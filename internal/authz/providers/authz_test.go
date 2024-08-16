@@ -38,7 +38,7 @@ func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos []*types.Rep
 	panic("should never be called")
 }
 
-func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (mine *extsvc.Account, err error) {
+func (m gitlabAuthzProviderParams) FetchAccount(context.Context, *types.User) (mine *extsvc.Account, err error) {
 	panic("should never be called")
 }
 
@@ -303,12 +303,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{
 					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
+						IdentityProvider: &schema.BitbucketServerIdentityProvider{
 							Username: &schema.BitbucketServerUsernameIdentity{
 								Type: "username",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
+						Oauth: &schema.BitbucketServerOAuth{
 							ConsumerKey: "sourcegraph",
 							SigningKey:  "Invalid Key",
 						},
@@ -326,12 +326,12 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{
 					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
+						IdentityProvider: &schema.BitbucketServerIdentityProvider{
 							Username: &schema.BitbucketServerUsernameIdentity{
 								Type: "username",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
+						Oauth: &schema.BitbucketServerOAuth{
 							ConsumerKey: "sourcegraph",
 							SigningKey:  bogusKey,
 						},
@@ -540,12 +540,12 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			bitbucketServerConnections: []*schema.BitbucketServerConnection{
 				{
 					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
+						IdentityProvider: &schema.BitbucketServerIdentityProvider{
 							Username: &schema.BitbucketServerUsernameIdentity{
 								Type: "username",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
+						Oauth: &schema.BitbucketServerOAuth{
 							ConsumerKey: "sourcegraph",
 							SigningKey:  bogusKey,
 						},
@@ -1283,7 +1283,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				"authorization": {}
 			}
 			`,
-			assert: includes("authorization: oauth is required"),
+			assert: includes("authorization: Must validate one and only one schema (oneOf)"),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
@@ -1296,8 +1296,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			}
 			`,
 			assert: includes(
-				"authorization.oauth: consumerKey is required",
-				"authorization.oauth: signingKey is required",
+				"authorization: Must validate one and only one schema (oneOf)",
 			),
 		},
 		{
@@ -1324,6 +1323,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			config: `
 			{
 				"authorization": {
+					"identityProvider": { "type": "username" },
 					"oauth": {
 						"consumerKey": "sourcegraph",
 						"signingKey": "not-base-64-encoded"

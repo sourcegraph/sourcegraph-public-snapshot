@@ -1208,6 +1208,34 @@ func languageFromFilepath(trace observation.TraceLogger, path core.RepoRelPath) 
 	return langs[0], nil
 }
 
+type SearchBasedSyntacticFilterTag int
+
+const (
+	// There was a previous syntactic search in this request, reuse some of the data it resolved to filter out
+	// syntactic results
+	SBSFilterSyntacticPrevious SearchBasedSyntacticFilterTag = iota
+	// There wasn't a previous syntactic search in this request, but we should still filter out syntactic results
+	SBSFilterSyntacticNoPrevious
+	// Do not filter out syntactic results
+	SBSFilterSyntacticDont
+)
+
+type SearchBasedSyntacticFilter struct {
+	Tag            SearchBasedSyntacticFilterTag
+	PreviousSearch PreviousSyntacticSearch
+}
+
+func NewSyntacticFilter(prev core.Option[PreviousSyntacticSearch]) SearchBasedSyntacticFilter {
+	if p, isSome := prev.Get(); isSome {
+		return SearchBasedSyntacticFilter{Tag: SBSFilterSyntacticPrevious, PreviousSearch: p}
+	}
+	return SearchBasedSyntacticFilter{Tag: SBSFilterSyntacticNoPrevious, PreviousSearch: PreviousSyntacticSearch{}}
+}
+
+func NoSyntacticFilter() SearchBasedSyntacticFilter {
+	return SearchBasedSyntacticFilter{Tag: SBSFilterSyntacticDont, PreviousSearch: PreviousSyntacticSearch{}}
+}
+
 type SearchBasedUsagesResult struct {
 	Matches    []SearchBasedMatch
 	NextCursor core.Option[UsagesCursor]
@@ -1217,7 +1245,7 @@ func (s *Service) SearchBasedUsages(
 	ctx context.Context,
 	gitTreeTranslator GitTreeTranslator,
 	args UsagesForSymbolArgs,
-	previousSyntacticSearch core.Option[PreviousSyntacticSearch],
+	syntacticFilter SearchBasedSyntacticFilter,
 ) (_ SearchBasedUsagesResult, err error) {
 	ctx, trace, endObservation := s.operations.searchBasedUsages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoId", int(args.Repo.ID)),
@@ -1230,28 +1258,27 @@ func (s *Service) SearchBasedUsages(
 	var language string
 	var symbolName string
 	var syntacticIndex core.Option[MappedIndex]
-
-	if prev, ok := previousSyntacticSearch.Get(); ok {
-		language = prev.Language
-		symbolName = prev.SymbolName
-		syntacticIndex = core.Some[MappedIndex](prev.MappedIndex)
+	if syntacticFilter.Tag == SBSFilterSyntacticPrevious {
+		language = syntacticFilter.PreviousSearch.Language
+		symbolName = syntacticFilter.PreviousSearch.SymbolName
+		syntacticIndex = core.Some[MappedIndex](syntacticFilter.PreviousSearch.MappedIndex)
 	} else {
 		language, err = languageFromFilepath(trace, args.Path)
 		if err != nil {
 			return SearchBasedUsagesResult{}, err
 		}
-
 		nameFromGit, err := s.symbolNameFromGit(ctx, args)
 		if err != nil {
 			return SearchBasedUsagesResult{}, err
 		}
 		symbolName = nameFromGit
-
-		upload, uploadErr := s.getSyntacticUpload(ctx, trace, args)
-		if uploadErr != nil {
-			trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
-		} else {
-			syntacticIndex = core.Some[MappedIndex](NewMappedIndexFromTranslator(s.lsifstore, gitTreeTranslator, upload, args.Commit))
+		if syntacticFilter.Tag == SBSFilterSyntacticNoPrevious {
+			upload, uploadErr := s.getSyntacticUpload(ctx, trace, args)
+			if uploadErr != nil {
+				trace.Info("no syntactic upload found, return all search-based results", log.Error(err))
+			} else {
+				syntacticIndex = core.Some[MappedIndex](NewMappedIndexFromTranslator(s.lsifstore, gitTreeTranslator, upload, args.Commit))
+			}
 		}
 	}
 	return searchBasedUsagesImpl(ctx, trace, s.searchClient, args, symbolName, language, syntacticIndex)

@@ -20,7 +20,6 @@ export class ReblameMarker extends GutterMarker {
     }
 
     public toDOM(_view: EditorView): Node {
-        console.log('ReblameMarker toDOM')
         const dom = document.createElement('div')
         dom.style.height = '100%'
         if (this.line !== 1) {

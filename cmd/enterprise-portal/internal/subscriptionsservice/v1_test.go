@@ -909,6 +909,8 @@ func TestHandlerV1_CreateEnterpriseSubscriptionLicense(t *testing.T) {
 			}
 			if tc.wantKeyOpts != nil {
 				mockrequire.CalledOnce(t, h.mockStore.CreateEnterpriseSubscriptionLicenseKeyFunc)
+				// Successful creation should get a Slack message as well
+				mockrequire.CalledOnce(t, h.mockStore.PostToSlackFunc)
 			} else {
 				mockrequire.NotCalled(t, h.mockStore.CreateEnterpriseSubscriptionLicenseKeyFunc)
 			}
@@ -1189,4 +1191,28 @@ func TestHandlerV1_UpdateEnterpriseSubscriptionMembership(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRenderLicenseKeyCreationSlackMessage(t *testing.T) {
+	mockTime := utctime.FromTime(time.Date(2024, 7, 8, 16, 39, 16, 0, time.UTC))
+
+	text := renderLicenseKeyCreationSlackMessage(
+		mockTime,
+		"dev",
+		subscriptions.Subscription{
+			ID:                       "sub-id",
+			DisplayName:              pointers.Ptr("display-name"),
+			SalesforceSubscriptionID: pointers.Ptr("salesforce-subscription-id"),
+		},
+		&subscriptions.DataLicenseKey{
+			Info: license.Info{
+				UserCount:               123,
+				Tags:                    []string{"foo"},
+				SalesforceOpportunityID: pointers.Ptr("salesforce-opp-id"),
+				ExpiresAt:               mockTime.AsTime().Add(30 * time.Hour),
+			},
+		},
+		"Testing license creation",
+	)
+	autogold.ExpectFile(t, autogold.Raw(text))
 }

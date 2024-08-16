@@ -105,7 +105,7 @@ type Provider struct {
 	httpClient *http.Client
 }
 
-func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Account, _ []string) (*extsvc.Account, error) {
+func (p *Provider) FetchAccount(context.Context, *types.User) (*extsvc.Account, error) {
 	return nil, nil
 }
 

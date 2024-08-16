@@ -654,7 +654,7 @@ var docsCommand = &cli.Command{
 	Usage: "Render reference documentation for build pipeline types",
 	Action: func(ctx *cli.Context) error {
 		cmd := exec.Command("go", "run", "./dev/ci/gen-pipeline.go", "-docs")
-		out, err := run.InRoot(cmd)
+		out, err := run.InRoot(cmd, run.InRootArgs{})
 		if err != nil {
 			return err
 		}

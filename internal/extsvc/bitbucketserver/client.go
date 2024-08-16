@@ -69,7 +69,7 @@ func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 		return nil, err
 	}
 
-	if config.Authorization == nil {
+	if config.Authorization == nil || config.Authorization.Oauth2 {
 		if config.Token != "" {
 			client.Auth = &auth.OAuthBearerToken{Token: config.Token}
 		} else {
@@ -78,7 +78,7 @@ func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 				Password: config.Password,
 			}
 		}
-	} else {
+	} else if config.Authorization.Oauth != nil {
 		err := client.SetOAuth(
 			config.Authorization.Oauth.ConsumerKey,
 			config.Authorization.Oauth.SigningKey,
@@ -304,17 +304,15 @@ func (c *Client) UserPermissions(ctx context.Context, username string) (perms []
 		Permission Perm  `json:"permission"`
 	}
 
-	var ps []permission
-	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &struct {
+	resp := &struct {
 		Values []permission `json:"values"`
-	}{
-		Values: ps,
-	})
+	}{}
+	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, p := range ps {
+	for _, p := range resp.Values {
 		if p.User.Name == username {
 			perms = append(perms, p.Permission)
 		}
@@ -582,7 +580,6 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 	)
 
 	resp, err := c.send(ctx, "POST", path, nil, payload, pr)
-
 	if err != nil {
 		var code int
 		if resp != nil {
@@ -946,7 +943,6 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 		PageToken: &next,
 		Values:    results,
 	})
-
 	if err != nil {
 		return nil, err
 	}

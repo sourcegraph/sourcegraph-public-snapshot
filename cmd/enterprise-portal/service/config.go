@@ -44,6 +44,8 @@ type Config struct {
 	}
 
 	LicenseExpirationChecker licenseexpiration.Config
+
+	SubscriptionsServiceSlackWebhookURL *string
 }
 
 type SAMSConfig struct {
@@ -63,7 +65,7 @@ func (c *Config) Load(env *runtime.Env) {
 		"For local dev: custom PostgreSQL DSN, overrides DOTCOM_CLOUDSQL_* options")
 	c.DotComDB.IncludeProductionLicenses = env.GetBool("DOTCOM_INCLUDE_PRODUCTION_LICENSES", "false",
 		"Include production licenses in API results")
-	c.DotComDB.ImportInterval = env.GetInterval("DOTCOM_IMPORT_INTERVAL", "10m",
+	c.DotComDB.ImportInterval = env.GetInterval("DOTCOM_IMPORT_INTERVAL", "0s", // disable by default
 		"Interval at which to import data from Sourcegraph.com")
 
 	c.SAMS.ConnConfig = sams.NewConnConfigFromEnv(env)
@@ -118,6 +120,10 @@ func (c *Config) Load(env *runtime.Env) {
 		"Interval at which to run license expiration checks. If not set, checks are not run.")
 	c.LicenseExpirationChecker.SlackWebhookURL = env.GetOptional(
 		"LICENSE_EXPIRATION_CHECKER_SLACK_WEBHOOK_URL",
-		"Destination webhook for expired licenses. If not set, messages are logged.",
+		"Destination webhook for expiring licenses. If not set, messages are logged.",
 	)
+
+	c.SubscriptionsServiceSlackWebhookURL = env.GetOptional(
+		"SUBSCRIPTIONS_SERVICE_SLACK_WEBHOOK_URL",
+		"Destination webhook for subscription API events, such as license creation. If not set, messages are logged.")
 }

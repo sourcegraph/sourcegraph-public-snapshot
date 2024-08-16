@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -28,22 +27,10 @@ func TestHandler_Handle(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	prefix := "__test__" + t.Name()
-	redisHost := "127.0.0.1:6379"
-
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", redisHost)
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
+	kv := redispool.NewTestKeyValue()
 
 	t.Cleanup(func() {
-		if err := redispool.DeleteAllKeysWithPrefix(redispool.RedisKeyValue(pool), prefix); err != nil {
+		if err := redispool.DeleteAllKeysWithPrefix(kv, prefix); err != nil {
 			t.Logf("Failed to clear redis: %+v\n", err)
 		}
 	})
@@ -69,14 +56,14 @@ func TestHandler_Handle(t *testing.T) {
 	h := handler{
 		externalServiceStore: db.ExternalServices(),
 		newRateLimiterFunc: func(bucketName string) ratelimit.GlobalLimiter {
-			return ratelimit.NewTestGlobalRateLimiter(pool, prefix, bucketName)
+			return ratelimit.NewTestGlobalRateLimiter(kv.Pool(), prefix, bucketName)
 		},
 		logger: logger,
 	}
 	err = h.Handle(ctx)
 	assert.NoError(t, err)
 
-	info, err := ratelimit.GetGlobalLimiterStateFromPool(ctx, pool, prefix)
+	info, err := ratelimit.GetGlobalLimiterStateFromStore(kv, prefix)
 	require.NoError(t, err)
 
 	if diff := cmp.Diff(map[string]ratelimit.GlobalLimiterInfo{

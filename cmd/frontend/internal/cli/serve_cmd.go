@@ -450,19 +450,6 @@ func GetInternalAddr() string {
 	return httpAddrInternal
 }
 
-func pingRedis(kv redispool.KeyValue) error {
-	conn := kv.Pool().Get()
-	defer conn.Close()
-	data, err := conn.Do("PING")
-	if err != nil {
-		return err
-	}
-	if data != "PONG" {
-		return errors.New("no pong received")
-	}
-	return nil
-}
-
 // waitForRedis waits up to a certain timeout for Redis to become reachable, to reduce the
 // likelihood of the HTTP handlers starting to serve requests while Redis (and therefore session
 // data) is still unavailable. After the timeout has elapsed, if Redis is still unreachable, it
@@ -473,7 +460,7 @@ func waitForRedis(logger sglog.Logger, kv redispool.KeyValue) {
 	var err error
 	for {
 		time.Sleep(150 * time.Millisecond)
-		err = pingRedis(kv)
+		err = kv.Ping()
 		if err == nil {
 			return
 		}

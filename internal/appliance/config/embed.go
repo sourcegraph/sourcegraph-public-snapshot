@@ -17,6 +17,7 @@ var (
 	CodeIntelConfig                 []byte
 	CodeInsightsConfig              []byte
 	OtelAgentConfig                 []byte
+	OtelCollectorConfigTemplate     []byte
 )
 
 func init() {
@@ -26,6 +27,7 @@ func init() {
 	PrometheusDefaultConfigTemplate = mustReadFile("prometheus/default.yml.gotmpl")
 	GrafanaDefaultConfigTemplate = mustReadFile("grafana/default.yml.gotmpl")
 	OtelAgentConfig = mustReadFile("otel/agent.yaml")
+	OtelCollectorConfigTemplate = mustReadFile("otel/collector.yaml.gotmpl")
 }
 
 func mustReadFile(name string) []byte {

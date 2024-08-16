@@ -64,6 +64,14 @@ export function defaultPatternTypeFromSettings(settingsCascade: SettingsCascadeO
 }
 
 /**
+ * Returns true if the query examples we show on the homepage should be for keyword search.
+ */
+export function showQueryExamplesForKeywordSearch(settingsCascade: SettingsCascadeOrError): boolean {
+    const defaultPatternType = defaultPatternTypeFromSettings(settingsCascade)
+    return defaultPatternType === SearchPatternType.keyword || defaultPatternType === SearchPatternType.regexp
+}
+
+/**
  * Returns the user-configured case sensitivity setting or undefined if not configured.
  */
 export function defaultCaseSensitiveFromSettings(settingsCascade: SettingsCascadeOrError): boolean | undefined {

@@ -6,9 +6,7 @@ import (
 	"reflect"
 	"strconv"
 	"testing"
-	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/log/logtest"
 )
 
@@ -40,30 +38,15 @@ func TestMain(m *testing.M) {
 func TestDeleteAllKeysWithPrefix(t *testing.T) {
 	t.Helper()
 
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", "127.0.0.1:6379")
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-
-	c := pool.Get()
-	defer c.Close()
+	kv := NewTestKeyValue()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		_, err := c.Do("PING")
-		if err != nil {
+		if err := kv.Ping(); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
 
-	kv := RedisKeyValue(pool)
 	var aKeys, bKeys []string
 	var key string
 	for i := range 10 {

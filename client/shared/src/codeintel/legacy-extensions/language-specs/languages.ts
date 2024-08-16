@@ -431,5 +431,6 @@ export const languageSpecs: LanguageSpec[] = [
  * @deprecated See FIXME(id: language-detection)
  */
 export function findLanguageSpec(languageID: string): LanguageSpec | undefined {
+    languageID = languageID.toLowerCase()
     return languageSpecs.find(spec => spec.languageID === languageID || spec.additionalLanguages?.includes(languageID))
 }

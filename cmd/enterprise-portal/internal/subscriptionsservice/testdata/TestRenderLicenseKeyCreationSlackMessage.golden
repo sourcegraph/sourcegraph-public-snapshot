@@ -1,0 +1,9 @@
+A new license was created for subscription <https://sourcegraph.com/site-admin/dotcom/product/subscriptions/es_sub-id?env=dev|display-name>:
+
+• *Expiration (UTC)*: Jul 9, 2024 10:39pm UTC (1.2 days remaining)
+• *Expiration (PT)*: Jul 9, 2024 3:39pm PDT
+• *User count*: 123
+• *License tags*: `foo`
+• *Salesforce subscription*: salesforce-subscription-id
+• *Salesforce opportunity*: <https://sourcegraph2020.lightning.force.com/lightning/r/Opportunity/salesforce-opp-id/view|salesforce-opp-id>
+• *Message*: Testing license creation

@@ -2,6 +2,7 @@ package connections
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"testing"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -51,6 +53,50 @@ func getSchema(name string) (*schemas.Schema, bool) {
 	return nil, false
 }
 
+// 🚨 SECURITY: These tables are NOT governed by Postgres RLS protection to isolate
+// tenant data.
+// This list should only ever contain tables that are system critical, and NOT tenant-specific.
+var tablesWithoutTenant = map[string]map[string]struct{}{
+	"frontend": {
+		"tenants":                  {}, // The tenant table itself, it cannot link to itself.
+		"migration_logs":           {}, // Maintained by migrator and not part of Sourcegraph proper.
+		"versions":                 {}, // Maintained by migrator and not part of Sourcegraph proper.
+		"critical_and_site_config": {}, // Site config is global to the instance so it does not have a tenant.
+
+		// Excluding lsif_* since we are not targetting code-intel initially
+		// and they cause issues since its hard to get a table lock with the
+		// many long running transactions against them from worker.
+		"lsif_configuration_policies":                           {},
+		"lsif_configuration_policies_repository_pattern_lookup": {},
+		"lsif_dependency_indexing_jobs":                         {},
+		"lsif_dependency_repos":                                 {},
+		"lsif_dependency_syncing_jobs":                          {},
+		"lsif_dirty_repositories":                               {},
+		"lsif_index_configuration":                              {},
+		"lsif_indexes":                                          {},
+		"lsif_last_index_scan":                                  {},
+		"lsif_last_retention_scan":                              {},
+		"lsif_nearest_uploads":                                  {},
+		"lsif_nearest_uploads_links":                            {},
+		"lsif_packages":                                         {},
+		"lsif_references":                                       {},
+		"lsif_retention_configuration":                          {},
+		"lsif_uploads":                                          {},
+		"lsif_uploads_audit_logs":                               {},
+		"lsif_uploads_reference_counts":                         {},
+		"lsif_uploads_visible_at_tip":                           {},
+		"lsif_uploads_vulnerability_scan":                       {},
+	},
+	"codeintel": {
+		"tenants":        {}, // The tenant table itself, it cannot link to itself.
+		"migration_logs": {}, // Maintained by migrator and not part of Sourcegraph proper.
+	},
+	"codeinsights": {
+		"tenants":        {}, // The tenant table itself, it cannot link to itself.
+		"migration_logs": {}, // Maintained by migrator and not part of Sourcegraph proper.
+	},
+}
+
 func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 	t.Helper()
 
@@ -73,6 +119,27 @@ func testMigrations(t *testing.T, name string, schema *schemas.Schema) {
 		if err := migrationRunner.Run(ctx, options); err != nil {
 			t.Fatalf("failed to perform initial upgrade: %s", err)
 		}
+
+		t.Run("verify tenant isolation config", func(t *testing.T) {
+			// Get the list of all tables
+			tables, err := getAllTables(db)
+			if err != nil {
+				t.Fatalf("Failed to retrieve tables: %v", err)
+			}
+
+			for _, table := range tables {
+				if _, ok := tablesWithoutTenant[name][table]; ok {
+					continue
+				}
+				hasTenantID, err := tableHasTenantIDColumn(db, table)
+				if err != nil {
+					t.Errorf("Failed to check tenant_id column for table %s: %v", table, err)
+				}
+				if !hasTenantID {
+					t.Errorf("Table %s does not have a tenant_id column. In the migration that adds it, make sure to include \n\ntenant_id integer REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE;\n\n", table)
+				}
+			}
+		})
 	})
 	t.Run("down", func(t *testing.T) {
 		// Run down to the root "squashed commits" migration. For this, we need to select
@@ -129,7 +196,7 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 
 	t.Run("idempotent up", func(t *testing.T) {
 		for _, definition := range all {
-			if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			if err := applyMigration(db, definition, true); err != nil {
 				t.Fatalf("failed to perform upgrade of migration %d: %s", definition.ID, err)
 			}
 
@@ -139,7 +206,7 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 				continue
 			}
 
-			if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			if err := applyMigration(db, definition, true); err != nil {
 				t.Fatalf("migration %d is not idempotent%s: %s", definition.ID, formatHint(err), err)
 			}
 		}
@@ -149,7 +216,7 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 		for i := len(all) - 1; i >= 0; i-- {
 			definition := all[i]
 
-			if _, err := db.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			if err := applyMigration(db, definition, false); err != nil {
 				t.Fatalf("failed to perform downgrade of migration %d: %s", definition.ID, err)
 			}
 
@@ -159,7 +226,7 @@ func testMigrationIdempotency(t *testing.T, name string, schema *schemas.Schema)
 				continue
 			}
 
-			if _, err := db.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			if err := applyMigration(db, definition, false); err != nil {
 				t.Fatalf("migration %d is not idempotent%s: %s", definition.ID, formatHint(err), err)
 			}
 		}
@@ -183,7 +250,7 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		expectedDescription := expectedDescriptions["public"]
 
 		// Run query up
-		if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+		if err := applyMigration(db, definition, true); err != nil {
 			t.Fatalf("failed to perform upgrade of migration %d: %s", definition.ID, err)
 		}
 
@@ -194,7 +261,7 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		}
 
 		// Run query down (should restore previous state)
-		if _, err := db.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+		if err := applyMigration(db, definition, false); err != nil {
 			t.Fatalf("failed to perform downgrade of migration %d: %s", definition.ID, err)
 		}
 
@@ -232,7 +299,7 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		}
 
 		// Re-run query up to prepare for next round
-		if _, err := db.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+		if err := applyMigration(db, definition, true); err != nil {
 			t.Fatalf("failed to re-perform upgrade of migration %d: %s", definition.ID, err)
 		}
 	}
@@ -263,4 +330,88 @@ func formatHint(err error) string {
 	}
 
 	return ""
+}
+
+// applyMigration applies migrations for testing. In real-world, they run inside of a
+// transaction, sp we mimic that in this helper as well.
+func applyMigration(db *sql.DB, definition definition.Definition, up bool) (err error) {
+	type execer interface {
+		Exec(query string, args ...any) (sql.Result, error)
+	}
+	var queryRunner execer = db
+
+	if !definition.IsCreateIndexConcurrently {
+		tx, err := db.BeginTx(context.Background(), &sql.TxOptions{})
+		if err != nil {
+			return err
+		}
+		queryRunner = tx
+		defer func() {
+			if err != nil {
+				err = errors.Append(err, tx.Rollback())
+			}
+			err = tx.Commit()
+		}()
+	}
+
+	if up {
+		if _, err := queryRunner.Exec(definition.UpQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			return errors.Wrapf(err, "failed to apply migration %d:\n```\n%s\n```\n", definition.ID, definition.UpQuery.Query(sqlf.PostgresBindVar))
+		}
+	} else {
+		if _, err := queryRunner.Exec(definition.DownQuery.Query(sqlf.PostgresBindVar)); err != nil {
+			return errors.Wrapf(err, "failed to apply migration %d:\n```\n%s\n```\n", definition.ID, definition.DownQuery.Query(sqlf.PostgresBindVar))
+		}
+	}
+
+	return nil
+}
+
+func getAllTables(db *sql.DB) ([]string, error) {
+	query := `
+		SELECT table_name
+		FROM information_schema.tables
+		WHERE table_schema='public'
+		AND table_type='BASE TABLE'
+	`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var tables []string
+	for rows.Next() {
+		var table string
+		if err := rows.Scan(&table); err != nil {
+			return nil, err
+		}
+		tables = append(tables, table)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return tables, nil
+}
+
+func tableHasTenantIDColumn(db *sql.DB, tableName string) (bool, error) {
+	q := sqlf.Sprintf(`
+		SELECT column_name
+		FROM information_schema.columns
+		WHERE table_name=%s AND column_name='tenant_id'
+	`, tableName)
+
+	var columnName string
+	err := db.QueryRow(q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&columnName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return columnName == "tenant_id", nil
 }

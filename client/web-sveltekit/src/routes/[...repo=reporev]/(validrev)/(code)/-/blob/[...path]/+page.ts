@@ -27,7 +27,7 @@ import {
     BlobViewCodeGraphDataNextPage,
 } from './page.gql'
 
-function loadDiffView({ params, url }: PageLoadEvent) {
+async function loadDiffView({ params, url }: PageLoadEvent) {
     const client = getGraphQLClient()
     const revisionOverride = url.searchParams.get('rev')
     const { repoName } = parseRepoRevision(params.repo)
@@ -220,5 +220,6 @@ export const load: PageLoad = event => {
     if (showDiff && revisionOverride) {
         return loadDiffView(event)
     }
+
     return loadFileView(event)
 }

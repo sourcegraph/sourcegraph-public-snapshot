@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -231,7 +232,9 @@ func TestScanFullRepoPermissions(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/",
 		"//depot/training/",
@@ -312,7 +315,9 @@ func TestScanIPPermissions(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/src/",
 		"//depot/project1/",
@@ -404,7 +409,9 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/base/",
 	}
@@ -726,7 +733,9 @@ read    group   Dev1    *   //depot/main/.../*.go
 				}
 			})
 
-			p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+			db := dbmocks.NewMockDB()
+
+			p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 			p.depots = []extsvc.RepoID{
 				extsvc.RepoID(tc.depot),
 			}
@@ -787,7 +796,9 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/654/deploy/base/",
 	}
@@ -934,7 +945,10 @@ func TestScanAllUsers(t *testing.T) {
 	rc := io.NopCloser(bytes.NewReader(data))
 	gc := gitserver.NewStrictMockClient()
 	gc.PerforceGroupMembersFunc.SetDefaultReturn(nil, nil)
-	p := NewProvider(logger, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.cachedGroupMembers = map[string][]string{
 		"dev": {"user1", "user2"},
 	}

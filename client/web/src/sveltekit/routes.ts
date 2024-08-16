@@ -27,6 +27,11 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
         isRepoRoot: false,
     },
     {
+        id: '/[...repo=reporev]/(validrev)/-/changelists/[...path]',
+        pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/changelists(?:/.*)?/?$'),
+        isRepoRoot: false,
+    },
+    {
         id: '/[...repo=reporev]/(validrev)/-/commits/[...path]',
         pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/commits(?:/.*)?/?$'),
         isRepoRoot: false,
@@ -39,6 +44,11 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
     {
         id: '/[...repo=reporev]/-/branches/all',
         pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/branches/all/?$'),
+        isRepoRoot: false,
+    },
+    {
+        id: '/[...repo=reporev]/-/changelist/[changelistID]',
+        pattern: new RegExp('^/(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,})))(?:@(?:(?:(?:[^@/-]|(?:[^/@]{2,}))/)*(?:[^@/-]|(?:[^/@]{2,}))))?/-/changelist(?:/[^/]&#43;)/?$'),
         isRepoRoot: false,
     },
     {
@@ -64,6 +74,11 @@ export const svelteKitRoutes: SvelteKitRoute[] = [
     {
         id: '/[community=communitySearchContext]',
         pattern: new RegExp('^/(backstage|chakraui|cncf|julia|kubernetes|o3de|stackstorm|stanford|temporal)/?$'),
+        isRepoRoot: false,
+    },
+    {
+        id: '/cody/chat',
+        pattern: new RegExp('^/cody/chat/?$'),
         isRepoRoot: false,
     },
     {

@@ -78,7 +78,7 @@ func (p *Provider) ServiceID() string { return p.codeHost.ServiceID }
 func (p *Provider) ServiceType() string { return p.codeHost.ServiceType }
 
 // FetchAccount satisfies the authz.Provider interface.
-func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*extsvc.Account, _ []string) (acct *extsvc.Account, err error) {
+func (p *Provider) FetchAccount(ctx context.Context, user *types.User) (acct *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}

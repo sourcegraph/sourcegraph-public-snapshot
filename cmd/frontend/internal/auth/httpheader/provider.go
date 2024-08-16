@@ -34,3 +34,7 @@ func (p *provider) ExternalAccountInfo(ctx context.Context, account extsvc.Accou
 		DisplayName: account.AccountID,
 	}, nil
 }
+
+func (p *provider) Type() providers.ProviderType {
+	return providers.ProviderTypeHTTPHeader
+}

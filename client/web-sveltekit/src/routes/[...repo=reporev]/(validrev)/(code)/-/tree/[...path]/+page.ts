@@ -7,7 +7,7 @@ import { parseRepoRevision } from '$lib/shared'
 import type { PageLoad } from './$types'
 import { TreePageCommitInfoQuery, TreePageReadmeQuery } from './page.gql'
 
-export const load: PageLoad = ({ parent, params }) => {
+export const load: PageLoad = async ({ parent, params }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const resolvedRevision = resolveRevision(parent, revision)

@@ -130,21 +130,12 @@ type FetchPermsOptions struct {
 // In most cases, an authz provider represents a code host, because it is the source of truth for
 // repository permissions.
 type Provider interface {
-	// FetchAccount returns the external account that identifies the user to this authz provider,
-	// taking as input the current list of external accounts associated with the
-	// user. Implementations should always recompute the returned account (rather than returning an
-	// element of `current` if it has the correct ServiceID and ServiceType).
-	//
-	// Implementations should use only the `user` and `current` parameters to compute the returned
-	// external account. Specifically, they should not try to get the currently authenticated user
-	// from the context parameter.
+	// FetchAccount returns the external account that identifies the user to this authz provider.
+	// Implementations should always recompute the returned account.
 	//
 	// The `user` argument should always be non-nil. If no external account can be computed for the
 	// provided user, implementations should return nil, nil.
-	//
-	// The `verifiedEmails` should only contain a list of verified emails that is
-	// associated to the `user`.
-	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (mine *extsvc.Account, err error)
+	FetchAccount(ctx context.Context, user *types.User) (mine *extsvc.Account, err error)
 
 	// FetchUserPerms returns a collection of accessible repository/project IDs (on
 	// code host) that the given account has read access on the code host. The

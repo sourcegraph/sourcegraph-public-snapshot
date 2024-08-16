@@ -36,7 +36,6 @@ go_library(
         "//internal/version",
         "//lib/errors",
         "//lib/pointers",
-        "@com_github_gomodule_redigo//redis",
         "@com_github_gorilla_mux//:mux",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",

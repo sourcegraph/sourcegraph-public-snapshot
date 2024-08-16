@@ -5,12 +5,11 @@
     import { navigating } from '$app/stores'
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
     import { getHumanNameForCodeHost } from '$lib/repo/shared/codehost'
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import CodeHostIcon from '$lib/search/CodeHostIcon.svelte'
     import { Alert, Badge } from '$lib/wildcard'
-
-    import RepositoryRevPicker from '$lib/repo/RepositoryRevPicker.svelte'
 
     import type { PageData, Snapshot } from './$types'
 

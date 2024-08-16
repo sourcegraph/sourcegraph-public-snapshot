@@ -21,6 +21,7 @@ go_library(
 go_test(
     name = "selfupdate_test",
     srcs = ["selfupdate_test.go"],
+    data = glob(["testdata/**"]),
     embed = [":selfupdate"],
     deps = [
         "//internal/releaseregistry",

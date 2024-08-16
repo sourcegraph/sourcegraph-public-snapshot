@@ -177,7 +177,7 @@ export const AddCredentialModal: FC<React.PropsWithChildren<AddCredentialModalPr
                         <option value={AuthenticationStrategy.PERSONAL_ACCESS_TOKEN} defaultChecked={true}>
                             Personal Access Token
                         </option>
-                        <option value={AuthenticationStrategy.GITHUB_APP}>GitHub App</option>
+                        <option value={AuthenticationStrategy.GITHUB_APP}>GitHub App (Experimental)</option>
                     </Select>
                 )}
                 {requiresSSH && (

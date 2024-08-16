@@ -1,7 +1,7 @@
 - steps: []
   local_steps: []
   root: a
-  indexer: sourcegraph/scip-ruby@sha256:75a54c6032c977ae4960c5651f6095bb017bf55b7a4b86e608c6235443c38cbb
+  indexer: sourcegraph/scip-ruby@sha256:99b1a1adcb1ec1b6e92956f5817dfc6dfc9940f962b999685954b2ba052e1a7b
   indexer_args:
     - scip-ruby-autoindex
   outfile: index.scip
@@ -9,7 +9,7 @@
 - steps: []
   local_steps: []
   root: b
-  indexer: sourcegraph/scip-ruby@sha256:75a54c6032c977ae4960c5651f6095bb017bf55b7a4b86e608c6235443c38cbb
+  indexer: sourcegraph/scip-ruby@sha256:99b1a1adcb1ec1b6e92956f5817dfc6dfc9940f962b999685954b2ba052e1a7b
   indexer_args:
     - scip-ruby-autoindex
   outfile: index.scip
@@ -17,7 +17,7 @@
 - steps: []
   local_steps: []
   root: c
-  indexer: sourcegraph/scip-ruby@sha256:75a54c6032c977ae4960c5651f6095bb017bf55b7a4b86e608c6235443c38cbb
+  indexer: sourcegraph/scip-ruby@sha256:99b1a1adcb1ec1b6e92956f5817dfc6dfc9940f962b999685954b2ba052e1a7b
   indexer_args:
     - scip-ruby-autoindex
   outfile: index.scip
@@ -25,7 +25,7 @@
 - steps: []
   local_steps: []
   root: d
-  indexer: sourcegraph/scip-ruby@sha256:75a54c6032c977ae4960c5651f6095bb017bf55b7a4b86e608c6235443c38cbb
+  indexer: sourcegraph/scip-ruby@sha256:99b1a1adcb1ec1b6e92956f5817dfc6dfc9940f962b999685954b2ba052e1a7b
   indexer_args:
     - scip-ruby-autoindex
   outfile: index.scip
@@ -33,7 +33,7 @@
 - steps: []
   local_steps: []
   root: e
-  indexer: sourcegraph/scip-ruby@sha256:75a54c6032c977ae4960c5651f6095bb017bf55b7a4b86e608c6235443c38cbb
+  indexer: sourcegraph/scip-ruby@sha256:99b1a1adcb1ec1b6e92956f5817dfc6dfc9940f962b999685954b2ba052e1a7b
   indexer_args:
     - scip-ruby-autoindex
   outfile: index.scip

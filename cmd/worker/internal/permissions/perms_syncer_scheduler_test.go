@@ -395,7 +395,7 @@ type mockProvider struct {
 	extAcct  *extsvc.Account
 }
 
-func (p *mockProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
+func (p *mockProvider) FetchAccount(context.Context, *types.User) (mine *extsvc.Account, err error) {
 	return p.extAcct, nil
 }
 

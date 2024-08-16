@@ -69,5 +69,5 @@ msp_delivery(
     name = "msp_deploy",
     gcp_project = "telemetry-gateway-prod-acae",
     msp_service_id = "telemetry-gateway",
-    repository = "index.docker.io/sourcegraph/telemetry-gateway",
+    repository = "us.gcr.io/sourcegraph-dev/telemetry-gateway",
 )

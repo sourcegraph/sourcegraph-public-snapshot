@@ -47,7 +47,6 @@ var (
 
 func NewIndexSchedulers(
 	observationCtx *observation.Context,
-	uploadSvc UploadService,
 	policiesSvc PoliciesService,
 	policyMatcher PolicyMatcher,
 	repoSchedulingSvc reposcheduler.RepositorySchedulingService,

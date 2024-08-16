@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/idf"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/cast"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
@@ -87,6 +88,7 @@ type CodyContextClient struct {
 type GetContextArgs struct {
 	Repos            []types.RepoIDName
 	RepoStats        map[api.RepoName]*idf.StatsProvider
+	FilePatterns     []types.RegexpPattern
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
@@ -144,14 +146,16 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 	embeddingsArgs := GetContextArgs{
 		Repos:            embeddingRepos,
 		RepoStats:        args.RepoStats,
+		FilePatterns:     nil, // Not supported for embeddings context (which is currently not in use)
 		Query:            args.Query,
 		CodeResultsCount: int32(float32(args.CodeResultsCount) * embeddingsResultRatio),
 		TextResultsCount: int32(float32(args.TextResultsCount) * embeddingsResultRatio),
 	}
 	keywordArgs := GetContextArgs{
-		Repos:     keywordRepos,
-		RepoStats: args.RepoStats,
-		Query:     args.Query,
+		Repos:        keywordRepos,
+		RepoStats:    args.RepoStats,
+		Query:        args.Query,
+		FilePatterns: args.FilePatterns,
 		// Assign the remaining result budget to keyword search
 		CodeResultsCount: args.CodeResultsCount - embeddingsArgs.CodeResultsCount,
 		TextResultsCount: args.TextResultsCount - embeddingsArgs.TextResultsCount,
@@ -288,7 +292,14 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	transformedQuery := getTransformedQuery(args, maxTermsPerWord)
 	lg.Printf("# userQuery -> transformedQuery: %q -> %q", args.Query, transformedQuery)
 	fmt.Printf("# userQuery -> transformedQuery: %q -> %q", args.Query, transformedQuery)
-	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, reposAsRegexp(args.Repos), getKeywordContextExcludeFilePathsQuery(), transformedQuery)
+
+	keywordQuery := fmt.Sprintf(
+		`repo:%s file:%s %s %s`,
+		reposAsRegexp(args.Repos),
+		"(?:"+strings.Join(cast.ToStrings(args.FilePatterns), "|")+")",
+		getKeywordContextExcludeFilePathsQuery(),
+		args.Query,
+	)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

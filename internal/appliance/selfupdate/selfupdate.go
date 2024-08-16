@@ -2,6 +2,8 @@ package selfupdate
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"strings"
 	"time"
 
@@ -18,12 +20,13 @@ import (
 )
 
 type SelfUpdate struct {
-	Interval        time.Duration
-	Logger          log.Logger
-	K8sClient       client.Client
-	RelregClient    releaseregistry.ReleaseRegistryClient
-	DeploymentNames string
-	Namespace       string
+	Interval           time.Duration
+	Logger             log.Logger
+	K8sClient          client.Client
+	RelregClient       releaseregistry.ReleaseRegistryClient
+	PinnedReleasesFile string
+	DeploymentNames    string
+	Namespace          string
 }
 
 func (u *SelfUpdate) Loop(ctx context.Context) error {
@@ -80,7 +83,7 @@ func (u *SelfUpdate) Once(ctx context.Context) error {
 }
 
 func (u *SelfUpdate) getLatestTag(ctx context.Context) (string, error) {
-	versions, err := u.RelregClient.ListVersions(ctx, "sourcegraph")
+	versions, err := u.getVersions(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -98,6 +101,22 @@ func (u *SelfUpdate) getLatestTag(ctx context.Context) (string, error) {
 
 	u.Logger.Info("found latest version", log.String("version", latestVersion))
 	return latestVersion, nil
+}
+
+func (u *SelfUpdate) getVersions(ctx context.Context) ([]releaseregistry.ReleaseInfo, error) {
+	if u.PinnedReleasesFile != "" {
+		file, err := os.Open(u.PinnedReleasesFile)
+		if err != nil {
+			return nil, errors.Wrap(err, "opening pinned releases file")
+		}
+		defer file.Close()
+		var versions []releaseregistry.ReleaseInfo
+		if err := json.NewDecoder(file).Decode(&versions); err != nil {
+			return nil, err
+		}
+		return versions, nil
+	}
+	return u.RelregClient.ListVersions(ctx, "sourcegraph")
 }
 
 // I thought about using regular expressions for this but I swear that's not

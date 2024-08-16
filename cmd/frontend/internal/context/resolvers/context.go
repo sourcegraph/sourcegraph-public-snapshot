@@ -180,6 +180,18 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		return nil, err
 	}
 
+	var validatedFilePatterns []types.RegexpPattern
+	if args.FilePatterns != nil {
+		validatedFilePatterns = make([]types.RegexpPattern, 0, len(*args.FilePatterns))
+		for _, filePattern := range *args.FilePatterns {
+			validatedFilePattern, err := types.NewRegexpPattern(filePattern)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid file pattern %q", filePattern)
+			}
+			validatedFilePatterns = append(validatedFilePatterns, validatedFilePattern)
+		}
+	}
+
 	repos, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
@@ -207,6 +219,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
 		Repos:            repoNameIDs,
 		RepoStats:        repoStats,
+		FilePatterns:     validatedFilePatterns,
 		Query:            args.Query,
 		CodeResultsCount: args.CodeResultsCount,
 		TextResultsCount: args.TextResultsCount,
@@ -226,7 +239,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 // ChatIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.
 // Yes, it does things that should not be done in production code - for now it is just a proof of concept for demos.
 func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatIntentArgs) (graphqlbackend.IntentResolver, error) {
-	err := r.contextApiEnabled(ctx)
+	err := r.chatIntentApiEnabled(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -305,6 +318,16 @@ func (r *Resolver) sendIntentRequest(ctx context.Context, backend schema.Backend
 		return nil, err
 	}
 	return &intentResponse, nil
+}
+
+func (r *Resolver) chatIntentApiEnabled(ctx context.Context) error {
+	if isEnabled, reason := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
+		return errors.Newf("cody is not enabled: %s", reason)
+	}
+	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Resolver) contextApiEnabled(ctx context.Context) error {
@@ -419,8 +442,9 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Repo) ([]graphqlbackend.RetrieverContextItemResolver, []error, error) {
 	var res []graphqlbackend.RetrieverContextItemResolver
 	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
-		Repos: []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
-		Query: query,
+		Repos:        []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
+		FilePatterns: nil, // Not suppported in ChatContext
+		Query:        query,
 	})
 	if err != nil {
 		return nil, nil, err

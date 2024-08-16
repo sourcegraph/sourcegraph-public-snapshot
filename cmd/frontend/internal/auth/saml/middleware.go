@@ -65,7 +65,7 @@ func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next ht
 	// Note: For instances that are conf.AuthPublic(), we don't redirect to sign-in automatically, as that would
 	// lock out unauthenticated access.
 	ps := providers.SignInProviders(!r.URL.Query().Has("sourcegraph-operator"))
-	if !conf.AuthPublic() && len(ps) == 1 && ps[0].Config().Saml != nil && !session.HasSignOutCookie(r) && !isAPIRequest {
+	if !conf.AuthPublic() && len(ps) == 1 && ps[0].Type() == providers.ProviderTypeSAML && !session.HasSignOutCookie(r) && !isAPIRequest {
 		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
 		if handled {
 			return

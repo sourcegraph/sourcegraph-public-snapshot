@@ -38,6 +38,10 @@ func (m mockAuthnProvider) CachedInfo() *providers.Info {
 	// return &providers.Info{ServiceID: m.serviceID}
 }
 
+func (m mockAuthnProvider) Type() providers.ProviderType {
+	return providers.ProviderTypeOAuth
+}
+
 type mockAuthnProviderUser struct {
 	Username string `json:"username,omitempty"`
 	ID       int32  `json:"id,omitempty"`

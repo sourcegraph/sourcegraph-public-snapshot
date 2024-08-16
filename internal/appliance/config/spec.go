@@ -98,6 +98,16 @@ type OtelAgentSpec struct {
 
 type OtelCollectorSpec struct {
 	StandardConfig
+
+	// Read how to configure sampling in the [OpenTelemetry
+	// documentation](https://docs.sourcegraph.com/admin/observability/opentelemetry#sampling-traces)
+	Processors map[string]any `json:"processors,omitempty"`
+
+	// Read how to configure different backends in the [OpenTelemetry
+	// documentation](https://opentelemetry.io/docs/collector/configuration/#exporters)
+	Exporters map[string]any `json:"exporters,omitempty"`
+
+	ExportersTLSSecretName string `json:"exportersTlsSecretName,omitempty"`
 }
 
 type JaegerSpec struct {

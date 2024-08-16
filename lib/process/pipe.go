@@ -87,7 +87,7 @@ func PipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWrit
 		return nil, errors.Wrap(err, "failed to attach stderr pipe")
 	}
 
-	go func() {
+	context.AfterFunc(ctx, func() {
 		// There is a deadlock condition due the following strange decisions:
 		//
 		// 1. The pipes attached to a command are not closed if the context
@@ -106,10 +106,9 @@ func PipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWrit
 		// finished. These may return an ErrClosed condition, but we don't really
 		// care: the command package doesn't surface errors when closing the pipes
 		// either.
-		<-ctx.Done()
 		stdoutPipe.Close()
 		stderrPipe.Close()
-	}()
+	})
 
 	eg := pool.New().WithErrors()
 
