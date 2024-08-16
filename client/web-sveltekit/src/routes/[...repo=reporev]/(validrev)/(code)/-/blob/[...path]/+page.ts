@@ -38,33 +38,33 @@ async function loadDiffView({ params, url }: PageLoadEvent) {
 
     assertNonNullable(revisionOverride, 'revisionOverride is set')
 
-    return cid
-        ? {
-              type: 'DiffView' as const,
-              enableInlineDiff: true,
-              enableViewAtCommit: true,
-              filePath,
-              commit: client
-                  .query(BlobDiffViewChangelistQuery, {
-                      repoName,
-                      cid: cid,
-                      path: filePath,
-                  })
-                  .then(mapOrThrow(result => result.data?.repository?.changelist?.commit ?? null)),
-          }
-        : {
-              type: 'DiffView' as const,
-              enableInlineDiff: true,
-              enableViewAtCommit: true,
-              filePath,
-              commit: client
-                  .query(BlobDiffViewCommitQuery, {
-                      repoName,
-                      revspec: revisionOverride,
-                      path: filePath,
-                  })
-                  .then(mapOrThrow(result => result.data?.repository?.commit ?? null)),
-          }
+    const getRevision = () => {
+        if (cid) {
+            return client
+                .query(BlobDiffViewChangelistQuery, {
+                    repoName,
+                    cid: cid,
+                    path: filePath,
+                })
+                .then(mapOrThrow(result => result.data?.repository?.changelist?.commit ?? null))
+        }
+
+        return client
+            .query(BlobDiffViewCommitQuery, {
+                repoName,
+                revspec: revisionOverride,
+                path: filePath,
+            })
+            .then(mapOrThrow(result => result.data?.repository?.commit ?? null))
+    }
+
+    return {
+        type: 'DiffView' as const,
+        enableInlineDiff: true,
+        enableViewAtCommit: true,
+        filePath,
+        commit: getRevision(),
+    }
 }
 
 async function fetchCodeGraphData(

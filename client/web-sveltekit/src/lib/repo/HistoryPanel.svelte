@@ -65,6 +65,10 @@
                     {@const revURL = isPerforceDepot ? commit.perforceChangelist?.canonicalURL : commit.canonicalURL}
                     {@const revID = isPerforceDepot ? commit.perforceChangelist?.cid : commit.abbreviatedOID}
                     {@const revType = isPerforceDepot ? 'changelist' : 'commit'}
+                    {@const revQueryParams = isPerforceDepot
+                        ? `?rev=changelist%2f${revID}&diff=1`
+                        : `?rev=${revID}&diff=1`}
+                    {@const revSlug = isPerforceDepot ? `${revType}/${revID}` : revID || ''}
 
                     <tr class:selected use:scrollIntoViewOnMount={selected}>
                         <td class="revision">
@@ -72,12 +76,7 @@
                         </td>
                         <td class="subject">
                             {#if enableInlineDiff}
-                                <a
-                                    href={selected
-                                        ? closeURL
-                                        : `?rev=${isPerforceDepot ? `${revType}%2f${revID}` : revID}&diff=1`}
-                                    >{commit.subject}</a
-                                >
+                                <a href={selected ? closeURL : revQueryParams}>{commit.subject}</a>
                             {:else}
                                 {commit.subject}
                             {/if}
@@ -90,7 +89,7 @@
                         <td class="actions">
                             {#if enableViewAtCommit}
                                 <Tooltip tooltip={selected && !diffEnabled ? `Close ${revType}` : `View at ${revType}`}>
-                                    <a href={selected && !diffEnabled ? closeURL : `?rev=${commit.oid}`}
+                                    <a href={selected && !diffEnabled ? closeURL : revQueryParams}
                                         ><Icon icon={ILucideFileText} inline aria-hidden /></a
                                     >
                                 </Tooltip>
@@ -99,7 +98,7 @@
                                 <a
                                     href={replaceRevisionInURL(
                                         SourcegraphURL.from($page.url).deleteSearchParameter('rev', 'diff').toString(),
-                                        isPerforceDepot ? `changelist/${revID}` : revID || ''
+                                        revSlug
                                     )}><Icon icon={ILucideFolderGit} inline aria-hidden /></a
                                 >
                             </Tooltip>
