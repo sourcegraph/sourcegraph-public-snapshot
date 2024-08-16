@@ -186,6 +186,12 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 		return nil, err
 	}
 
+	if len(embeddingsResults) == 0 {
+		return &GetCodyContextResult{ContextLists: keywordResults}, nil
+	}
+	if len(keywordResults) == 0 {
+		return &GetCodyContextResult{ContextLists: embeddingsResults}, nil
+	}
 	mergedContextLists := make([]ContextList, len(embeddingsResults)*len(keywordResults))
 	for i, embeddingsResult := range embeddingsResults {
 		for j, keywordResult := range keywordResults {
