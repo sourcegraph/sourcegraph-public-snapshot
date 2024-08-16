@@ -8,6 +8,12 @@ extend type Query {
         """
         repos: [ID!]!
         """
+        An optional list of file patterns used to filter the results. The
+        patterns are regex strings. For a file chunk to be returned a context
+        result, the path must match at least one of these patterns.
+        """
+        filePatterns: [String!]
+        """
         A natural language query string.
         """
         query: String!

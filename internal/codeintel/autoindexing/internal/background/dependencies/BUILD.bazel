@@ -20,6 +20,7 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
+        "//internal/cast",
         "//internal/codeintel/autoindexing/internal/inference",
         "//internal/codeintel/autoindexing/internal/store",
         "//internal/codeintel/dependencies",

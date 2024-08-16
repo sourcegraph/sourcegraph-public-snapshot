@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "cast",
+    srcs = ["cast.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cast",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "cast_test",
+    srcs = ["cast_test.go"],
+    embed = [":cast"],
+)

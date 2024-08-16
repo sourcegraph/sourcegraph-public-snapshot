@@ -14,6 +14,7 @@ go_library(
     deps = [
         "//cmd/frontend/internal/cody",
         "//internal/api",
+        "//internal/cast",
         "//internal/conf",
         "//internal/database",
         "//internal/dotcom",
