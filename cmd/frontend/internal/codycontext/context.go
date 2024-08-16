@@ -442,7 +442,7 @@ type queryVariant struct {
 }
 
 func getQueryVariants(args GetContextArgs) []queryVariant {
-	qv := []queryVariant{{name: "unmodified-keyword", query: args.Query}}
+	qv := []queryVariant{{name: fmt.Sprintf("keyword(%q)", args.Query), query: args.Query}}
 	if args.RepoStats == nil {
 		return qv
 	}
@@ -453,12 +453,12 @@ func getQueryVariants(args GetContextArgs) []queryVariant {
 		}
 	}
 
-	const maxTermsPerWord = 5
 	termsPerWord := []int{5}
 	for _, tpw := range termsPerWord {
+		q := evalDictionaryExpandedQuery(args.Query, tpw, args.RepoStats)
 		qv = append(qv, queryVariant{
-			name:  fmt.Sprintf("dictionary-expanded-keyword-tpw-%d", tpw),
-			query: evalDictionaryExpandedQuery(args.Query, tpw, args.RepoStats),
+			name:  fmt.Sprintf("expandedKeyword_%d(%q)", tpw, q),
+			query: q,
 		})
 	}
 	return qv

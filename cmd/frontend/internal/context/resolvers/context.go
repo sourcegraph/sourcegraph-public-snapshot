@@ -229,9 +229,6 @@ func (r *Resolver) GetCodyContextAlternatives(ctx context.Context, args graphqlb
 		return nil, err
 	}
 
-	jn, _ := json.Marshal(contextAlternatives)
-	log.Scoped("").Info("Got context alternatives", log.String("alternatives", string(jn)))
-
 	return graphqlbackend.NewContextAlternativesResolver(r.db, r.gitserverClient, contextAlternatives), nil
 }
 
