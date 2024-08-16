@@ -235,7 +235,6 @@ func (r *Resolver) GetCodyContextAlternatives(ctx context.Context, args graphqlb
 	return graphqlbackend.NewContextAlternativesResolver(r.db, r.gitserverClient, contextAlternatives), nil
 }
 
-// TODO(beyang): modify
 func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) (_ []graphqlbackend.ContextResultResolver, err error) {
 	alts, err := r.GetCodyContextAlternatives(ctx, args)
 	if err != nil {

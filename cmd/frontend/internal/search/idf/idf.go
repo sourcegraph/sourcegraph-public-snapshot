@@ -10,6 +10,7 @@ import (
 	"io"
 	"math"
 	"path"
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -26,6 +27,48 @@ import (
 const featureFlagName = "enhanced-index"
 
 var redisCache = rcache.NewWithTTL(redispool.Cache, "idf-index", 10*24*60*60)
+var permissibleExtensions = map[string]struct{}{
+	".py":      {},
+	".js":      {},
+	".ts":      {},
+	".java":    {},
+	".cpp":     {},
+	".c":       {},
+	".cs":      {},
+	".go":      {},
+	".rb":      {},
+	".rs":      {},
+	".php":     {},
+	".html":    {},
+	".css":     {},
+	".scss":    {},
+	".md":      {},
+	".sh":      {},
+	".swift":   {},
+	".kt":      {},
+	".m":       {},
+	".awk":     {},
+	".bash":    {},
+	".bat":     {},
+	".bazel":   {},
+	".bzl":     {},
+	".cc":      {},
+	".cjs":     {},
+	".cue":     {},
+	".dart":    {},
+	".gradle":  {},
+	".graphql": {},
+	".groovy":  {},
+	".hack":    {},
+	".hcl":     {},
+	".jsx":     {},
+	".lua":     {},
+	".scala":   {},
+	".sql":     {},
+	".svelte":  {},
+	".tsx":     {},
+	".zig":     {},
+}
 
 func Update(ctx context.Context, logger log.Logger, repoName api.RepoName) error {
 	if !featureflag.FromContext(ctx).GetBoolOr(featureFlagName, false) {
@@ -35,18 +78,12 @@ func Update(ctx context.Context, logger log.Logger, repoName api.RepoName) error
 	stats := NewStatsAggregator()
 
 	git := gitserver.NewClient("idf-indexer")
-	r, err := git.ArchiveReader(ctx, repoName, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatTar})
+	r, err := git.ArchiveReader(ctx, repoName, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatTar, Paths: []string{""}})
 	if err != nil {
 		return nil
 	}
 
-	permissibleExtensions := map[string]bool{
-		".py": true, ".js": true, ".ts": true, ".java": true, ".cpp": true,
-		".c": true, ".cs": true, ".go": true, ".rb": true, ".rs": true,
-		".php": true, ".html": true, ".css": true, ".scss": true, ".md": true,
-		".sh": true, ".swift": true, ".kt": true, ".m": true,
-	}
-
+	numFilesProcessed := 0
 	tr := tar.NewReader(r)
 	for {
 		header, err := tr.Next()
@@ -65,20 +102,25 @@ func Update(ctx context.Context, logger log.Logger, repoName api.RepoName) error
 
 		// Check if the file has a permissible extension
 		ext := strings.ToLower(path.Ext(header.Name))
-
-		if !permissibleExtensions[ext] {
+		if _, ok := permissibleExtensions[ext]; !ok {
 			continue
 		}
 
 		// Read the first line of the file
 		scanner := bufio.NewScanner(tr)
+		buf := make([]byte, 4*1024)
+		scanner.Buffer(buf, 10*1024*1024) // max 10MB file size
 		if scanner.Scan() {
 			stats.ProcessDoc(scanner.Text())
-		} else if err := scanner.Err(); err != nil {
-			// TODO(beyang): fix error
+			numFilesProcessed++
+		} else if err := scanner.Err(); err == bufio.ErrTooLong {
+			logger.Info("Ignoring file because it was too long", log.String("filename", header.Name))
+		} else if err != nil {
 			logger.Error("Error reading file content", log.Error(err))
 		}
 	}
+
+	logger.Info("Processed files for enhanced index", log.String("repoName", string(repoName)), log.Int("numFiles", numFilesProcessed))
 
 	statsP := stats.EvalProvider()
 	statsBytes, err := json.Marshal(statsP)
@@ -118,7 +160,7 @@ func NewStatsAggregator() *StatsAggregator {
 }
 
 func isValidWord(word string) bool {
-	if len(word) < 3 || len(word) > 20 {
+	if len(word) < 3 || len(word) > 50 {
 		return false
 	}
 	hasLetter := false
@@ -133,16 +175,32 @@ func isValidWord(word string) bool {
 	return hasLetter
 }
 
-// TODO(beyang): add test
 func (s *StatsAggregator) ProcessDoc(text string) {
-	words := strings.Fields(text)
+	words := getKeywords(text)
 	for _, word := range words {
-		// word = strings.ToLower(word)
 		if isValidWord(word) {
 			s.TermToDocCt[word]++
 		}
 	}
 	s.DoctCt++
+}
+
+var keywordRe = regexp.MustCompile(`[^a-zA-Z0-9_]+`)
+
+func getKeywords(s string) []string {
+
+	// Split the string using the regular expression
+	fields := keywordRe.Split(s, -1)
+
+	// Filter out empty strings
+	var result []string
+	for _, field := range fields {
+		if field != "" {
+			result = append(result, field)
+		}
+	}
+
+	return result
 }
 
 func (s *StatsAggregator) EvalProvider() StatsProvider {
