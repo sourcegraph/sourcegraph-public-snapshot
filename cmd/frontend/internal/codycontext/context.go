@@ -109,7 +109,16 @@ func (a *GetContextArgs) Attrs() []attribute.KeyValue {
 	}
 }
 
-func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+type ContextList struct {
+	Name       string
+	FileChunks []FileChunkContext
+}
+
+type GetCodyContextResult struct {
+	ContextLists []ContextList
+}
+
+func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextArgs) (_ *GetCodyContextResult, err error) {
 	ctx, _, endObservation := c.getCodyContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -159,7 +168,7 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 		TextResultsCount: args.TextResultsCount - embeddingsArgs.TextResultsCount,
 	}
 
-	var embeddingsResults, keywordResults []FileChunkContext
+	var embeddingsResults, keywordResults []ContextList
 
 	// Fetch keyword results and embeddings results concurrently
 	p := pool.New().WithErrors()
@@ -177,7 +186,16 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 		return nil, err
 	}
 
-	return append(embeddingsResults, keywordResults...), nil
+	mergedContextLists := make([]ContextList, len(embeddingsResults)*len(keywordResults))
+	for i, embeddingsResult := range embeddingsResults {
+		for j, keywordResult := range keywordResults {
+			mergedContextLists[i*len(keywordResults)+j] = ContextList{
+				Name:       fmt.Sprintf("%s (embeddings)", embeddingsResult.Name),
+				FileChunks: append(embeddingsResult.FileChunks, keywordResult.FileChunks...),
+			}
+		}
+	}
+	return &GetCodyContextResult{ContextLists: mergedContextLists}, nil
 }
 
 // partitionRepos splits a set of repos into repos with embeddings and repos without embeddings
@@ -201,7 +219,7 @@ func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.Re
 	return embedded, notEmbedded, nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, matcher fileMatcher) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs, matcher fileMatcher) (_ []ContextList, err error) {
 	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -250,7 +268,12 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 			filtered = append(filtered, chunk)
 		}
 	}
-	return filtered, nil
+	return []ContextList{
+		{
+			Name:       "embeddings",
+			FileChunks: filtered,
+		},
+	}, nil
 }
 
 func getKeywordContextExcludeFilePathsQuery() string {
@@ -272,7 +295,7 @@ func getKeywordContextExcludeFilePathsQuery() string {
 }
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, matcher fileMatcher) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs, matcher fileMatcher) (_ []ContextList, err error) {
 	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
 	defer endObservation(1, observation.Args{})
 
@@ -283,69 +306,86 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		return nil, nil
 	}
 
-	// TODO(beyang): track alternatives in the response
-	transformedQuery := getTransformedQuery(args)
+	toZoektQuery := func(baseQuery string) string {
+		// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
+		// would not be using query text manipulation for this and would be using
+		// the job structs directly.
+		return fmt.Sprintf(
+			`repo:%s file:%s %s %s`,
+			reposAsRegexp(args.Repos),
+			"(?:"+strings.Join(cast.ToStrings(args.FilePatterns), "|")+")",
+			getKeywordContextExcludeFilePathsQuery(),
+			baseQuery,
+		)
+	}
 
-	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
-	// would not be using query text manipulation for this and would be using
-	// the job structs directly.
-	keywordQuery := fmt.Sprintf(
-		`repo:%s file:%s %s %s`,
-		reposAsRegexp(args.Repos),
-		"(?:"+strings.Join(cast.ToStrings(args.FilePatterns), "|")+")",
-		getKeywordContextExcludeFilePathsQuery(),
-		transformedQuery,
-	)
+	execQuery := func(ctx context.Context, baseQuery string) (res []FileChunkContext, err error) {
+		zoektQuery := toZoektQuery(baseQuery)
+		patternType := "codycontext"
+		plan, err := c.searchClient.Plan(
+			ctx,
+			"V3",
+			&patternType,
+			zoektQuery,
+			search.Precise,
+			search.Streaming,
+			pointers.Ptr(int32(0)),
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		addLimitsAndFilter(plan, matcher, args)
+
+		var (
+			mu        sync.Mutex
+			collected []FileChunkContext
+		)
+
+		stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			for _, res := range e.Results {
+				if fm, ok := res.(*result.FileMatch); ok {
+					collected = append(collected, fileMatchToContextMatch(fm))
+				}
+			}
+		})
+
+		alert, err := c.searchClient.Execute(ctx, stream, plan)
+		if err != nil {
+			return nil, err
+		}
+
+		if alert != nil {
+			c.obsCtx.Logger.Warn("received alert from keyword search execution",
+				log.String("title", alert.Title),
+				log.String("description", alert.Description),
+			)
+		}
+		return collected, nil
+	}
+
+	queryVariants := getQueryVariants(args)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	patternType := "codycontext"
-	plan, err := c.searchClient.Plan(
-		ctx,
-		"V3",
-		&patternType,
-		keywordQuery,
-		search.Precise,
-		search.Streaming,
-		pointers.Ptr(int32(0)),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	addLimitsAndFilter(plan, matcher, args)
-
-	var (
-		mu        sync.Mutex
-		collected []FileChunkContext
-	)
-
-	stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
-		mu.Lock()
-		defer mu.Unlock()
-
-		for _, res := range e.Results {
-			if fm, ok := res.(*result.FileMatch); ok {
-				collected = append(collected, fileMatchToContextMatch(fm))
-			}
+	contextLists := make([]ContextList, len(queryVariants))
+	for i, qv := range queryVariants {
+		collected, err := execQuery(ctx, qv.query)
+		if err != nil {
+			return nil, err
 		}
-	})
-
-	alert, err := c.searchClient.Execute(ctx, stream, plan)
-	if err != nil {
-		return nil, err
+		contextLists[i] = ContextList{
+			Name:       qv.name,
+			FileChunks: collected,
+		}
 	}
 
-	if alert != nil {
-		c.obsCtx.Logger.Warn("received alert from keyword search execution",
-			log.String("title", alert.Title),
-			log.String("description", alert.Description),
-		)
-	}
-
-	return collected, nil
+	return contextLists, nil
 }
 
 // reposAsRegexp returns a regex pattern that matches the names of the given repos,
@@ -390,19 +430,35 @@ func fileMatchToContextMatch(fm *result.FileMatch) FileChunkContext {
 	}
 }
 
-func getTransformedQuery(args GetContextArgs) string {
-	const maxTermsPerWord = 5
-	if args.RepoStats == nil {
-		return args.Query
-	}
+type queryVariant struct {
+	name  string
+	query string
+}
 
+func getQueryVariants(args GetContextArgs) []queryVariant {
+	qv := []queryVariant{{name: "unmodified-keyword", query: args.Query}}
+	if args.RepoStats == nil {
+		return qv
+	}
 	for _, repo := range args.Repos {
 		if stats, ok := args.RepoStats[repo.Name]; !ok || stats == nil {
 			// Don't transform query if one of the repositories lacks an IDF table
-			return args.Query
+			return qv
 		}
 	}
 
+	const maxTermsPerWord = 5
+	termsPerWord := []int{5}
+	for _, tpw := range termsPerWord {
+		qv = append(qv, queryVariant{
+			name:  fmt.Sprintf("dictionary-expanded-keyword-tpw-%d", tpw),
+			query: evalDictionaryExpandedQuery(args.Query, tpw, args.RepoStats),
+		})
+	}
+	return qv
+}
+
+func evalDictionaryExpandedQuery(origQuery string, maxTermsPerWord int, repoStats map[api.RepoName]*idf.StatsProvider) string {
 	// TODO(rishabh): currently we are just picking up top-k vocab terms based on idf scores, but we can do a better semantic ranking of terms
 	// current matching is fairly limited based on substring matching, but perhaps stemming/lemmatization might be considered?
 
@@ -413,12 +469,12 @@ func getTransformedQuery(args GetContextArgs) string {
 		score float32
 	}
 
-	for _, word := range strings.Fields(args.Query) {
+	for _, word := range strings.Fields(origQuery) {
 		if len(word) < 4 {
 			continue
 		}
 		var matches []termScore
-		for _, stats := range args.RepoStats {
+		for _, stats := range repoStats {
 			for term, score := range stats.GetTerms() {
 				if strings.Contains(term, word) && len(term) > 4 && score > 3 {
 					matches = append(matches, termScore{term: term, score: score})
@@ -434,4 +490,23 @@ func getTransformedQuery(args GetContextArgs) string {
 	}
 
 	return strings.Join(filteredToks, " ")
+}
+
+func mergeContextBasicConcat(contextLists ...ContextList) ContextList {
+	totalNumContext := 0
+	for _, cl := range contextLists {
+		totalNumContext += len(cl.FileChunks)
+	}
+
+	names := make([]string, len(contextLists))
+	combinedFiles := make([]FileChunkContext, 0, totalNumContext)
+	for i, cl := range contextLists {
+		names[i] = cl.Name
+		combinedFiles = append(combinedFiles, cl.FileChunks...)
+	}
+
+	return ContextList{
+		Name:       fmt.Sprintf("basic-concat(%s)", strings.Join(names, ",")),
+		FileChunks: combinedFiles,
+	}
 }

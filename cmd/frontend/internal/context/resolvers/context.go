@@ -173,6 +173,67 @@ func (r *Resolver) RankContext(ctx context.Context, args graphqlbackend.RankCont
 	return res, nil
 }
 
+func (r *Resolver) GetCodyContextAlternatives(ctx context.Context, args graphqlbackend.GetContextArgs) (*graphqlbackend.ContextAlternativesResolver, error) {
+	repoIDs, err := graphqlbackend.UnmarshalRepositoryIDs(args.Repos)
+	if err != nil {
+		return nil, err
+	}
+
+	var validatedFilePatterns []types.RegexpPattern
+	if args.FilePatterns != nil {
+		validatedFilePatterns = make([]types.RegexpPattern, 0, len(*args.FilePatterns))
+		for _, filePattern := range *args.FilePatterns {
+			validatedFilePattern, err := types.NewRegexpPattern(filePattern)
+			if err != nil {
+				return nil, errors.Wrapf(err, "invalid file pattern %q", filePattern)
+			}
+			validatedFilePatterns = append(validatedFilePatterns, validatedFilePattern)
+		}
+	}
+
+	repos, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	repoNameIDs := make([]types.RepoIDName, len(repoIDs))
+	repoStats := make(map[api.RepoName]*idf.StatsProvider)
+	for i, repoID := range repoIDs {
+		repo, ok := repos[repoID]
+		if !ok {
+			// GetReposSetByIDs does not error if a repo could not be found.
+			return nil, errors.Newf("could not find repo with id %d", int32(repoID))
+		}
+
+		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repo.Name}
+
+		stats, err := idf.Get(ctx, r.logger, repo.Name)
+		if err != nil {
+			r.logger.Warn("Error getting idf index value for repo", log.Int32("repoID", int32(repoID)), log.Error(err))
+			continue
+		}
+		if stats == nil {
+			continue
+		}
+		repoStats[repo.Name] = stats
+	}
+
+	contextAlternatives, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
+		Repos:            repoNameIDs,
+		RepoStats:        repoStats,
+		FilePatterns:     validatedFilePatterns,
+		Query:            args.Query,
+		CodeResultsCount: args.CodeResultsCount,
+		TextResultsCount: args.TextResultsCount,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return graphqlbackend.NewContextAlternativesResolver(r.db, r.gitserverClient, contextAlternatives), nil
+}
+
+// TODO(beyang): modify
 func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) (_ []graphqlbackend.ContextResultResolver, err error) {
 	repoIDs, err := graphqlbackend.UnmarshalRepositoryIDs(args.Repos)
 	if err != nil {
@@ -218,7 +279,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		repoStats[repo.Name] = stats
 	}
 
-	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
+	contextAlternatives, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
 		Repos:            repoNameIDs,
 		RepoStats:        repoStats,
 		FilePatterns:     validatedFilePatterns,
@@ -229,6 +290,10 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	if err != nil {
 		return nil, err
 	}
+	if len(contextAlternatives.ContextLists) == 0 {
+		return nil, nil
+	}
+	fileChunks := contextAlternatives.ContextLists[0].FileChunks
 
 	tr, ctx := trace.New(ctx, "resolveChunks")
 	defer tr.EndWithErr(&err)
@@ -443,7 +508,7 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 
 func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Repo) ([]graphqlbackend.RetrieverContextItemResolver, []error, error) {
 	var res []graphqlbackend.RetrieverContextItemResolver
-	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
+	contextAlternatives, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
 		Repos:        []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
 		FilePatterns: nil, // Not suppported in ChatContext
 		Query:        query,
@@ -451,6 +516,11 @@ func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Rep
 	if err != nil {
 		return nil, nil, err
 	}
+	if len(contextAlternatives.ContextLists) == 0 {
+		return nil, nil, nil
+	}
+	fileChunks := contextAlternatives.ContextLists[0].FileChunks
+
 	var partialErrors []error
 	for _, fc := range fileChunks {
 		fcr, err := r.fileChunkToResolver(ctx, &fc)
