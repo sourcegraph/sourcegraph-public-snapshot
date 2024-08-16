@@ -40,11 +40,14 @@ func AllowedEventTypes() EventTypes {
 		// The 'languageId' key is included for feature:'cody.completions' events to provide
 		// customers with valuable language-specific insights from the analytics we offer.
 		// This information helps them better understand code completion usage patterns.
+		// The 'otherCompletionProviders' key is included to provide internal teams insights on
+		// competitor completion providers customers are using.
 		EventType{
 			Feature: "cody.completion",
 			Action:  "*",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
+				"otherCompletionProviders",
 			},
 		},
 		// The 'languageId' key is included for feature:'cody.hoverCommands' action: 'visible' events to provide
