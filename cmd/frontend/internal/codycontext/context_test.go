@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -116,4 +117,35 @@ func TestReposAsRegexp(t *testing.T) {
 		require.True(t, re.MatchString("github.com/sourcegraph/docs"))
 		require.False(t, re.MatchString("github.com/sourcegraph/docsite"))
 	})
+}
+
+func TestBuildKeywordQuery(t *testing.T) {
+	cases := []struct {
+		args GetContextArgs
+		want autogold.Value
+	}{{
+		args: GetContextArgs{
+			Repos: []types.RepoIDName{{ID: 0, Name: "testrepo"}},
+			Query: "test query",
+		},
+		want: autogold.Expect("repo:^testrepo$  -file:\\.min\\.js$ -file:\\.map$ -file:\\.tsbuildinfo$ -file:(\\/|^)umd\\/ -file:(\\/|^)amd\\/ -file:(\\/|^)cjs\\/ test query"),
+	}, {
+		args: GetContextArgs{
+			Repos: []types.RepoIDName{{ID: 0, Name: "testrepo"}, {ID: 1, Name: "special*Chars$"}},
+			Query: "test query",
+		},
+		want: autogold.Expect("repo:(?:^testrepo$)|(?:^special\\*Chars\\$$)  -file:\\.min\\.js$ -file:\\.map$ -file:\\.tsbuildinfo$ -file:(\\/|^)umd\\/ -file:(\\/|^)amd\\/ -file:(\\/|^)cjs\\/ test query"),
+	}, {
+		args: GetContextArgs{
+			Repos:        []types.RepoIDName{{ID: 0, Name: "testrepo"}},
+			FilePatterns: []types.RegexpPattern{"file1", "dir/.*"},
+			Query:        "test query",
+		},
+		want: autogold.Expect("repo:^testrepo$ file:(?:file1|dir/.*) -file:\\.min\\.js$ -file:\\.map$ -file:\\.tsbuildinfo$ -file:(\\/|^)umd\\/ -file:(\\/|^)amd\\/ -file:(\\/|^)cjs\\/ test query"),
+	}}
+
+	for _, tc := range cases {
+		got := buildKeywordQuery(tc.args)
+		tc.want.Equal(t, got)
+	}
 }

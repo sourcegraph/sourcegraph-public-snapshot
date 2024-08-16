@@ -278,16 +278,7 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		return nil, nil
 	}
 
-	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
-	// would not be using query text manipulation for this and would be using
-	// the job structs directly.
-	keywordQuery := fmt.Sprintf(
-		`repo:%s file:%s %s %s`,
-		reposAsRegexp(args.Repos),
-		"(?:"+strings.Join(cast.ToStrings(args.FilePatterns), "|")+")",
-		getKeywordContextExcludeFilePathsQuery(),
-		args.Query,
-	)
+	keywordQuery := buildKeywordQuery(args)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -338,6 +329,27 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	}
 
 	return collected, nil
+}
+
+func buildKeywordQuery(args GetContextArgs) string {
+	var fileFilter string
+	if len(args.FilePatterns) > 0 {
+		fileFilter = fmt.Sprintf(
+			"file:%s",
+			"(?:"+strings.Join(cast.ToStrings(args.FilePatterns), "|")+")",
+		)
+	}
+
+	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
+	// would not be using query text manipulation for this and would be using
+	// the job structs directly.
+	return fmt.Sprintf(
+		`repo:%s %s %s %s`,
+		reposAsRegexp(args.Repos),
+		fileFilter,
+		getKeywordContextExcludeFilePathsQuery(),
+		args.Query,
+	)
 }
 
 // reposAsRegexp returns a regex pattern that matches the names of the given repos,
