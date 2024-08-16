@@ -2,30 +2,35 @@
     import type { Readable } from 'svelte/store'
 
     import { isDefined } from '$lib/common'
-    import { SearchPatternType } from '$lib/graphql-types'
+    import { SearchPatternType } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
-    import type { QueryState } from '$lib/search/state'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
     import { buildSearchURLQuery } from '$lib/shared'
+    import { settings } from '$lib/stores'
     import TabPanel from '$lib/TabPanel.svelte'
     import Tabs from '$lib/Tabs.svelte'
+    import { showQueryExamplesForKeywordSearch } from '$lib/web'
     import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
 
-    import { basicSyntaxColumns, exampleQueryColumns, type QueryExample } from './queryExamples'
+    import {getKeywordExamples, exampleQueryColumns, type QueryExample, getStandardExamples} from './queryExamples'
 
     export let showQueryPage = false
     export let queryExample: Readable<QueryExample | null>
-    export let queryState: QueryState
+
+    $: queryExamplesForKeywordSearch = showQueryExamplesForKeywordSearch({ final: $settings, subjects: [] })
+    $: patternTypeForQueryLinks = queryExamplesForKeywordSearch
+        ? SearchPatternType.keyword
+        : SearchPatternType.standard
+    $: getQueryExamples = queryExamplesForKeywordSearch ? getKeywordExamples : getStandardExamples
 
     $: tabs = [
         $queryExample
             ? {
                   name: 'How to search',
-                  columns: basicSyntaxColumns(
+                  columns: getQueryExamples(
                       $queryExample.fileName,
                       $queryExample.repoName,
                       $queryExample.orgName,
-                      queryState.patternType === SearchPatternType.keyword
                   ),
               }
             : null,
@@ -55,7 +60,7 @@
                                                     class="chip"
                                                     href="/search?{buildSearchURLQuery(
                                                         example.query,
-                                                        queryState.patternType,
+                                                        patternTypeForQueryLinks,
                                                         false
                                                     )}"
                                                 >
