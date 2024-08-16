@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription"
@@ -31,7 +29,6 @@ var (
 
 // dotcomRootResolver implements the GraphQL types DotcomMutation and DotcomQuery.
 type dotcomRootResolver struct {
-	productsubscription.ProductSubscriptionLicensingResolver
 	productsubscription.CodyGatewayDotcomUserResolver
 }
 
@@ -40,14 +37,7 @@ func (d dotcomRootResolver) Dotcom() graphqlbackend.DotcomResolver {
 }
 
 func (d dotcomRootResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		productsubscription.ProductLicenseIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return d.ProductLicenseByID(ctx, id)
-		},
-		productsubscription.ProductSubscriptionIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return d.ProductSubscriptionByID(ctx, id)
-		},
-	}
+	return map[string]graphqlbackend.NodeByIDFunc{}
 }
 
 var _ graphqlbackend.DotcomRootResolver = dotcomRootResolver{}
@@ -63,10 +53,6 @@ func Init(
 	// Only enabled on Sourcegraph.com.
 	if dotcom.SourcegraphDotComMode() {
 		enterpriseServices.DotcomRootResolver = dotcomRootResolver{
-			ProductSubscriptionLicensingResolver: productsubscription.ProductSubscriptionLicensingResolver{
-				Logger: observationCtx.Logger.Scoped("productsubscriptions"),
-				DB:     db,
-			},
 			CodyGatewayDotcomUserResolver: productsubscription.CodyGatewayDotcomUserResolver{
 				Logger: observationCtx.Logger.Scoped("codygatewayuser"),
 				DB:     db,

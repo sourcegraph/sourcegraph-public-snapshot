@@ -14,8 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 )
 
 type dbTokens struct {
@@ -24,55 +22,6 @@ type dbTokens struct {
 
 func newTokensDB(db database.DB) dbTokens {
 	return dbTokens{store: basestore.NewWithHandle(db.Handle())}
-}
-
-type productSubscriptionNotFoundError struct {
-	reason string
-}
-
-func (e productSubscriptionNotFoundError) Error() string {
-	return "product subscription not found because " + e.reason
-}
-
-func (e productSubscriptionNotFoundError) NotFound() bool {
-	return true
-}
-
-// LookupProductSubscriptionIDByAccessToken returns the subscription ID
-// corresponding to a token, trimming token prefixes if there are any.
-func (t dbTokens) LookupProductSubscriptionIDByAccessToken(ctx context.Context, token string) (string, error) {
-	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
-		!strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
-		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown prefix"}
-	}
-
-	// Extract the raw token and decode it. Right now the prefix doesn't mean
-	// much, we only track 'license_key' and check the that the raw token value
-	// matches the license key. Note that all prefixes have the same length.
-	//
-	// TODO(@bobheadxi): Migrate to license.GenerateLicenseKeyBasedAccessToken(token)
-	// after back-compat with productsubscription.AccessTokenPrefix is no longer
-	// needed
-	decoded, err := hex.DecodeString(token[len(license.LicenseKeyBasedAccessTokenPrefix):])
-	if err != nil {
-		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown encoding"}
-	}
-
-	query := sqlf.Sprintf(`
-SELECT product_subscription_id
-FROM product_licenses
-WHERE
-	access_token_enabled=true
-	AND digest(license_key, 'sha256')=%s`,
-		decoded,
-	)
-	subID, found, err := basestore.ScanFirstString(t.store.Query(ctx, query))
-	if err != nil {
-		return "", err
-	} else if !found {
-		return "", productSubscriptionNotFoundError{reason: "no associated token"}
-	}
-	return subID, nil
 }
 
 type dotcomUserNotFoundError struct {

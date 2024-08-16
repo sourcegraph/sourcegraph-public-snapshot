@@ -3,18 +3,13 @@ package init
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/enforcement"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -44,20 +39,6 @@ func Init(
 	database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}
-
-	if dotcom.SourcegraphDotComMode() {
-		logger := log.Scoped("licensing")
-		if enableUpcomingLicenseExpirationChecker {
-			goroutine.Go(func() {
-				productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
-			})
-		}
-		if enableAnomalousLicenseChecker {
-			goroutine.Go(func() {
-				productsubscription.StartCheckForAnomalousLicenseUsage(logger, db)
-			})
-		}
-	}
 
 	return nil
 }

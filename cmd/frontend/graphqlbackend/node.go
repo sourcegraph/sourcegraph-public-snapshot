@@ -141,16 +141,6 @@ func (r *NodeResolver) ToBatchChangesCredential() (BatchChangesCredentialResolve
 	return n, ok
 }
 
-func (r *NodeResolver) ToProductLicense() (ProductLicense, bool) {
-	n, ok := r.Node.(ProductLicense)
-	return n, ok
-}
-
-func (r *NodeResolver) ToProductSubscription() (ProductSubscription, bool) {
-	n, ok := r.Node.(ProductSubscription)
-	return n, ok
-}
-
 func (r *NodeResolver) ToExternalAccount() (*externalAccountResolver, bool) {
 	n, ok := r.Node.(*externalAccountResolver)
 	return n, ok

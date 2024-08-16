@@ -1,7 +1,6 @@
 package productsubscription
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -31,26 +30,6 @@ var (
 	EventNameSuccess  = "license.check.api.success"
 	EventNameAssigned = "license.check.api.assigned"
 )
-
-func getCustomerNameFromLicense(ctx context.Context, logger log.Logger, db database.DB, license *dbLicense) string {
-	// Best effort fetch of customer name for slack message
-	customerName := "could not load customer name"
-
-	subscriptionsStore := dbSubscriptions{db: db}
-	dbSubscription, err := subscriptionsStore.GetByID(ctx, license.ProductSubscriptionID)
-	if err != nil {
-		logger.Warn("could not find subscription for license", log.String("licenseID", license.ID), log.String("productSubscriptionID", license.ProductSubscriptionID), log.Error(err))
-	} else {
-		user, err := db.Users().GetByID(ctx, dbSubscription.UserID)
-		if err != nil {
-			logger.Warn("could not find user for subscription", log.String("licenseID", license.ID), log.String("subscriptionID", dbSubscription.ID), log.Int32("userID", dbSubscription.UserID), log.Error(err))
-		} else {
-			customerName = user.Name()
-		}
-	}
-
-	return customerName
-}
 
 // NewLicenseCheckHandler creates a new license check handler that uses the provided database.
 //
