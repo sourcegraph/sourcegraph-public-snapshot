@@ -134,6 +134,10 @@ func Update(ctx context.Context, logger log.Logger, repoName api.RepoName) error
 }
 
 func Get(ctx context.Context, logger log.Logger, repoName api.RepoName) (*StatsProvider, error) {
+	if !featureflag.FromContext(ctx).GetBoolOr(featureFlagName, false) {
+		return nil, nil
+	}
+
 	b, ok := redisCache.Get(fmt.Sprintf("repo:%v", repoName))
 	if !ok {
 		return nil, nil
