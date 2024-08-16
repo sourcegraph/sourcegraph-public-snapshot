@@ -90,7 +90,7 @@ func EnforceTenant(commandName string, factory RunnerFactory, outFactory OutputF
 	return &cli.Command{
 		Name:        "enforce-tenant-id",
 		ArgsUsage:   "",
-		Usage:       "Rewrite schemas definitions to enable RLS on tenant_id columns.",
+		Usage:       "Rewrite schemas definitions to enable RLS on tenant_id columns",
 		Description: ConstructLongHelp(),
 		Action:      action,
 		Flags: []cli.Flag{
