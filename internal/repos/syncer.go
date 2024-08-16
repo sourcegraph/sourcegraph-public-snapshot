@@ -226,7 +226,7 @@ func (s *Syncer) SyncExternalService(
 	minSyncInterval time.Duration,
 	progressRecorder progressRecorderFunc,
 ) (err error) {
-	logger := s.ObsvCtx.Logger.With(log.Int64("externalServiceID", externalServiceID))
+	logger := s.ObsvCtx.Logger.Scoped("SyncExternalService").With(log.Int64("externalServiceID", externalServiceID))
 	logger.Info("syncing external service")
 
 	// Ensure the job field is recorded when monitoring external API calls
@@ -365,6 +365,29 @@ func (s *Syncer) SyncExternalService(
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 	}
 
+	// This information isn't necessarily an error in and of itself, but it's possible
+	// for the code host to misbehave in a way that returns a legitimate-looking response
+	// (e.g. a non-fatal HTTP status code, with a well-formed response body) that is
+	// nonetheless incorrect (e.g. temporarily returning empty set of repositories
+	// instead of an error).
+	//
+	// Because of this, we have to be able to log every response from the code host
+	// so that we can audit them later so that we can rule in/out the above scenario.
+	// So, we choose the WARN level instead of INFO so that this info is logged by default.
+	logger.Warn("finished listing repositories from external service",
+		log.Object("syncProgress",
+			log.Int32("synced", syncProgress.Synced),
+			log.Int32("errors", syncProgress.Errors),
+			log.Int32("added", syncProgress.Added),
+			log.Int32("removed", syncProgress.Removed),
+			log.Int32("modified", syncProgress.Modified),
+			log.Int32("unmodified", syncProgress.Unmodified),
+		),
+		log.Int("seen", len(seen)),
+		log.Bool("modified", modified),
+		log.Error(errs),
+	)
+
 	// We don't delete any repos of site-level external services if there were any
 	// non-warning errors during a sync.
 	//
@@ -380,6 +403,7 @@ func (s *Syncer) SyncExternalService(
 	// repos (by removing ones if code-host permissions have changed).
 	abortDeletion := false
 	if errs != nil {
+		logger.Error("received errors during sync", log.Error(errs))
 		var ref errors.MultiError
 		if errors.As(errs, &ref) {
 			for _, e := range ref.Errors() {
@@ -387,6 +411,7 @@ func (s *Syncer) SyncExternalService(
 					baseError := errors.Unwrap(e)
 					if !errcode.IsForbidden(baseError) && !errcode.IsUnauthorized(baseError) {
 						abortDeletion = true
+						logger.Info("aborting deletion due to fatal error", log.Error(e))
 						break
 					}
 					continue
@@ -395,6 +420,7 @@ func (s *Syncer) SyncExternalService(
 					continue
 				}
 				abortDeletion = true
+				logger.Info("aborting deletion due to fatal error", log.Error(e))
 				break
 			}
 		}
