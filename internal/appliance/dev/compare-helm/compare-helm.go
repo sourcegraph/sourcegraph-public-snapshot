@@ -24,7 +24,7 @@ func main() {
 	helmRepoRoot := flag.String("deploy-sourcegraph-helm-path", filepath.Join("..", "deploy-sourcegraph-helm"), "Path to deploy-sourcegraph-helm repository checkout.")
 	helmTemplateExtraArgs := flag.String("helm-template-extra-args", "", "extra args to pass to `helm template`")
 	component := flag.String("component", "", "Which SG service to target (comma-separated list).")
-	goldenFile := flag.String("golden-file", "", "Which golden fixture to compare.")
+	goldenFiles := flag.String("golden-file", "", "Which golden fixture to compare (omma-separated list).")
 	diffArgs := flag.String("diff-args", "", "Extra arguments to pass to diff(1).")
 	noColor := flag.Bool("no-color", false, "Do not try to produce diffs in color. This is necessary for non-GNU diff users.")
 	flag.Parse()
@@ -32,7 +32,7 @@ func main() {
 	if *component == "" {
 		fatal("must pass -component")
 	}
-	if *goldenFile == "" {
+	if *goldenFiles == "" {
 		fatal("must pass -golden-file")
 	}
 
@@ -40,10 +40,14 @@ func main() {
 
 	helmObjs := parseHelmResources(*helmTemplateExtraArgs, *helmRepoRoot, components)
 
-	goldenContent, err := os.ReadFile(*goldenFile)
-	must(err)
-	var goldenResources goldenResources
-	must(k8syamlapi.Unmarshal(goldenContent, &goldenResources))
+	var resourcesFromGoldenFiles []*unstructured.Unstructured
+	for _, goldenFile := range strings.Split(*goldenFiles, ",") {
+		var parsedGoldenFile goldenResources
+		goldenContent, err := os.ReadFile(goldenFile)
+		must(err)
+		must(k8syamlapi.Unmarshal(goldenContent, &parsedGoldenFile))
+		resourcesFromGoldenFiles = append(resourcesFromGoldenFiles, parsedGoldenFile.Resources...)
+	}
 
 	tmpDir, err := os.MkdirTemp("", "compare-helm-")
 	must(err)
@@ -72,7 +76,7 @@ func main() {
 		must(err)
 
 		// find corresponding golden object
-		for i, goldenObj := range goldenResources.Resources {
+		for i, goldenObj := range resourcesFromGoldenFiles {
 			if helmObj.GetName() == goldenObj.GetName() &&
 				helmObj.GetKind() == goldenObj.GetKind() {
 
@@ -83,7 +87,7 @@ func main() {
 
 				// remove the golden object so that only unmatched resources
 				// remain
-				goldenResources.Resources = append(goldenResources.Resources[:i], goldenResources.Resources[i+1:]...)
+				resourcesFromGoldenFiles = append(resourcesFromGoldenFiles[:i], resourcesFromGoldenFiles[i+1:]...)
 
 				break
 			}
@@ -92,7 +96,7 @@ func main() {
 
 	// Print any golden resources that didn't correspond to any helm resources,
 	// so that they appear in the diff.
-	for _, unmatchedGolden := range goldenResources.Resources {
+	for _, unmatchedGolden := range resourcesFromGoldenFiles {
 		fmt.Fprintln(sortedGoldenFile, "---")
 		fmt.Fprintf(sortedGoldenFile, "# golden: %s/%s\n", unmatchedGolden.GetKind(), unmatchedGolden.GetName())
 		goldenBytes := marshalYAMLNormalized(unmatchedGolden)
