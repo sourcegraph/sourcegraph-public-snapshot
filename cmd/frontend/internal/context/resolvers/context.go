@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
@@ -214,7 +215,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 // ChatIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.
 // Yes, it does things that should not be done in production code - for now it is just a proof of concept for demos.
 func (r *Resolver) ChatIntent(ctx context.Context, args graphqlbackend.ChatIntentArgs) (graphqlbackend.IntentResolver, error) {
-	err := r.contextApiEnabled(ctx)
+	err := r.chatIntentApiEnabled(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -293,6 +294,16 @@ func (r *Resolver) sendIntentRequest(ctx context.Context, backend schema.Backend
 		return nil, err
 	}
 	return &intentResponse, nil
+}
+
+func (r *Resolver) chatIntentApiEnabled(ctx context.Context) error {
+	if isEnabled, reason := cody.IsCodyEnabled(ctx, r.db); !isEnabled {
+		return errors.Newf("cody is not enabled: %s", reason)
+	}
+	if err := cody.CheckVerifiedEmailRequirement(ctx, r.db, r.logger); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *Resolver) contextApiEnabled(ctx context.Context) error {
