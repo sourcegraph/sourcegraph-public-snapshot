@@ -283,11 +283,12 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		return nil, nil
 	}
 
+	// TODO(beyang): track alternatives in the response
+	transformedQuery := getTransformedQuery(args)
+
 	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
 	// would not be using query text manipulation for this and would be using
 	// the job structs directly.
-	var maxTermsPerWord = 5
-	transformedQuery := getTransformedQuery(args, maxTermsPerWord) // TODO(beyang): track this or alternatives in the response
 	keywordQuery := fmt.Sprintf(
 		`repo:%s file:%s %s %s`,
 		reposAsRegexp(args.Repos),
@@ -389,7 +390,8 @@ func fileMatchToContextMatch(fm *result.FileMatch) FileChunkContext {
 	}
 }
 
-func getTransformedQuery(args GetContextArgs, maxTermsPerWord int) string {
+func getTransformedQuery(args GetContextArgs) string {
+	const maxTermsPerWord = 5
 	if args.RepoStats == nil {
 		return args.Query
 	}

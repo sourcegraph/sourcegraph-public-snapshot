@@ -75,6 +75,7 @@ func Update(ctx context.Context, logger log.Logger, repoName api.RepoName) error
 		if scanner.Scan() {
 			stats.ProcessDoc(scanner.Text())
 		} else if err := scanner.Err(); err != nil {
+			// TODO(beyang): fix error
 			logger.Error("Error reading file content", log.Error(err))
 		}
 	}
@@ -132,6 +133,7 @@ func isValidWord(word string) bool {
 	return hasLetter
 }
 
+// TODO(beyang): add test
 func (s *StatsAggregator) ProcessDoc(text string) {
 	words := strings.Fields(text)
 	for _, word := range words {
