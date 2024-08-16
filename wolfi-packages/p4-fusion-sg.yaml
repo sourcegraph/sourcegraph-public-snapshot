@@ -36,7 +36,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://github.com/sourcegraph/p4-fusion/archive/da9080587bc40ef9cf40690f315bcd8137677fdd.tar.gz
-      expected-sha256: 6f4fc7726537d934070af3d09b883de843e44ca0496952a1872af46e7449dbab
+      expected-sha256: 2ca2811bd807ece9b778d8481d77d7643cb137f7d863fb52a1e1edfa7578610f
       extract: false
   - runs: |
       mkdir p4-fusion-src
