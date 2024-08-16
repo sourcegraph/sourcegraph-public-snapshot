@@ -36,7 +36,7 @@ func TestPeriodicGoroutine(t *testing.T) {
 		WithInterval(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 	clock.BlockingAdvance(time.Second)
 	<-called
 	clock.BlockingAdvance(time.Second)
@@ -74,7 +74,7 @@ func TestPeriodicGoroutineReinvoke(t *testing.T) {
 		WithInterval(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 	witnessHandler()
 	clock.BlockingAdvance(time.Second)
 	witnessHandler()
@@ -116,7 +116,7 @@ func TestPeriodicGoroutineWithDynamicInterval(t *testing.T) {
 		WithIntervalFunc(getInterval),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 	clock.BlockingAdvance(time.Second)
 	<-called
 	clock.BlockingAdvance(2 * time.Second)
@@ -149,7 +149,7 @@ func TestPeriodicGoroutineWithInitialDelay(t *testing.T) {
 		WithInitialDelay(2*time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 	clock.BlockingAdvance(time.Second)
 	select {
 	case <-called:
@@ -188,7 +188,7 @@ func TestPeriodicGoroutineConcurrency(t *testing.T) {
 		WithConcurrency(concurrency),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 
 	for range concurrency {
 		<-called
@@ -250,7 +250,7 @@ func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
 		withClock(clock),
 		withConcurrencyClock(concurrencyClock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 
 	for poolSize := 1; poolSize < 3; poolSize++ {
 		// Ensure each of the handlers can be called independently.
@@ -297,7 +297,7 @@ func TestPeriodicGoroutineError(t *testing.T) {
 		WithInterval(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 	clock.BlockingAdvance(time.Second)
 	<-called
 	clock.BlockingAdvance(time.Second)
@@ -342,7 +342,7 @@ func TestPeriodicGoroutinePanic(t *testing.T) {
 		WithInterval(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 
 	clock.BlockingAdvance(time.Second)
 	select {
@@ -389,7 +389,7 @@ func TestPeriodicGoroutineContextError(t *testing.T) {
 		WithInterval(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 	<-called
 	err := goroutine.Stop(context.Background())
 	require.NoError(t, err)
@@ -420,7 +420,7 @@ func TestPeriodicGoroutineFinalizer(t *testing.T) {
 		WithInterval(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Start(context.Background())
 	clock.BlockingAdvance(time.Second)
 	<-called
 	clock.BlockingAdvance(time.Second)

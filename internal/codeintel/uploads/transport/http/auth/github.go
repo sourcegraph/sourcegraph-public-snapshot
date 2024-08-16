@@ -29,7 +29,7 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 
 	key := makeGitHubAuthCacheKey(githubToken, repoName)
 
-	if authorized, ok := githubAuthCache.Get(key); ok {
+	if authorized, ok := githubAuthCache.Get(ctx, key); ok {
 		if !authorized {
 			return http.StatusUnauthorized, ErrGitHubUnauthorized
 		}
@@ -40,7 +40,7 @@ func enforceAuthViaGitHub(ctx context.Context, query url.Values, repoName string
 	defer func() {
 		switch err {
 		case nil:
-			githubAuthCache.Set(key, true)
+			githubAuthCache.Set(ctx, key, true)
 		case ErrGitHubUnauthorized:
 			// Note: We explicitly do not store false here in case a user is
 			// adjusting permissions on a cache key. Storing false here would

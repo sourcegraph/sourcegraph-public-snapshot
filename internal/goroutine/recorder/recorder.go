@@ -12,7 +12,7 @@ import (
 )
 
 type Recordable interface {
-	Start()
+	Start(ctx context.Context)
 	Stop(ctx context.Context) error
 	Name() string
 	Type() RoutineType

@@ -408,7 +408,7 @@ func getLLMUsageData(ctx context.Context, db database.DB) (_ json.RawMessage, er
 	if err != nil {
 		return nil, err
 	}
-	usageData, err := Manager.RetrieveAndResetTokenUsageData()
+	usageData, err := Manager.RetrieveAndResetTokenUsageData(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -419,7 +419,7 @@ func getLLMUsageData(ctx context.Context, db database.DB) (_ json.RawMessage, er
 func storeTokenUsageinDbBeforeRedisSync(ctx context.Context, db database.DB) error {
 	recorder := telemetryrecorder.New(db)
 	tokenManager := tokenusage.NewManager()
-	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis()
+	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis(ctx)
 	if err != nil {
 		return err
 	}

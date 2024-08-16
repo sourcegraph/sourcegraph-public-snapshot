@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -46,21 +47,21 @@ type cachedGroups struct {
 }
 
 // setGroup stores the given group in the cache.
-func (c *cachedGroups) setGroup(group cachedGroup) error {
+func (c *cachedGroups) setGroup(ctx context.Context, group cachedGroup) error {
 	bytes, err := json.Marshal(&group)
 	if err != nil {
 		return err
 	}
-	c.cache.Set(group.key(), bytes)
+	c.cache.Set(ctx, group.key(), bytes)
 	return nil
 }
 
 // getGroup attempts to retrive the given org, team group from cache.
 //
 // It always returns a valid cachedGroup even if it fails to retrieve a group from cache.
-func (c *cachedGroups) getGroup(org string, team string) (cachedGroup, bool) {
+func (c *cachedGroups) getGroup(ctx context.Context, org string, team string) (cachedGroup, bool) {
 	rawGroup := cachedGroup{Org: org, Team: team}
-	bytes, ok := c.cache.Get(rawGroup.key())
+	bytes, ok := c.cache.Get(ctx, rawGroup.key())
 	if !ok {
 		return rawGroup, ok
 	}
@@ -73,8 +74,8 @@ func (c *cachedGroups) getGroup(org string, team string) (cachedGroup, bool) {
 
 // invalidateGroup deletes the given group from the cache and invalidates the cached values
 // within the given group.
-func (c *cachedGroups) invalidateGroup(group *cachedGroup) {
-	c.cache.Delete(group.key())
+func (c *cachedGroups) invalidateGroup(ctx context.Context, group *cachedGroup) {
+	c.cache.Delete(ctx, group.key())
 	group.Repositories = nil
 	group.Users = nil
 }

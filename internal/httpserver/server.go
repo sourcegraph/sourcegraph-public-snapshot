@@ -55,7 +55,7 @@ func (s *server) Name() string {
 	return "HTTP server"
 }
 
-func (s *server) Start() {
+func (s *server) Start(context.Context) {
 	listener, err := s.makeListener()
 	if err != nil {
 		log15.Error("Failed to create listener", "error", err)

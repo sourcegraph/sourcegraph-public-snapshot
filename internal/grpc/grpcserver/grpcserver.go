@@ -58,7 +58,7 @@ func (s *server) Name() string {
 	return "gRPC server"
 }
 
-func (s *server) Start() {
+func (s *server) Start(context.Context) {
 	listener, err := s.makeListener()
 	if err != nil {
 		s.logger.Error("failed to create listener", log.Error(err))

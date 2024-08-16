@@ -29,6 +29,7 @@ go_test(
     srcs = ["resetter_test.go"],
     embed = [":dbworker"],
     deps = [
+        "//internal/tenant",
         "//internal/workerutil/dbworker/store",
         "//internal/workerutil/dbworker/store/mocks",
         "@com_github_derision_test_glock//:glock",

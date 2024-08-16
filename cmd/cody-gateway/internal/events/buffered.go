@@ -138,7 +138,7 @@ func (l *BufferedLogger) Name() string {
 
 // Start begins working by processing the logger's buffer, blocking until stop
 // is called and the backlog is cleared.
-func (l *BufferedLogger) Start() {
+func (l *BufferedLogger) Start(ctx context.Context) {
 	var wg sync.WaitGroup
 
 	// Spin up

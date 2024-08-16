@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "httpcache",
+    srcs = [
+        "httpcache.go",
+        "memory.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/httpcache",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "httpcache_test",
+    srcs = ["httpcache_test.go"],
+    embed = [":httpcache"],
+)

@@ -14,7 +14,7 @@ func (m *exampleRoutine) Name() string {
 	return "exampleRoutine"
 }
 
-func (m *exampleRoutine) Start() {
+func (m *exampleRoutine) Start(context.Context) {
 	for {
 		select {
 		case <-m.done:

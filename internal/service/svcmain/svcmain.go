@@ -136,7 +136,7 @@ func run(
 	// services report ready.
 	var allReadyWG sync.WaitGroup
 	var allDoneWG sync.WaitGroup
-	go debugserver.NewServerRoutine(allReady, allDebugserverEndpoints...).Start()
+	go debugserver.NewServerRoutine(allReady, allDebugserverEndpoints...).Start(ctx)
 
 	// Start the services.
 	for i := range services {

@@ -209,7 +209,7 @@ func (s *redisLockedBackgroundRoutine) Name() string {
 	return s.routine.Name()
 }
 
-func (s *redisLockedBackgroundRoutine) Start() {
+func (s *redisLockedBackgroundRoutine) Start(ctx context.Context) {
 	s.logger.Info("Starting background sync routine")
 
 	// Best-effort attempt to acquire lock immediately.
@@ -225,7 +225,7 @@ func (s *redisLockedBackgroundRoutine) Start() {
 		s.logger.Info("Did not claim worker lock")
 	}
 
-	s.routine.Start()
+	s.routine.Start(ctx)
 }
 
 func (s *redisLockedBackgroundRoutine) Stop(ctx context.Context) error {

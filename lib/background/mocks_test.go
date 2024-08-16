@@ -36,7 +36,7 @@ func NewMockRoutine() *MockRoutine {
 			},
 		},
 		StartFunc: &RoutineStartFunc{
-			defaultHook: func() {
+			defaultHook: func(context.Context) {
 				return
 			},
 		},
@@ -58,7 +58,7 @@ func NewStrictMockRoutine() *MockRoutine {
 			},
 		},
 		StartFunc: &RoutineStartFunc{
-			defaultHook: func() {
+			defaultHook: func(context.Context) {
 				panic("unexpected invocation of MockRoutine.Start")
 			},
 		},
@@ -187,23 +187,23 @@ func (c RoutineNameFuncCall) Results() []interface{} {
 // RoutineStartFunc describes the behavior when the Start method of the
 // parent MockRoutine instance is invoked.
 type RoutineStartFunc struct {
-	defaultHook func()
-	hooks       []func()
+	defaultHook func(context.Context)
+	hooks       []func(context.Context)
 	history     []RoutineStartFuncCall
 	mutex       sync.Mutex
 }
 
 // Start delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockRoutine) Start() {
-	m.StartFunc.nextHook()()
-	m.StartFunc.appendCall(RoutineStartFuncCall{})
+func (m *MockRoutine) Start(v0 context.Context) {
+	m.StartFunc.nextHook()(v0)
+	m.StartFunc.appendCall(RoutineStartFuncCall{v0})
 	return
 }
 
 // SetDefaultHook sets function that is called when the Start method of the
 // parent MockRoutine instance is invoked and the hook queue is empty.
-func (f *RoutineStartFunc) SetDefaultHook(hook func()) {
+func (f *RoutineStartFunc) SetDefaultHook(hook func(context.Context)) {
 	f.defaultHook = hook
 }
 
@@ -211,7 +211,7 @@ func (f *RoutineStartFunc) SetDefaultHook(hook func()) {
 // Start method of the parent MockRoutine instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *RoutineStartFunc) PushHook(hook func()) {
+func (f *RoutineStartFunc) PushHook(hook func(context.Context)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -220,19 +220,19 @@ func (f *RoutineStartFunc) PushHook(hook func()) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *RoutineStartFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func() {
+	f.SetDefaultHook(func(context.Context) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *RoutineStartFunc) PushReturn() {
-	f.PushHook(func() {
+	f.PushHook(func(context.Context) {
 		return
 	})
 }
 
-func (f *RoutineStartFunc) nextHook() func() {
+func (f *RoutineStartFunc) nextHook() func(context.Context) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -264,12 +264,16 @@ func (f *RoutineStartFunc) History() []RoutineStartFuncCall {
 
 // RoutineStartFuncCall is an object that describes an invocation of method
 // Start on an instance of MockRoutine.
-type RoutineStartFuncCall struct{}
+type RoutineStartFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+}
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c RoutineStartFuncCall) Args() []interface{} {
-	return []interface{}{}
+	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this

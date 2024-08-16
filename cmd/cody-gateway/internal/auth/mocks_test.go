@@ -7,6 +7,7 @@
 package auth
 
 import (
+	"context"
 	"sync"
 
 	productsubscription "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
@@ -36,12 +37,12 @@ type MockListingCache struct {
 func NewMockListingCache() *MockListingCache {
 	return &MockListingCache{
 		DeleteFunc: &ListingCacheDeleteFunc{
-			defaultHook: func(string) {
+			defaultHook: func(context.Context, string) {
 				return
 			},
 		},
 		GetFunc: &ListingCacheGetFunc{
-			defaultHook: func(string) (r0 []byte, r1 bool) {
+			defaultHook: func(context.Context, string) (r0 []byte, r1 bool) {
 				return
 			},
 		},
@@ -51,7 +52,7 @@ func NewMockListingCache() *MockListingCache {
 			},
 		},
 		SetFunc: &ListingCacheSetFunc{
-			defaultHook: func(string, []byte) {
+			defaultHook: func(context.Context, string, []byte) {
 				return
 			},
 		},
@@ -63,12 +64,12 @@ func NewMockListingCache() *MockListingCache {
 func NewStrictMockListingCache() *MockListingCache {
 	return &MockListingCache{
 		DeleteFunc: &ListingCacheDeleteFunc{
-			defaultHook: func(string) {
+			defaultHook: func(context.Context, string) {
 				panic("unexpected invocation of MockListingCache.Delete")
 			},
 		},
 		GetFunc: &ListingCacheGetFunc{
-			defaultHook: func(string) ([]byte, bool) {
+			defaultHook: func(context.Context, string) ([]byte, bool) {
 				panic("unexpected invocation of MockListingCache.Get")
 			},
 		},
@@ -78,7 +79,7 @@ func NewStrictMockListingCache() *MockListingCache {
 			},
 		},
 		SetFunc: &ListingCacheSetFunc{
-			defaultHook: func(string, []byte) {
+			defaultHook: func(context.Context, string, []byte) {
 				panic("unexpected invocation of MockListingCache.Set")
 			},
 		},
@@ -108,23 +109,23 @@ func NewMockListingCacheFrom(i productsubscription.ListingCache) *MockListingCac
 // ListingCacheDeleteFunc describes the behavior when the Delete method of
 // the parent MockListingCache instance is invoked.
 type ListingCacheDeleteFunc struct {
-	defaultHook func(string)
-	hooks       []func(string)
+	defaultHook func(context.Context, string)
+	hooks       []func(context.Context, string)
 	history     []ListingCacheDeleteFuncCall
 	mutex       sync.Mutex
 }
 
 // Delete delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockListingCache) Delete(v0 string) {
-	m.DeleteFunc.nextHook()(v0)
-	m.DeleteFunc.appendCall(ListingCacheDeleteFuncCall{v0})
+func (m *MockListingCache) Delete(v0 context.Context, v1 string) {
+	m.DeleteFunc.nextHook()(v0, v1)
+	m.DeleteFunc.appendCall(ListingCacheDeleteFuncCall{v0, v1})
 	return
 }
 
 // SetDefaultHook sets function that is called when the Delete method of the
 // parent MockListingCache instance is invoked and the hook queue is empty.
-func (f *ListingCacheDeleteFunc) SetDefaultHook(hook func(string)) {
+func (f *ListingCacheDeleteFunc) SetDefaultHook(hook func(context.Context, string)) {
 	f.defaultHook = hook
 }
 
@@ -132,7 +133,7 @@ func (f *ListingCacheDeleteFunc) SetDefaultHook(hook func(string)) {
 // Delete method of the parent MockListingCache instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ListingCacheDeleteFunc) PushHook(hook func(string)) {
+func (f *ListingCacheDeleteFunc) PushHook(hook func(context.Context, string)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -141,19 +142,19 @@ func (f *ListingCacheDeleteFunc) PushHook(hook func(string)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ListingCacheDeleteFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(string) {
+	f.SetDefaultHook(func(context.Context, string) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ListingCacheDeleteFunc) PushReturn() {
-	f.PushHook(func(string) {
+	f.PushHook(func(context.Context, string) {
 		return
 	})
 }
 
-func (f *ListingCacheDeleteFunc) nextHook() func(string) {
+func (f *ListingCacheDeleteFunc) nextHook() func(context.Context, string) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -188,13 +189,16 @@ func (f *ListingCacheDeleteFunc) History() []ListingCacheDeleteFuncCall {
 type ListingCacheDeleteFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ListingCacheDeleteFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -206,23 +210,23 @@ func (c ListingCacheDeleteFuncCall) Results() []interface{} {
 // ListingCacheGetFunc describes the behavior when the Get method of the
 // parent MockListingCache instance is invoked.
 type ListingCacheGetFunc struct {
-	defaultHook func(string) ([]byte, bool)
-	hooks       []func(string) ([]byte, bool)
+	defaultHook func(context.Context, string) ([]byte, bool)
+	hooks       []func(context.Context, string) ([]byte, bool)
 	history     []ListingCacheGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockListingCache) Get(v0 string) ([]byte, bool) {
-	r0, r1 := m.GetFunc.nextHook()(v0)
-	m.GetFunc.appendCall(ListingCacheGetFuncCall{v0, r0, r1})
+func (m *MockListingCache) Get(v0 context.Context, v1 string) ([]byte, bool) {
+	r0, r1 := m.GetFunc.nextHook()(v0, v1)
+	m.GetFunc.appendCall(ListingCacheGetFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Get method of the
 // parent MockListingCache instance is invoked and the hook queue is empty.
-func (f *ListingCacheGetFunc) SetDefaultHook(hook func(string) ([]byte, bool)) {
+func (f *ListingCacheGetFunc) SetDefaultHook(hook func(context.Context, string) ([]byte, bool)) {
 	f.defaultHook = hook
 }
 
@@ -230,7 +234,7 @@ func (f *ListingCacheGetFunc) SetDefaultHook(hook func(string) ([]byte, bool)) {
 // Get method of the parent MockListingCache instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ListingCacheGetFunc) PushHook(hook func(string) ([]byte, bool)) {
+func (f *ListingCacheGetFunc) PushHook(hook func(context.Context, string) ([]byte, bool)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -239,19 +243,19 @@ func (f *ListingCacheGetFunc) PushHook(hook func(string) ([]byte, bool)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ListingCacheGetFunc) SetDefaultReturn(r0 []byte, r1 bool) {
-	f.SetDefaultHook(func(string) ([]byte, bool) {
+	f.SetDefaultHook(func(context.Context, string) ([]byte, bool) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ListingCacheGetFunc) PushReturn(r0 []byte, r1 bool) {
-	f.PushHook(func(string) ([]byte, bool) {
+	f.PushHook(func(context.Context, string) ([]byte, bool) {
 		return r0, r1
 	})
 }
 
-func (f *ListingCacheGetFunc) nextHook() func(string) ([]byte, bool) {
+func (f *ListingCacheGetFunc) nextHook() func(context.Context, string) ([]byte, bool) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -286,7 +290,10 @@ func (f *ListingCacheGetFunc) History() []ListingCacheGetFuncCall {
 type ListingCacheGetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []byte
@@ -298,7 +305,7 @@ type ListingCacheGetFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ListingCacheGetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -409,23 +416,23 @@ func (c ListingCacheListAllKeysFuncCall) Results() []interface{} {
 // ListingCacheSetFunc describes the behavior when the Set method of the
 // parent MockListingCache instance is invoked.
 type ListingCacheSetFunc struct {
-	defaultHook func(string, []byte)
-	hooks       []func(string, []byte)
+	defaultHook func(context.Context, string, []byte)
+	hooks       []func(context.Context, string, []byte)
 	history     []ListingCacheSetFuncCall
 	mutex       sync.Mutex
 }
 
 // Set delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockListingCache) Set(v0 string, v1 []byte) {
-	m.SetFunc.nextHook()(v0, v1)
-	m.SetFunc.appendCall(ListingCacheSetFuncCall{v0, v1})
+func (m *MockListingCache) Set(v0 context.Context, v1 string, v2 []byte) {
+	m.SetFunc.nextHook()(v0, v1, v2)
+	m.SetFunc.appendCall(ListingCacheSetFuncCall{v0, v1, v2})
 	return
 }
 
 // SetDefaultHook sets function that is called when the Set method of the
 // parent MockListingCache instance is invoked and the hook queue is empty.
-func (f *ListingCacheSetFunc) SetDefaultHook(hook func(string, []byte)) {
+func (f *ListingCacheSetFunc) SetDefaultHook(hook func(context.Context, string, []byte)) {
 	f.defaultHook = hook
 }
 
@@ -433,7 +440,7 @@ func (f *ListingCacheSetFunc) SetDefaultHook(hook func(string, []byte)) {
 // Set method of the parent MockListingCache instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ListingCacheSetFunc) PushHook(hook func(string, []byte)) {
+func (f *ListingCacheSetFunc) PushHook(hook func(context.Context, string, []byte)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -442,19 +449,19 @@ func (f *ListingCacheSetFunc) PushHook(hook func(string, []byte)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ListingCacheSetFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(string, []byte) {
+	f.SetDefaultHook(func(context.Context, string, []byte) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ListingCacheSetFunc) PushReturn() {
-	f.PushHook(func(string, []byte) {
+	f.PushHook(func(context.Context, string, []byte) {
 		return
 	})
 }
 
-func (f *ListingCacheSetFunc) nextHook() func(string, []byte) {
+func (f *ListingCacheSetFunc) nextHook() func(context.Context, string, []byte) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -489,16 +496,19 @@ func (f *ListingCacheSetFunc) History() []ListingCacheSetFuncCall {
 type ListingCacheSetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []byte
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []byte
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ListingCacheSetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

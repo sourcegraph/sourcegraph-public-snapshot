@@ -87,6 +87,6 @@ type outOfBandMigrationRunnerWrapper struct {
 	firstVersion   oobmigration.Version
 }
 
-func (w *outOfBandMigrationRunnerWrapper) Start() {
+func (w *outOfBandMigrationRunnerWrapper) Start(context.Context) {
 	w.Runner.Start(w.currentVersion, w.firstVersion)
 }

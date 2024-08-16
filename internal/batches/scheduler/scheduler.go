@@ -32,9 +32,9 @@ func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 	}
 }
 
-func (s *Scheduler) Start() {
+func (s *Scheduler) Start(ctx context.Context) {
 	if s.recorder != nil {
-		go s.recorder.LogStart(s)
+		go s.recorder.LogStart(ctx, s)
 	}
 
 	// Set up a global backoff strategy where we start at 5 seconds, up to a
@@ -75,7 +75,7 @@ func (s *Scheduler) Start() {
 
 				duration := time.Since(start)
 				if s.recorder != nil {
-					go s.recorder.LogRun(s, duration, nil)
+					go s.recorder.LogRun(ctx, s, duration, nil)
 				}
 
 			case <-validity.C:
@@ -100,9 +100,9 @@ func (s *Scheduler) Start() {
 	}
 }
 
-func (s *Scheduler) Stop(context.Context) error {
+func (s *Scheduler) Stop(ctx context.Context) error {
 	if s.recorder != nil {
-		go s.recorder.LogStop(s)
+		go s.recorder.LogStop(ctx, s)
 	}
 	s.done <- struct{}{}
 	close(s.done)

@@ -72,7 +72,7 @@ func (s *SyncRegistry) Name() string {
 	return "SyncRegistry"
 }
 
-func (s *SyncRegistry) Start() {
+func (s *SyncRegistry) Start(context.Context) {
 	// Fetch initial list of syncers.
 	if err := s.syncCodeHosts(s.ctx); err != nil {
 		s.logger.Error("Fetching initial list of code hosts", log.Error(err))

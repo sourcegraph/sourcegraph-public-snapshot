@@ -166,7 +166,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			rec.Register(recordable)
 		}
 	}
-	rec.RegistrationDone()
+	rec.RegistrationDone(ctx)
 
 	debugserverEndpoints.lockerStatusEndpoint = func(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(locker.AllStatuses()); err != nil {

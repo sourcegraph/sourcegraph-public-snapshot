@@ -143,9 +143,9 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 }
 
 // Start begins polling for work from the underlying store and processing records.
-func (w *Worker[T]) Start() {
+func (w *Worker[T]) Start(ctx context.Context) {
 	if w.recorder != nil {
-		go w.recorder.LogStart(w)
+		go w.recorder.LogStart(ctx, w)
 	}
 	defer close(w.finished)
 
@@ -256,9 +256,9 @@ loop:
 // Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
 // context passed to the dequeue operations (but not the handler operations). This method blocks until
 // all handler goroutines have exited.
-func (w *Worker[T]) Stop(context.Context) error {
+func (w *Worker[T]) Stop(ctx context.Context) error {
 	if w.recorder != nil {
-		go w.recorder.LogStop(w)
+		go w.recorder.LogStop(ctx, w)
 	}
 	w.dequeueCancel()
 	w.Wait()
@@ -400,7 +400,7 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 	}
 	duration := time.Since(start)
 	if w.recorder != nil {
-		go w.recorder.LogRun(w, duration, handleErr)
+		go w.recorder.LogRun(ctx, w, duration, handleErr)
 	}
 
 	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordUID(), handleErr, ctx.Err()) {

@@ -149,7 +149,7 @@ func (c *Client) cachedGetProject(ctx context.Context, key string, forceFetch bo
 	if IsNotFound(err) {
 		// Before we do anything, ensure we cache NotFound responses.
 		// Do this if client is unauthed or authed, it's okay since we're only caching not found responses here.
-		c.addProjectToCache(keys, &cachedProj{NotFound: true})
+		c.addProjectToCache(ctx, keys, &cachedProj{NotFound: true})
 		projectsGitLabCacheCounter.WithLabelValues("notfound").Inc()
 	}
 	if err != nil {
@@ -157,7 +157,7 @@ func (c *Client) cachedGetProject(ctx context.Context, key string, forceFetch bo
 		return nil, err
 	}
 
-	c.addProjectToCache(keys, &cachedProj{Project: *proj})
+	c.addProjectToCache(ctx, keys, &cachedProj{Project: *proj})
 	projectsGitLabCacheCounter.WithLabelValues("miss").Inc()
 
 	return proj, nil
@@ -177,8 +177,8 @@ type cachedProj struct {
 
 // getProjectFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *Client) getProjectFromCache(_ context.Context, key string) *cachedProj {
-	b, ok := c.projCache.Get(strings.ToLower(key))
+func (c *Client) getProjectFromCache(ctx context.Context, key string) *cachedProj {
+	b, ok := c.projCache.Get(ctx, strings.ToLower(key))
 	if !ok {
 		return nil
 	}
@@ -193,13 +193,13 @@ func (c *Client) getProjectFromCache(_ context.Context, key string) *cachedProj 
 
 // addProjectToCache will cache the value for proj. The caller can provide multiple cache keys for the multiple
 // ways that this project can be retrieved (e.g., both ID and path with namespace).
-func (c *Client) addProjectToCache(keys []string, proj *cachedProj) {
+func (c *Client) addProjectToCache(ctx context.Context, keys []string, proj *cachedProj) {
 	b, err := json.Marshal(proj)
 	if err != nil {
 		return
 	}
 	for _, key := range keys {
-		c.projCache.Set(strings.ToLower(key), b)
+		c.projCache.Set(ctx, strings.ToLower(key), b)
 	}
 }
 
@@ -245,7 +245,7 @@ func (c *Client) ListProjects(ctx context.Context, urlStr string) (projs []*Proj
 	// Add to cache.
 	for _, proj := range projs {
 		keys := []string{pathWithNamespaceCacheKey(proj.PathWithNamespace), idCacheKey(proj.ID)} // cache under multiple
-		c.addProjectToCache(keys, &cachedProj{Project: *proj})
+		c.addProjectToCache(ctx, keys, &cachedProj{Project: *proj})
 	}
 
 	return projs, nextPageURL, nil

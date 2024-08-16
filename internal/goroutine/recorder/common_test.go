@@ -115,7 +115,7 @@ func newRoutineMock(name string, description string, interval time.Duration) *Ro
 	}
 }
 
-func (r *RoutineMock) Start() {
+func (r *RoutineMock) Start(context.Context) {
 	// Do nothing
 }
 

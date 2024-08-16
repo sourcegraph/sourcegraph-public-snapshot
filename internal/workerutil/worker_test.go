@@ -51,7 +51,7 @@ func TestWorkerHandlerSuccess(t *testing.T) {
 
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	dequeueClock.BlockingAdvance(time.Second)
 	err := worker.Stop(ctx)
 	require.NoError(t, err)
@@ -90,7 +90,7 @@ func TestWorkerHandlerFailure(t *testing.T) {
 
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	dequeueClock.BlockingAdvance(time.Second)
 	err := worker.Stop(ctx)
 	require.NoError(t, err)
@@ -138,7 +138,7 @@ func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
 
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	dequeueClock.BlockingAdvance(time.Second)
 	err := worker.Stop(ctx)
 	require.NoError(t, err)
@@ -211,7 +211,7 @@ func TestWorkerConcurrent(t *testing.T) {
 
 			ctx := context.Background()
 			worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-			go func() { worker.Start() }()
+			go func() { worker.Start(ctx) }()
 			for range NumTestRecords {
 				dequeueClock.BlockingAdvance(time.Second)
 			}
@@ -255,7 +255,7 @@ func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	dequeueClock.BlockingAdvance(time.Second)
 	err := worker.Stop(ctx)
 	require.NoError(t, err)
@@ -291,7 +291,7 @@ func TestWorkerConditionalPreDequeueHook(t *testing.T) {
 
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	dequeueClock.BlockingAdvance(time.Second)
 	dequeueClock.BlockingAdvance(time.Second)
 	dequeueClock.BlockingAdvance(time.Second)
@@ -373,7 +373,7 @@ func TestWorkerDequeueHeartbeat(t *testing.T) {
 
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	t.Cleanup(func() {
 		close(doneHandling)
 		err := worker.Stop(ctx)
@@ -412,7 +412,7 @@ func TestWorkerNumTotalJobs(t *testing.T) {
 	// Should process 5 then shut down
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	worker.Start()
+	worker.Start(ctx)
 
 	if callCount := len(store.DequeueFunc.History()); callCount != 5 {
 		t.Errorf("unexpected call count. want=%d have=%d", 5, callCount)
@@ -455,7 +455,7 @@ func TestWorkerMaxActiveTime(t *testing.T) {
 		defer close(stopped)
 		ctx := context.Background()
 		worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-		worker.Start()
+		worker.Start(ctx)
 	}()
 
 	timeout := time.After(time.Second * 5)
@@ -532,7 +532,7 @@ func TestWorkerCancelJobs(t *testing.T) {
 	heartbeatClock := glock.NewMockClock()
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, clock, heartbeatClock, clock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	t.Cleanup(func() {
 		// Keep the handler working until context is canceled.
 		close(doneHandling)
@@ -611,7 +611,7 @@ func TestWorkerDeadline(t *testing.T) {
 	clock := glock.NewMockClock()
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, clock, clock, clock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	t.Cleanup(func() {
 		// Keep the handler working until context is canceled.
 		close(doneHandling)
@@ -667,7 +667,7 @@ func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
 	clock := glock.NewMockClock()
 	ctx := context.Background()
 	worker := newWorker(ctx, Store[*TestRecord](store), Handler[*TestRecord](handler), options, clock, clock, clock)
-	go func() { worker.Start() }()
+	go func() { worker.Start(ctx) }()
 	t.Cleanup(func() {
 		err := worker.Stop(ctx)
 		require.NoError(t, err)

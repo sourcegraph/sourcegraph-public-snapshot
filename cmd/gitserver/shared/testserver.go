@@ -53,7 +53,7 @@ func (t *testServerRoutine) Name() string {
 	return "gitserver-test"
 }
 
-func (t *testServerRoutine) Start() {
+func (t *testServerRoutine) Start(context.Context) {
 	t.start()
 }
 

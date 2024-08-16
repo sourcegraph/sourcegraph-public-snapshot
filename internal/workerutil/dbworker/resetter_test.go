@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 )
@@ -43,7 +44,7 @@ func TestResetter(t *testing.T) {
 	}
 
 	resetter := newResetter(logger, store.Store[*TestRecord](s), options, clock)
-	go func() { resetter.Start() }()
+	go func() { resetter.Start(tenant.TestContext()) }()
 	clock.BlockingAdvance(time.Second)
 	err := resetter.Stop(context.Background())
 	require.NoError(t, err)

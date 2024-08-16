@@ -34,13 +34,6 @@ func (c *Client) repositoryCacheKey(ctx context.Context, arn string) (string, er
 // GetRepositoryMock is set by tests to mock (*Client).GetRepository.
 var GetRepositoryMock func(ctx context.Context, arn string) (*Repository, error)
 
-// MockGetRepository_Return is called by tests to mock (*Client).GetRepository.
-func MockGetRepository_Return(returns *Repository) {
-	GetRepositoryMock = func(context.Context, string) (*Repository, error) {
-		return returns, nil
-	}
-}
-
 // GetRepository gets a repository from AWS CodeCommit by ARN (Amazon Resource Name).
 func (c *Client) GetRepository(ctx context.Context, arn string) (*Repository, error) {
 	if GetRepositoryMock != nil {
@@ -71,7 +64,7 @@ func (c *Client) cachedGetRepository(ctx context.Context, arn string) (*Reposito
 	repo, err := c.getRepositoryFromAPI(ctx, arn)
 	if IsNotFound(err) {
 		// Before we do anything, ensure we cache NotFound responses.
-		c.addRepositoryToCache(key, &cachedRepo{NotFound: true})
+		c.addRepositoryToCache(ctx, key, &cachedRepo{NotFound: true})
 		reposCacheCounter.WithLabelValues("notfound").Inc()
 	}
 	if err != nil {
@@ -79,7 +72,7 @@ func (c *Client) cachedGetRepository(ctx context.Context, arn string) (*Reposito
 		return nil, err
 	}
 
-	c.addRepositoryToCache(key, &cachedRepo{Repository: *repo})
+	c.addRepositoryToCache(ctx, key, &cachedRepo{Repository: *repo})
 	reposCacheCounter.WithLabelValues("miss").Inc()
 
 	return repo, nil
@@ -100,8 +93,8 @@ type cachedRepo struct {
 
 // getRepositoryFromCache attempts to get a response from the redis cache.
 // It returns nil error for cache-hit condition and non-nil error for cache-miss.
-func (c *Client) getRepositoryFromCache(_ context.Context, key string) *cachedRepo {
-	b, ok := c.repoCache.Get(key)
+func (c *Client) getRepositoryFromCache(ctx context.Context, key string) *cachedRepo {
+	b, ok := c.repoCache.Get(ctx, key)
 	if !ok {
 		return nil
 	}
@@ -117,12 +110,12 @@ func (c *Client) getRepositoryFromCache(_ context.Context, key string) *cachedRe
 // addRepositoryToCache will cache the value for repo. The caller can provide multiple cache key
 // for the multiple ways that this repository can be retrieved (e.g., both "owner/name" and the
 // GraphQL node ID).
-func (c *Client) addRepositoryToCache(key string, repo *cachedRepo) {
+func (c *Client) addRepositoryToCache(ctx context.Context, key string, repo *cachedRepo) {
 	b, err := json.Marshal(repo)
 	if err != nil {
 		return
 	}
-	c.repoCache.Set(strings.ToLower(key), b)
+	c.repoCache.Set(ctx, strings.ToLower(key), b)
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -214,7 +207,7 @@ func (c *Client) getRepositories(ctx context.Context, svc *codecommit.Client, re
 		if err != nil {
 			return nil, err
 		}
-		c.addRepositoryToCache(key, &cachedRepo{Repository: *repos[i]})
+		c.addRepositoryToCache(ctx, key, &cachedRepo{Repository: *repos[i]})
 	}
 	return repos, nil
 }

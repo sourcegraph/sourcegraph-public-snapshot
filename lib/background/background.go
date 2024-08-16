@@ -19,7 +19,7 @@ type Routine interface {
 	Name() string
 	// Start begins the long-running process. This routine may also implement a Stop
 	// method that should signal this process the application is going to shut down.
-	Start()
+	Start(ctx context.Context)
 	// Stop signals the Start method to stop accepting new work and complete its
 	// current work. This method can but is not required to block until Start has
 	// returned. The method should respect the context deadline passed to it for
@@ -43,7 +43,7 @@ func Monitor(ctx context.Context, routines ...Routine) error {
 
 func monitorBackgroundRoutines(ctx context.Context, signals <-chan os.Signal, routines ...Routine) error {
 	wg := &sync.WaitGroup{}
-	startAll(wg, routines...)
+	startAll(ctx, wg, routines...)
 	waitForSignal(ctx, signals)
 	return stopAll(ctx, wg, routines...)
 }
@@ -52,11 +52,11 @@ func monitorBackgroundRoutines(ctx context.Context, signals <-chan os.Signal, ro
 // each running goroutine with the given waitgroup. It DOES NOT wait for the
 // routines to finish starting, so the caller must wait for the waitgroup (if
 // desired).
-func startAll(wg *sync.WaitGroup, routines ...Routine) {
+func startAll(ctx context.Context, wg *sync.WaitGroup, routines ...Routine) {
 	for _, r := range routines {
 		t := r
 		wg.Add(1)
-		Go(func() { defer wg.Done(); t.Start() })
+		Go(func() { defer wg.Done(); t.Start(ctx) })
 	}
 }
 
@@ -140,8 +140,8 @@ func (rs CombinedRoutine) Name() string {
 
 // Start starts all routines, it does not wait for the routines to finish
 // starting.
-func (rs CombinedRoutine) Start() {
-	startAll(&sync.WaitGroup{}, rs...)
+func (rs CombinedRoutine) Start(ctx context.Context) {
+	startAll(ctx, &sync.WaitGroup{}, rs...)
 }
 
 // Stop attempts to gracefully stopping all routines. It attempts to collect all
@@ -162,7 +162,7 @@ type FIFOSTopRoutine []Routine
 
 func (r FIFOSTopRoutine) Name() string { return "fifo" }
 
-func (r FIFOSTopRoutine) Start() { CombinedRoutine(r).Start() }
+func (r FIFOSTopRoutine) Start(ctx context.Context) { CombinedRoutine(r).Start(ctx) }
 
 func (r FIFOSTopRoutine) Stop(ctx context.Context) error {
 	// Pass self inverted into LIFOStopRoutine
@@ -180,7 +180,7 @@ type LIFOStopRoutine []Routine
 
 func (r LIFOStopRoutine) Name() string { return "lifo" }
 
-func (r LIFOStopRoutine) Start() { CombinedRoutine(r).Start() }
+func (r LIFOStopRoutine) Start(ctx context.Context) { CombinedRoutine(r).Start(ctx) }
 
 func (r LIFOStopRoutine) Stop(ctx context.Context) error {
 	var stopErr error
@@ -209,7 +209,7 @@ func NoopRoutine(name string) Routine {
 // Routine. Each callback may be nil.
 type CallbackRoutine struct {
 	NameFunc  func() string
-	StartFunc func()
+	StartFunc func(ctx context.Context)
 	StopFunc  func(ctx context.Context) error
 }
 
@@ -220,9 +220,9 @@ func (r CallbackRoutine) Name() string {
 	return "callback"
 }
 
-func (r CallbackRoutine) Start() {
+func (r CallbackRoutine) Start(ctx context.Context) {
 	if r.StartFunc != nil {
-		r.StartFunc()
+		r.StartFunc(ctx)
 	}
 }
 

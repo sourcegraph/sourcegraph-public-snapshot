@@ -57,9 +57,9 @@ func TestSyncWorkerPlumbing(t *testing.T) {
 		NumHandlers:    1,
 		WorkerInterval: 1 * time.Millisecond,
 	})
-	go worker.Start()
-	go resetter.Start()
-	go janitor.Start()
+	go worker.Start(ctx)
+	go resetter.Start(ctx)
+	go janitor.Start(ctx)
 
 	// There is a race between the worker being stopped and the worker util
 	// finalising the row which means that when running tests in verbose mode we'll

@@ -165,9 +165,9 @@ func (r *PeriodicGoroutine) RegisterRecorder(recorder *recorder.Recorder) { r.re
 
 // Start begins the process of calling the registered handler in a loop. This process will
 // wait the interval supplied at construction between invocations.
-func (r *PeriodicGoroutine) Start() {
+func (r *PeriodicGoroutine) Start(ctx context.Context) {
 	if r.recorder != nil {
-		go r.recorder.LogStart(r)
+		go r.recorder.LogStart(ctx, r)
 	}
 	defer close(r.finished)
 
@@ -181,9 +181,9 @@ func (r *PeriodicGoroutine) Start() {
 // Stop will cancel the context passed to the handler function to stop the current
 // iteration of work, then break the loop in the Start method so that no new work
 // is accepted. This method blocks until Start has returned.
-func (r *PeriodicGoroutine) Stop(context.Context) error {
+func (r *PeriodicGoroutine) Stop(ctx context.Context) error {
 	if r.recorder != nil {
-		go r.recorder.LogStop(r)
+		go r.recorder.LogStop(ctx, r)
 	}
 	r.cancel()
 	<-r.finished
@@ -377,8 +377,8 @@ func (r *PeriodicGoroutine) withRecorder(ctx context.Context, f func(ctx context
 	duration := time.Since(start)
 
 	go func() {
-		r.recorder.SaveKnownRoutine(r)
-		r.recorder.LogRun(r, duration, errorFilter(ctx, err))
+		r.recorder.SaveKnownRoutine(ctx, r)
+		r.recorder.LogRun(ctx, r, duration, errorFilter(ctx, err))
 	}()
 
 	return err

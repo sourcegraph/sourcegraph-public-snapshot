@@ -45,22 +45,22 @@ type MockLockoutStore struct {
 func NewMockLockoutStore() *MockLockoutStore {
 	return &MockLockoutStore{
 		GenerateUnlockAccountURLFunc: &LockoutStoreGenerateUnlockAccountURLFunc{
-			defaultHook: func(int32) (r0 string, r1 string, r2 error) {
+			defaultHook: func(context.Context, int32) (r0 string, r1 string, r2 error) {
 				return
 			},
 		},
 		IncreaseFailedAttemptFunc: &LockoutStoreIncreaseFailedAttemptFunc{
-			defaultHook: func(int32) {
+			defaultHook: func(context.Context, int32) {
 				return
 			},
 		},
 		IsLockedOutFunc: &LockoutStoreIsLockedOutFunc{
-			defaultHook: func(int32) (r0 string, r1 bool) {
+			defaultHook: func(context.Context, int32) (r0 string, r1 bool) {
 				return
 			},
 		},
 		ResetFunc: &LockoutStoreResetFunc{
-			defaultHook: func(int32) {
+			defaultHook: func(context.Context, int32) {
 				return
 			},
 		},
@@ -70,12 +70,12 @@ func NewMockLockoutStore() *MockLockoutStore {
 			},
 		},
 		UnlockEmailSentFunc: &LockoutStoreUnlockEmailSentFunc{
-			defaultHook: func(int32) (r0 bool) {
+			defaultHook: func(context.Context, int32) (r0 bool) {
 				return
 			},
 		},
 		VerifyUnlockAccountTokenAndResetFunc: &LockoutStoreVerifyUnlockAccountTokenAndResetFunc{
-			defaultHook: func(string) (r0 bool, r1 error) {
+			defaultHook: func(context.Context, string) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -87,22 +87,22 @@ func NewMockLockoutStore() *MockLockoutStore {
 func NewStrictMockLockoutStore() *MockLockoutStore {
 	return &MockLockoutStore{
 		GenerateUnlockAccountURLFunc: &LockoutStoreGenerateUnlockAccountURLFunc{
-			defaultHook: func(int32) (string, string, error) {
+			defaultHook: func(context.Context, int32) (string, string, error) {
 				panic("unexpected invocation of MockLockoutStore.GenerateUnlockAccountURL")
 			},
 		},
 		IncreaseFailedAttemptFunc: &LockoutStoreIncreaseFailedAttemptFunc{
-			defaultHook: func(int32) {
+			defaultHook: func(context.Context, int32) {
 				panic("unexpected invocation of MockLockoutStore.IncreaseFailedAttempt")
 			},
 		},
 		IsLockedOutFunc: &LockoutStoreIsLockedOutFunc{
-			defaultHook: func(int32) (string, bool) {
+			defaultHook: func(context.Context, int32) (string, bool) {
 				panic("unexpected invocation of MockLockoutStore.IsLockedOut")
 			},
 		},
 		ResetFunc: &LockoutStoreResetFunc{
-			defaultHook: func(int32) {
+			defaultHook: func(context.Context, int32) {
 				panic("unexpected invocation of MockLockoutStore.Reset")
 			},
 		},
@@ -112,12 +112,12 @@ func NewStrictMockLockoutStore() *MockLockoutStore {
 			},
 		},
 		UnlockEmailSentFunc: &LockoutStoreUnlockEmailSentFunc{
-			defaultHook: func(int32) bool {
+			defaultHook: func(context.Context, int32) bool {
 				panic("unexpected invocation of MockLockoutStore.UnlockEmailSent")
 			},
 		},
 		VerifyUnlockAccountTokenAndResetFunc: &LockoutStoreVerifyUnlockAccountTokenAndResetFunc{
-			defaultHook: func(string) (bool, error) {
+			defaultHook: func(context.Context, string) (bool, error) {
 				panic("unexpected invocation of MockLockoutStore.VerifyUnlockAccountTokenAndReset")
 			},
 		},
@@ -157,24 +157,24 @@ func NewMockLockoutStoreFrom(i LockoutStore) *MockLockoutStore {
 // GenerateUnlockAccountURL method of the parent MockLockoutStore instance
 // is invoked.
 type LockoutStoreGenerateUnlockAccountURLFunc struct {
-	defaultHook func(int32) (string, string, error)
-	hooks       []func(int32) (string, string, error)
+	defaultHook func(context.Context, int32) (string, string, error)
+	hooks       []func(context.Context, int32) (string, string, error)
 	history     []LockoutStoreGenerateUnlockAccountURLFuncCall
 	mutex       sync.Mutex
 }
 
 // GenerateUnlockAccountURL delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLockoutStore) GenerateUnlockAccountURL(v0 int32) (string, string, error) {
-	r0, r1, r2 := m.GenerateUnlockAccountURLFunc.nextHook()(v0)
-	m.GenerateUnlockAccountURLFunc.appendCall(LockoutStoreGenerateUnlockAccountURLFuncCall{v0, r0, r1, r2})
+func (m *MockLockoutStore) GenerateUnlockAccountURL(v0 context.Context, v1 int32) (string, string, error) {
+	r0, r1, r2 := m.GenerateUnlockAccountURLFunc.nextHook()(v0, v1)
+	m.GenerateUnlockAccountURLFunc.appendCall(LockoutStoreGenerateUnlockAccountURLFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // GenerateUnlockAccountURL method of the parent MockLockoutStore instance
 // is invoked and the hook queue is empty.
-func (f *LockoutStoreGenerateUnlockAccountURLFunc) SetDefaultHook(hook func(int32) (string, string, error)) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) SetDefaultHook(hook func(context.Context, int32) (string, string, error)) {
 	f.defaultHook = hook
 }
 
@@ -183,7 +183,7 @@ func (f *LockoutStoreGenerateUnlockAccountURLFunc) SetDefaultHook(hook func(int3
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LockoutStoreGenerateUnlockAccountURLFunc) PushHook(hook func(int32) (string, string, error)) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) PushHook(hook func(context.Context, int32) (string, string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -192,19 +192,19 @@ func (f *LockoutStoreGenerateUnlockAccountURLFunc) PushHook(hook func(int32) (st
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LockoutStoreGenerateUnlockAccountURLFunc) SetDefaultReturn(r0 string, r1 string, r2 error) {
-	f.SetDefaultHook(func(int32) (string, string, error) {
+	f.SetDefaultHook(func(context.Context, int32) (string, string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LockoutStoreGenerateUnlockAccountURLFunc) PushReturn(r0 string, r1 string, r2 error) {
-	f.PushHook(func(int32) (string, string, error) {
+	f.PushHook(func(context.Context, int32) (string, string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *LockoutStoreGenerateUnlockAccountURLFunc) nextHook() func(int32) (string, string, error) {
+func (f *LockoutStoreGenerateUnlockAccountURLFunc) nextHook() func(context.Context, int32) (string, string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -241,7 +241,10 @@ func (f *LockoutStoreGenerateUnlockAccountURLFunc) History() []LockoutStoreGener
 type LockoutStoreGenerateUnlockAccountURLFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 int32
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -256,7 +259,7 @@ type LockoutStoreGenerateUnlockAccountURLFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LockoutStoreGenerateUnlockAccountURLFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -269,24 +272,24 @@ func (c LockoutStoreGenerateUnlockAccountURLFuncCall) Results() []interface{} {
 // IncreaseFailedAttempt method of the parent MockLockoutStore instance is
 // invoked.
 type LockoutStoreIncreaseFailedAttemptFunc struct {
-	defaultHook func(int32)
-	hooks       []func(int32)
+	defaultHook func(context.Context, int32)
+	hooks       []func(context.Context, int32)
 	history     []LockoutStoreIncreaseFailedAttemptFuncCall
 	mutex       sync.Mutex
 }
 
 // IncreaseFailedAttempt delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockLockoutStore) IncreaseFailedAttempt(v0 int32) {
-	m.IncreaseFailedAttemptFunc.nextHook()(v0)
-	m.IncreaseFailedAttemptFunc.appendCall(LockoutStoreIncreaseFailedAttemptFuncCall{v0})
+func (m *MockLockoutStore) IncreaseFailedAttempt(v0 context.Context, v1 int32) {
+	m.IncreaseFailedAttemptFunc.nextHook()(v0, v1)
+	m.IncreaseFailedAttemptFunc.appendCall(LockoutStoreIncreaseFailedAttemptFuncCall{v0, v1})
 	return
 }
 
 // SetDefaultHook sets function that is called when the
 // IncreaseFailedAttempt method of the parent MockLockoutStore instance is
 // invoked and the hook queue is empty.
-func (f *LockoutStoreIncreaseFailedAttemptFunc) SetDefaultHook(hook func(int32)) {
+func (f *LockoutStoreIncreaseFailedAttemptFunc) SetDefaultHook(hook func(context.Context, int32)) {
 	f.defaultHook = hook
 }
 
@@ -295,7 +298,7 @@ func (f *LockoutStoreIncreaseFailedAttemptFunc) SetDefaultHook(hook func(int32))
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LockoutStoreIncreaseFailedAttemptFunc) PushHook(hook func(int32)) {
+func (f *LockoutStoreIncreaseFailedAttemptFunc) PushHook(hook func(context.Context, int32)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -304,19 +307,19 @@ func (f *LockoutStoreIncreaseFailedAttemptFunc) PushHook(hook func(int32)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LockoutStoreIncreaseFailedAttemptFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(int32) {
+	f.SetDefaultHook(func(context.Context, int32) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LockoutStoreIncreaseFailedAttemptFunc) PushReturn() {
-	f.PushHook(func(int32) {
+	f.PushHook(func(context.Context, int32) {
 		return
 	})
 }
 
-func (f *LockoutStoreIncreaseFailedAttemptFunc) nextHook() func(int32) {
+func (f *LockoutStoreIncreaseFailedAttemptFunc) nextHook() func(context.Context, int32) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -352,13 +355,16 @@ func (f *LockoutStoreIncreaseFailedAttemptFunc) History() []LockoutStoreIncrease
 type LockoutStoreIncreaseFailedAttemptFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 int32
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LockoutStoreIncreaseFailedAttemptFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -370,24 +376,24 @@ func (c LockoutStoreIncreaseFailedAttemptFuncCall) Results() []interface{} {
 // LockoutStoreIsLockedOutFunc describes the behavior when the IsLockedOut
 // method of the parent MockLockoutStore instance is invoked.
 type LockoutStoreIsLockedOutFunc struct {
-	defaultHook func(int32) (string, bool)
-	hooks       []func(int32) (string, bool)
+	defaultHook func(context.Context, int32) (string, bool)
+	hooks       []func(context.Context, int32) (string, bool)
 	history     []LockoutStoreIsLockedOutFuncCall
 	mutex       sync.Mutex
 }
 
 // IsLockedOut delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockLockoutStore) IsLockedOut(v0 int32) (string, bool) {
-	r0, r1 := m.IsLockedOutFunc.nextHook()(v0)
-	m.IsLockedOutFunc.appendCall(LockoutStoreIsLockedOutFuncCall{v0, r0, r1})
+func (m *MockLockoutStore) IsLockedOut(v0 context.Context, v1 int32) (string, bool) {
+	r0, r1 := m.IsLockedOutFunc.nextHook()(v0, v1)
+	m.IsLockedOutFunc.appendCall(LockoutStoreIsLockedOutFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the IsLockedOut method
 // of the parent MockLockoutStore instance is invoked and the hook queue is
 // empty.
-func (f *LockoutStoreIsLockedOutFunc) SetDefaultHook(hook func(int32) (string, bool)) {
+func (f *LockoutStoreIsLockedOutFunc) SetDefaultHook(hook func(context.Context, int32) (string, bool)) {
 	f.defaultHook = hook
 }
 
@@ -395,7 +401,7 @@ func (f *LockoutStoreIsLockedOutFunc) SetDefaultHook(hook func(int32) (string, b
 // IsLockedOut method of the parent MockLockoutStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *LockoutStoreIsLockedOutFunc) PushHook(hook func(int32) (string, bool)) {
+func (f *LockoutStoreIsLockedOutFunc) PushHook(hook func(context.Context, int32) (string, bool)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -404,19 +410,19 @@ func (f *LockoutStoreIsLockedOutFunc) PushHook(hook func(int32) (string, bool)) 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LockoutStoreIsLockedOutFunc) SetDefaultReturn(r0 string, r1 bool) {
-	f.SetDefaultHook(func(int32) (string, bool) {
+	f.SetDefaultHook(func(context.Context, int32) (string, bool) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LockoutStoreIsLockedOutFunc) PushReturn(r0 string, r1 bool) {
-	f.PushHook(func(int32) (string, bool) {
+	f.PushHook(func(context.Context, int32) (string, bool) {
 		return r0, r1
 	})
 }
 
-func (f *LockoutStoreIsLockedOutFunc) nextHook() func(int32) (string, bool) {
+func (f *LockoutStoreIsLockedOutFunc) nextHook() func(context.Context, int32) (string, bool) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -451,7 +457,10 @@ func (f *LockoutStoreIsLockedOutFunc) History() []LockoutStoreIsLockedOutFuncCal
 type LockoutStoreIsLockedOutFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 int32
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -463,7 +472,7 @@ type LockoutStoreIsLockedOutFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LockoutStoreIsLockedOutFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -475,23 +484,23 @@ func (c LockoutStoreIsLockedOutFuncCall) Results() []interface{} {
 // LockoutStoreResetFunc describes the behavior when the Reset method of the
 // parent MockLockoutStore instance is invoked.
 type LockoutStoreResetFunc struct {
-	defaultHook func(int32)
-	hooks       []func(int32)
+	defaultHook func(context.Context, int32)
+	hooks       []func(context.Context, int32)
 	history     []LockoutStoreResetFuncCall
 	mutex       sync.Mutex
 }
 
 // Reset delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockLockoutStore) Reset(v0 int32) {
-	m.ResetFunc.nextHook()(v0)
-	m.ResetFunc.appendCall(LockoutStoreResetFuncCall{v0})
+func (m *MockLockoutStore) Reset(v0 context.Context, v1 int32) {
+	m.ResetFunc.nextHook()(v0, v1)
+	m.ResetFunc.appendCall(LockoutStoreResetFuncCall{v0, v1})
 	return
 }
 
 // SetDefaultHook sets function that is called when the Reset method of the
 // parent MockLockoutStore instance is invoked and the hook queue is empty.
-func (f *LockoutStoreResetFunc) SetDefaultHook(hook func(int32)) {
+func (f *LockoutStoreResetFunc) SetDefaultHook(hook func(context.Context, int32)) {
 	f.defaultHook = hook
 }
 
@@ -499,7 +508,7 @@ func (f *LockoutStoreResetFunc) SetDefaultHook(hook func(int32)) {
 // Reset method of the parent MockLockoutStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *LockoutStoreResetFunc) PushHook(hook func(int32)) {
+func (f *LockoutStoreResetFunc) PushHook(hook func(context.Context, int32)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -508,19 +517,19 @@ func (f *LockoutStoreResetFunc) PushHook(hook func(int32)) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LockoutStoreResetFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func(int32) {
+	f.SetDefaultHook(func(context.Context, int32) {
 		return
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LockoutStoreResetFunc) PushReturn() {
-	f.PushHook(func(int32) {
+	f.PushHook(func(context.Context, int32) {
 		return
 	})
 }
 
-func (f *LockoutStoreResetFunc) nextHook() func(int32) {
+func (f *LockoutStoreResetFunc) nextHook() func(context.Context, int32) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -555,13 +564,16 @@ func (f *LockoutStoreResetFunc) History() []LockoutStoreResetFuncCall {
 type LockoutStoreResetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 int32
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LockoutStoreResetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -685,24 +697,24 @@ func (c LockoutStoreSendUnlockAccountEmailFuncCall) Results() []interface{} {
 // UnlockEmailSent method of the parent MockLockoutStore instance is
 // invoked.
 type LockoutStoreUnlockEmailSentFunc struct {
-	defaultHook func(int32) bool
-	hooks       []func(int32) bool
+	defaultHook func(context.Context, int32) bool
+	hooks       []func(context.Context, int32) bool
 	history     []LockoutStoreUnlockEmailSentFuncCall
 	mutex       sync.Mutex
 }
 
 // UnlockEmailSent delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockLockoutStore) UnlockEmailSent(v0 int32) bool {
-	r0 := m.UnlockEmailSentFunc.nextHook()(v0)
-	m.UnlockEmailSentFunc.appendCall(LockoutStoreUnlockEmailSentFuncCall{v0, r0})
+func (m *MockLockoutStore) UnlockEmailSent(v0 context.Context, v1 int32) bool {
+	r0 := m.UnlockEmailSentFunc.nextHook()(v0, v1)
+	m.UnlockEmailSentFunc.appendCall(LockoutStoreUnlockEmailSentFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the UnlockEmailSent
 // method of the parent MockLockoutStore instance is invoked and the hook
 // queue is empty.
-func (f *LockoutStoreUnlockEmailSentFunc) SetDefaultHook(hook func(int32) bool) {
+func (f *LockoutStoreUnlockEmailSentFunc) SetDefaultHook(hook func(context.Context, int32) bool) {
 	f.defaultHook = hook
 }
 
@@ -710,7 +722,7 @@ func (f *LockoutStoreUnlockEmailSentFunc) SetDefaultHook(hook func(int32) bool) 
 // UnlockEmailSent method of the parent MockLockoutStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *LockoutStoreUnlockEmailSentFunc) PushHook(hook func(int32) bool) {
+func (f *LockoutStoreUnlockEmailSentFunc) PushHook(hook func(context.Context, int32) bool) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -719,19 +731,19 @@ func (f *LockoutStoreUnlockEmailSentFunc) PushHook(hook func(int32) bool) {
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LockoutStoreUnlockEmailSentFunc) SetDefaultReturn(r0 bool) {
-	f.SetDefaultHook(func(int32) bool {
+	f.SetDefaultHook(func(context.Context, int32) bool {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LockoutStoreUnlockEmailSentFunc) PushReturn(r0 bool) {
-	f.PushHook(func(int32) bool {
+	f.PushHook(func(context.Context, int32) bool {
 		return r0
 	})
 }
 
-func (f *LockoutStoreUnlockEmailSentFunc) nextHook() func(int32) bool {
+func (f *LockoutStoreUnlockEmailSentFunc) nextHook() func(context.Context, int32) bool {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -766,7 +778,10 @@ func (f *LockoutStoreUnlockEmailSentFunc) History() []LockoutStoreUnlockEmailSen
 type LockoutStoreUnlockEmailSentFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 int32
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -775,7 +790,7 @@ type LockoutStoreUnlockEmailSentFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LockoutStoreUnlockEmailSentFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
@@ -788,24 +803,24 @@ func (c LockoutStoreUnlockEmailSentFuncCall) Results() []interface{} {
 // when the VerifyUnlockAccountTokenAndReset method of the parent
 // MockLockoutStore instance is invoked.
 type LockoutStoreVerifyUnlockAccountTokenAndResetFunc struct {
-	defaultHook func(string) (bool, error)
-	hooks       []func(string) (bool, error)
+	defaultHook func(context.Context, string) (bool, error)
+	hooks       []func(context.Context, string) (bool, error)
 	history     []LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall
 	mutex       sync.Mutex
 }
 
 // VerifyUnlockAccountTokenAndReset delegates to the next hook function in
 // the queue and stores the parameter and result values of this invocation.
-func (m *MockLockoutStore) VerifyUnlockAccountTokenAndReset(v0 string) (bool, error) {
-	r0, r1 := m.VerifyUnlockAccountTokenAndResetFunc.nextHook()(v0)
-	m.VerifyUnlockAccountTokenAndResetFunc.appendCall(LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall{v0, r0, r1})
+func (m *MockLockoutStore) VerifyUnlockAccountTokenAndReset(v0 context.Context, v1 string) (bool, error) {
+	r0, r1 := m.VerifyUnlockAccountTokenAndResetFunc.nextHook()(v0, v1)
+	m.VerifyUnlockAccountTokenAndResetFunc.appendCall(LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // VerifyUnlockAccountTokenAndReset method of the parent MockLockoutStore
 // instance is invoked and the hook queue is empty.
-func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) SetDefaultHook(hook func(string) (bool, error)) {
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) SetDefaultHook(hook func(context.Context, string) (bool, error)) {
 	f.defaultHook = hook
 }
 
@@ -814,7 +829,7 @@ func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) SetDefaultHook(hook f
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) PushHook(hook func(string) (bool, error)) {
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) PushHook(hook func(context.Context, string) (bool, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -823,19 +838,19 @@ func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) PushHook(hook func(st
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(string) (bool, error) {
+	f.SetDefaultHook(func(context.Context, string) (bool, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(string) (bool, error) {
+	f.PushHook(func(context.Context, string) (bool, error) {
 		return r0, r1
 	})
 }
 
-func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) nextHook() func(string) (bool, error) {
+func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) nextHook() func(context.Context, string) (bool, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -872,7 +887,10 @@ func (f *LockoutStoreVerifyUnlockAccountTokenAndResetFunc) History() []LockoutSt
 type LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 bool
@@ -884,7 +902,7 @@ type LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c LockoutStoreVerifyUnlockAccountTokenAndResetFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

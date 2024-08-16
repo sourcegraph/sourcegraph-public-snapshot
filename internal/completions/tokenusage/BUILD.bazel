@@ -20,7 +20,6 @@ go_library(
         "//internal/updatecheck:__pkg__",
     ],
     deps = [
-        "//internal/httpcache",
         "//internal/rcache",
         "//internal/redispool",
         "//lib/errors",
@@ -39,5 +38,6 @@ go_test(
         ":tokenusage",
         "//internal/rcache",
         "//internal/redispool",
+        "//internal/tenant",
     ],
 )

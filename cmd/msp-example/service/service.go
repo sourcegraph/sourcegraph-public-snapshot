@@ -109,7 +109,7 @@ type httpRoutine struct {
 
 func (s *httpRoutine) Name() string { return "http" }
 
-func (s *httpRoutine) Start() {
+func (s *httpRoutine) Start(context.Context) {
 	if err := s.Server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		s.log.Error("error stopping server", log.Error(err))
 	}

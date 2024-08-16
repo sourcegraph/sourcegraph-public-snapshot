@@ -102,7 +102,7 @@ func (r *Resetter[T]) Name() string {
 }
 
 // Start begins periodically calling reset stalled on the underlying store.
-func (r *Resetter[T]) Start() {
+func (r *Resetter[T]) Start(context.Context) {
 	defer close(r.finished)
 
 loop:

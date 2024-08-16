@@ -97,7 +97,7 @@ func (s *UpdateScheduler) Name() string {
 	return "UpdateScheduler"
 }
 
-func (s *UpdateScheduler) Start() {
+func (s *UpdateScheduler) Start(ctx context.Context) {
 	// Make sure the update scheduler acts as an internal actor, so it can see all
 	// repos.
 	ctx, cancel := context.WithCancel(actor.WithInternalActor(context.Background()))

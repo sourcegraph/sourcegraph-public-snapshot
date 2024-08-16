@@ -24,7 +24,6 @@ go_library(
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/extsvc/github",
-        "//internal/httpcache",
         "//internal/observation",
         "//internal/rcache",
         "//internal/redispool",

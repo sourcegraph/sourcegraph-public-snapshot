@@ -87,7 +87,7 @@ func NewServer(addr string, logger log.Logger, c config.Config, bqWriter BigQuer
 
 func (s *Server) Name() string { return "build-tracker" }
 
-func (s *Server) Start() {
+func (s *Server) Start(context.Context) {
 	if err := s.http.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		s.logger.Error("error stopping server", log.Error(err))
 	}

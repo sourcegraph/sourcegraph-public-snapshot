@@ -6,16 +6,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/tokenusage"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 )
 
 func TestGetAllTokenUsageData(t *testing.T) {
+	ctx := tenant.TestContext()
 	rcache.SetupForTest(t)
 	manager := tokenusage.NewManager()
 	cache := rcache.NewWithTTL(redispool.Store, "LLMUsage", 1800)
-	cache.SetInt("LLMUsage:model1:feature1:stream:input", 10)
-	cache.SetInt("LLMUsage:model1:feature1:stream:output", 20)
+	cache.SetInt(ctx, "LLMUsage:model1:feature1:stream:input", 10)
+	cache.SetInt(ctx, "LLMUsage:model1:feature1:stream:output", 20)
 
-	usageSummary, err := manager.RetrieveAndResetTokenUsageData()
+	usageSummary, err := manager.RetrieveAndResetTokenUsageData(ctx)
 
 	if err != nil {
 		t.Error(err)
