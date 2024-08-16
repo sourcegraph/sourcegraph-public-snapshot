@@ -45,6 +45,7 @@ func AllowedEventTypes() EventTypes {
 			Action:  "*",
 			AllowedPrivateMetadataKeys: []string{
 				"languageId",
+				"otherCompletionProviders",
 			},
 		},
 		// The 'languageId' key is included for feature:'cody.hoverCommands' action: 'visible' events to provide
