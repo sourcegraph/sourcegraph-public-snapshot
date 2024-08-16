@@ -40,7 +40,7 @@ pipeline:
       extract: false
   - runs: |
       mkdir p4-fusion-src
-      tar -C p4-fusion-src -xzf 00c54b37be9cbf3b1b70a79fef55ce0e78945c06.tar.gz --strip 1
+      tar -C p4-fusion-src -xzf da9080587bc40ef9cf40690f315bcd8137677fdd.tar.gz --strip 1
 
   # Download OpenSSL
   - uses: fetch
