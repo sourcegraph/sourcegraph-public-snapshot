@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 
-import { Symbol, formatSymbol, parseSymbol } from './scip_symbol'
+import { type Symbol, formatSymbol, parseSymbol } from './scipSymbol'
 
 describe('parseSymbolName', () => {
     test('roundtrip', () => {

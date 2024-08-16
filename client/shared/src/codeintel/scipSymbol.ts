@@ -2,19 +2,19 @@ import P from 'parsimmon'
 
 export type Symbol = LocalSymbol | NonLocalSymbol
 
-export type LocalSymbol = {
+export interface LocalSymbol {
     kind: 'local'
     localID: string
 }
 
-export type NonLocalSymbol = {
+export interface NonLocalSymbol {
     kind: 'nonlocal'
     scheme: string
     package: Package
     descriptors: Descriptor[]
 }
 
-export type Package = {
+export interface Package {
     manager: string
     name: string
     version: string
