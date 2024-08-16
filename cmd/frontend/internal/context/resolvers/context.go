@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -235,72 +234,15 @@ func (r *Resolver) GetCodyContextAlternatives(ctx context.Context, args graphqlb
 
 // TODO(beyang): modify
 func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) (_ []graphqlbackend.ContextResultResolver, err error) {
-	repoIDs, err := graphqlbackend.UnmarshalRepositoryIDs(args.Repos)
+	alts, err := r.GetCodyContextAlternatives(ctx, args)
 	if err != nil {
 		return nil, err
 	}
-
-	var validatedFilePatterns []types.RegexpPattern
-	if args.FilePatterns != nil {
-		validatedFilePatterns = make([]types.RegexpPattern, 0, len(*args.FilePatterns))
-		for _, filePattern := range *args.FilePatterns {
-			validatedFilePattern, err := types.NewRegexpPattern(filePattern)
-			if err != nil {
-				return nil, errors.Wrapf(err, "invalid file pattern %q", filePattern)
-			}
-			validatedFilePatterns = append(validatedFilePatterns, validatedFilePattern)
-		}
-	}
-
-	repos, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
-	if err != nil {
-		return nil, err
-	}
-
-	repoNameIDs := make([]types.RepoIDName, len(repoIDs))
-	repoStats := make(map[api.RepoName]*idf.StatsProvider)
-	for i, repoID := range repoIDs {
-		repo, ok := repos[repoID]
-		if !ok {
-			// GetReposSetByIDs does not error if a repo could not be found.
-			return nil, errors.Newf("could not find repo with id %d", int32(repoID))
-		}
-
-		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repo.Name}
-
-		stats, err := idf.Get(ctx, r.logger, repo.Name)
-		if err != nil {
-			r.logger.Warn("Error getting idf index value for repo", log.Int32("repoID", int32(repoID)), log.Error(err))
-			continue
-		}
-		if stats == nil {
-			continue
-		}
-		repoStats[repo.Name] = stats
-	}
-
-	contextAlternatives, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
-		Repos:            repoNameIDs,
-		RepoStats:        repoStats,
-		FilePatterns:     validatedFilePatterns,
-		Query:            args.Query,
-		CodeResultsCount: args.CodeResultsCount,
-		TextResultsCount: args.TextResultsCount,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(contextAlternatives.ContextLists) == 0 {
+	contextLists := alts.ContextLists()
+	if len(contextLists) == 0 {
 		return nil, nil
 	}
-	fileChunks := contextAlternatives.ContextLists[0].FileChunks
-
-	tr, ctx := trace.New(ctx, "resolveChunks")
-	defer tr.EndWithErr(&err)
-
-	return iter.MapErr(fileChunks, func(fileChunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
-		return r.fileChunkToResolver(ctx, fileChunk)
-	})
+	return contextLists[0].ContextItems(ctx)
 }
 
 // ChatIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.

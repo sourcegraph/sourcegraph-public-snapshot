@@ -73,6 +73,7 @@ type ContextListResolver struct {
 func (r *ContextListResolver) ContextItems(ctx context.Context) (_ []ContextResultResolver, err error) {
 	tr, ctx := trace.New(ctx, "resolveChunks")
 	defer tr.EndWithErr(&err)
+
 	return iter.MapErr(r.ContextList.FileChunks, func(fileChunk *codycontext.FileChunkContext) (ContextResultResolver, error) {
 		return r.fileChunkToResolver(ctx, fileChunk)
 	})
