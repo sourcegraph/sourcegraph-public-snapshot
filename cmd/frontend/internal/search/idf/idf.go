@@ -12,7 +12,9 @@ import (
 	"io"
 	"log"
 	"math"
+	"path"
 	"strings"
+	"unicode"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -34,6 +36,13 @@ func Update(ctx context.Context, repoName api.RepoName) error {
 		return nil
 	}
 
+	permissibleExtensions := map[string]bool{
+		".py": true, ".js": true, ".ts": true, ".java": true, ".cpp": true,
+		".c": true, ".cs": true, ".go": true, ".rb": true, ".rs": true,
+		".php": true, ".html": true, ".css": true, ".scss": true, ".md": true,
+		".sh": true, ".swift": true, ".kt": true, ".m": true,
+	}
+
 	tr := tar.NewReader(r)
 	for {
 		header, err := tr.Next()
@@ -47,6 +56,13 @@ func Update(ctx context.Context, repoName api.RepoName) error {
 
 		// Skip directories
 		if header.Typeflag == tar.TypeDir {
+			continue
+		}
+
+		// Check if the file has a permissible extension
+		ext := strings.ToLower(path.Ext(header.Name))
+
+		if !permissibleExtensions[ext] {
 			continue
 		}
 
@@ -100,10 +116,29 @@ func NewStatsAggregator() *StatsAggregator {
 	}
 }
 
+func isValidWord(word string) bool {
+	if len(word) < 3 || len(word) > 20 {
+		return false
+	}
+	hasLetter := false
+	for _, char := range word {
+		if !unicode.IsLetter(char) && !unicode.IsNumber(char) {
+			return false
+		}
+		if unicode.IsLetter(char) {
+			hasLetter = true
+		}
+	}
+	return hasLetter
+}
+
 func (s *StatsAggregator) ProcessDoc(text string) {
-	for _, tok := range Tokenize(text) {
-		term := strings.ToLower((tok))
-		s.TermToDocCt[term]++
+	words := strings.Fields(text)
+	for _, word := range words {
+		// word = strings.ToLower(word)
+		if isValidWord(word) {
+			s.TermToDocCt[word]++
+		}
 	}
 	s.DoctCt++
 }
@@ -122,4 +157,8 @@ type StatsProvider struct {
 
 func (s *StatsProvider) GetIDF(term string) float32 {
 	return s.IDF[strings.ToLower(term)]
+}
+
+func (s *StatsProvider) GetTerms() map[string]float32 {
+	return s.IDF
 }
