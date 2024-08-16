@@ -35,7 +35,7 @@ func TestBufferedLogger(t *testing.T) {
 		// Test with a buffer size of 0, which should immediately submit events
 		b, _ := events.NewBufferedLogger(logtest.Scoped(t), handler, 0, 3)
 		wg := conc.NewWaitGroup()
-		wg.Go(b.Start)
+		wg.Go(func() { b.Start(ctx) })
 
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "foo"}))
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "bar"}))
@@ -82,7 +82,7 @@ func TestBufferedLogger(t *testing.T) {
 		workerCount := 3
 		b, _ := events.NewBufferedLogger(l, handler, bufferSize, workerCount)
 		wg := conc.NewWaitGroup()
-		wg.Go(b.Start)
+		wg.Go(func() { b.Start(ctx) })
 
 		// Send events that will block the queue.
 		for i := 1; i <= workerCount; i++ {
@@ -130,7 +130,7 @@ func TestBufferedLogger(t *testing.T) {
 		l, exportLogs := logtest.Captured(t)
 		b, _ := events.NewBufferedLogger(l, handler, 10, 3)
 		wg := conc.NewWaitGroup()
-		wg.Go(b.Start)
+		wg.Go(func() { b.Start(ctx) })
 
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "foo"}))
 

@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"errors"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"strings"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const (
@@ -196,7 +196,7 @@ func (t *Transport) RoundTrip(req *http.Request) (resp *http.Response, err error
 				R: resp.Body,
 				OnEOF: func(r io.Reader) {
 					resp := *resp
-					resp.Body = ioutil.NopCloser(r)
+					resp.Body = io.NopCloser(r)
 					respBytes, err := httputil.DumpResponse(&resp, true)
 					if err == nil {
 						t.Cache.Set(req.Context(), cacheKey, respBytes)

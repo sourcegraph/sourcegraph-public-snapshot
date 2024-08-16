@@ -89,10 +89,11 @@ func TestCombinedRoutines(t *testing.T) {
 		r1 := NewMockRoutine()
 		r2 := NewMockRoutine()
 		rs := CombinedRoutine{r1, r2}
-		rs.Start()
 
 		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(1*time.Second))
 		defer cancel()
+
+		rs.Start(ctx)
 		err := rs.Stop(ctx)
 		require.NoError(t, err)
 		mockrequire.Called(t, r1.StopFunc)
@@ -105,10 +106,11 @@ func TestCombinedRoutines(t *testing.T) {
 		r2.NameFunc.SetDefaultReturn("mock")
 		r2.StopFunc.SetDefaultReturn(errors.New("stop error"))
 		rs := CombinedRoutine{r1, r2}
-		rs.Start()
 
 		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(1*time.Second))
 		defer cancel()
+
+		rs.Start(ctx)
 		err := rs.Stop(ctx)
 		assert.EqualError(t, err, `stop routine "mock": stop error`)
 		mockrequire.Called(t, r1.StopFunc)
@@ -125,11 +127,12 @@ func TestCombinedRoutines(t *testing.T) {
 			return nil
 		})
 		rs := CombinedRoutine{r1, r2}
-		rs.Start()
 
 		// Context deadline is 50ms, which is half of the sleep time of r2.
 		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(50*time.Millisecond))
 		defer cancel()
+
+		rs.Start(ctx)
 		err := rs.Stop(ctx)
 		assert.EqualError(t, err, `unable to stop routines gracefully with partial errors: stop routine "mock": stop error: context deadline exceeded`)
 
