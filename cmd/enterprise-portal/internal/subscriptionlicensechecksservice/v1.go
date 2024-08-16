@@ -60,10 +60,19 @@ func (h *handlerV1) CheckLicenseKey(ctx context.Context, req *connect.Request[su
 			errors.New("instance_id is required"))
 	}
 
+	tr := trace.FromContext(ctx)
 	logger := trace.Logger(ctx, h.logger).With(
 		log.String("instanceID", instanceID))
 
-	tr := trace.FromContext(ctx)
+	if h.store.BypassAllLicenseChecks() {
+		logger.Warn("bypassing license check")
+		tr.SetAttributes(attribute.Bool("bypass", true))
+		return &connect.Response[subscriptionlicensechecksv1.CheckLicenseKeyResponse]{
+			Msg: &subscriptionlicensechecksv1.CheckLicenseKeyResponse{
+				Valid: true,
+			},
+		}, nil
+	}
 
 	// HACK: For back-compat with old license check, try to look for a format
 	// that looks like a license key hash token. Remove in Sourcegraph 5.8
