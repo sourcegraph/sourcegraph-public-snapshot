@@ -77,6 +77,11 @@ type SubscriptionLicense struct {
 	// Value shapes correspond to API types appropriate for each
 	// 'EnterpriseSubscriptionLicenseType'.
 	LicenseData json.RawMessage `gorm:"type:jsonb"`
+
+	// DetectedInstanceID is the identifier of the Sourcegraph instance that has
+	// been automatically detected via onlince license checks (subscriptionlicensechecks).
+	// It should only be used internally for reference.
+	DetectedInstanceID *string
 }
 
 // subscriptionLicenseWithConditionsColumns must match scanSubscriptionLicense()
@@ -92,6 +97,8 @@ func subscriptionLicenseWithConditionsColumns() []string {
 
 		"license_type",
 		"license_data",
+
+		"detected_instance_id",
 
 		subscriptionLicenseConditionJSONBAgg(),
 	}
@@ -113,6 +120,7 @@ func scanSubscriptionLicenseWithConditions(row pgx.Row) (*LicenseWithConditions,
 		&l.ExpireAt,
 		&l.LicenseType,
 		&l.LicenseData,
+		&l.DetectedInstanceID,
 		&l.Conditions, // see subscriptionLicenseConditionJSONBAgg docstring
 	)
 	return &l, err
@@ -132,10 +140,19 @@ func NewLicensesStore(db *pgxpool.Pool) *LicensesStore {
 }
 
 type ListLicensesOpts struct {
-	SubscriptionID          string
-	LicenseType             subscriptionsv1.EnterpriseSubscriptionLicenseType
-	LicenseKeySubstring     string
+	SubscriptionID string
+	LicenseType    subscriptionsv1.EnterpriseSubscriptionLicenseType
+	// LicenseKey is an exact match on the signed key.
+	LicenseKey string
+	// LicenseKeySubstring is a substring match on the signed key.
+	LicenseKeySubstring string
+
 	SalesforceOpportunityID string
+
+	// LicenseKeyHash should be removed once subscriptionlicensechecks no longer
+	// supports the old key hash format
+	LicenseKeyHash []byte
+
 	// PageSize is the maximum number of licenses to return.
 	PageSize int
 }
@@ -155,6 +172,11 @@ func (opts ListLicensesOpts) toQueryConditions() (where, limitClause string, _ p
 
 	switch opts.LicenseType {
 	case subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY:
+		if opts.LicenseKey != "" {
+			whereConds = append(whereConds,
+				"license_data->>'SignedKey' = @licenseKey")
+			namedArgs["licenseKey"] = opts.LicenseKey
+		}
 		if opts.LicenseKeySubstring != "" {
 			whereConds = append(whereConds,
 				"license_data->>'SignedKey' LIKE  '%' || @licenseKeySubstring || '%'")
@@ -164,6 +186,11 @@ func (opts ListLicensesOpts) toQueryConditions() (where, limitClause string, _ p
 			whereConds = append(whereConds,
 				"license_data->'Info'->>'sf_opp_id' = @salesforceOpportunityID")
 			namedArgs["salesforceOpportunityID"] = opts.SalesforceOpportunityID
+		}
+		if opts.LicenseKeyHash != nil {
+			whereConds = append(whereConds,
+				"DIGEST(license_data->>'SignedKey','sha256') = @licenseKeyHash")
+			namedArgs["licenseKeyHash"] = opts.LicenseKeyHash
 		}
 	}
 
@@ -409,7 +436,7 @@ func (s *LicensesStore) Revoke(ctx context.Context, licenseID string, opts Revok
 		return nil, errors.Wrap(err, "begin transaction")
 	}
 	defer func() {
-		if rollbackErr := tx.Rollback(context.Background()); rollbackErr != nil {
+		if rollbackErr := tx.Rollback(context.WithoutCancel(ctx)); rollbackErr != nil {
 			err = errors.Append(err, rollbackErr)
 		}
 	}()
@@ -441,4 +468,60 @@ WHERE id = @licenseID
 	}
 
 	return s.Get(ctx, licenseID)
+}
+
+type SetDetectedInstanceOpts struct {
+	// InstanceID is the ID of the instance that was detected to be using this
+	// license.
+	InstanceID string
+	// Message to associate with the detection event.
+	Message string
+	// If nil, the detection time will be set to the current time.
+	Time *utctime.Time
+}
+
+// SetDetectedInstance sets the instance ID that was detected to be using this
+// license.
+func (s *LicensesStore) SetDetectedInstance(ctx context.Context, licenseID string, opts SetDetectedInstanceOpts) error {
+	if opts.Time == nil {
+		opts.Time = pointers.Ptr(utctime.Now())
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return errors.Wrap(err, "begin transaction")
+	}
+	defer func() {
+		if rollbackErr := tx.Rollback(context.WithoutCancel(ctx)); rollbackErr != nil {
+			err = errors.Append(err, rollbackErr)
+		}
+	}()
+
+	if _, err := tx.Exec(ctx, `
+UPDATE enterprise_portal_subscription_licenses
+SET detected_instance_id = @instanceID
+WHERE id = @licenseID
+`, pgx.NamedArgs{
+		"instanceID": opts.InstanceID,
+		"licenseID":  licenseID,
+	}); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrSubscriptionLicenseNotFound
+		}
+		return errors.Wrap(err, "update detected instance for license")
+	}
+
+	if err := newLicenseConditionsStore(tx).createLicenseCondition(ctx, licenseID, createLicenseConditionOpts{
+		Status:         subscriptionsv1.EnterpriseSubscriptionLicenseCondition_STATUS_INSTANCE_USAGE_DETECTED,
+		Message:        opts.Message,
+		TransitionTime: *opts.Time,
+	}); err != nil {
+		return errors.Wrap(err, "create license condition")
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return errors.Wrap(err, "commit transaction")
+	}
+
+	return nil
 }

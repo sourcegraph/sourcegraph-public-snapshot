@@ -582,12 +582,20 @@ export enum EnterpriseSubscriptionLicenseCondition_Status {
    * @generated from enum value: STATUS_REVOKED = 2;
    */
   REVOKED = 2,
+
+  /**
+   * License usage from a Sourcegraph instance was detected.
+   *
+   * @generated from enum value: STATUS_INSTANCE_USAGE_DETECTED = 3;
+   */
+  INSTANCE_USAGE_DETECTED = 3,
 }
 // Retrieve enum metadata with: proto3.getEnumType(EnterpriseSubscriptionLicenseCondition_Status)
 proto3.util.setEnumType(EnterpriseSubscriptionLicenseCondition_Status, "enterpriseportal.subscriptions.v1.EnterpriseSubscriptionLicenseCondition.Status", [
   { no: 0, name: "STATUS_UNSPECIFIED" },
   { no: 1, name: "STATUS_CREATED" },
   { no: 2, name: "STATUS_REVOKED" },
+  { no: 3, name: "STATUS_INSTANCE_USAGE_DETECTED" },
 ]);
 
 /**

@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,14 +23,17 @@ import (
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcoauth"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 
 	codyaccessv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/codyaccess/v1"
+	subscriptionlicensechecks "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptionlicensechecks/v1"
 	subscriptionsv1 "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1"
 )
 
 type Clients struct {
 	Subscriptions subscriptionsv1.SubscriptionsServiceClient
 	CodyAccess    codyaccessv1.CodyAccessServiceClient
+	LicenseChecks subscriptionlicensechecks.SubscriptionLicenseChecksServiceClient
 }
 
 func newE2EClients(t *testing.T) *Clients {
@@ -80,9 +84,15 @@ func newE2EClients(t *testing.T) *Clients {
 	require.NoError(t, err)
 	t.Cleanup(func() { _ = client.Close() })
 
+	clientWithoutCreds, err := grpc.NewClient("dns:///"+addr.Host,
+		defaults.DialOptions(logtest.Scoped(t).Scoped("grpc"))...)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = clientWithoutCreds.Close() })
+
 	return &Clients{
 		Subscriptions: subscriptionsv1.NewSubscriptionsServiceClient(client),
 		CodyAccess:    codyaccessv1.NewCodyAccessServiceClient(client),
+		LicenseChecks: subscriptionlicensechecks.NewSubscriptionLicenseChecksServiceClient(clientWithoutCreds),
 	}
 }
 
@@ -160,6 +170,7 @@ func runLifecycleTest(t *testing.T, ctx context.Context, clients *Clients, runID
 	})
 
 	var createdLicenseID string
+	var createdLicenseKey string
 	t.Run("Create license", func(t *testing.T) {
 		got, err := clients.Subscriptions.CreateEnterpriseSubscriptionLicense(ctx, &subscriptionsv1.CreateEnterpriseSubscriptionLicenseRequest{
 			License: &subscriptionsv1.EnterpriseSubscriptionLicense{
@@ -178,6 +189,7 @@ func runLifecycleTest(t *testing.T, ctx context.Context, clients *Clients, runID
 		})
 		require.NoError(t, err)
 		createdLicenseID = got.GetLicense().GetId()
+		createdLicenseKey = got.GetLicense().GetKey().GetLicenseKey()
 		prettyPrint(t, got)
 	})
 
@@ -224,6 +236,34 @@ func runLifecycleTest(t *testing.T, ctx context.Context, clients *Clients, runID
 		prettyPrint(t, got)
 	})
 
+	t.Run("Check license", func(t *testing.T) {
+		got, err := clients.LicenseChecks.CheckLicenseKey(ctx, &subscriptionlicensechecks.CheckLicenseKeyRequest{
+			InstanceId: "test-instance-id",
+			LicenseKey: createdLicenseKey,
+		})
+		require.NoError(t, err)
+		assert.True(t, got.GetValid())
+
+		t.Run("back-compat with license key token", func(t *testing.T) {
+			got, err := clients.LicenseChecks.CheckLicenseKey(ctx, &subscriptionlicensechecks.CheckLicenseKeyRequest{
+				InstanceId: "test-instance-id",
+				LicenseKey: license.GenerateLicenseKeyBasedAccessToken(createdLicenseKey),
+			})
+			require.NoError(t, err)
+			assert.True(t, got.GetValid())
+		})
+
+		t.Run("with wrong site ID", func(t *testing.T) {
+			got, err := clients.LicenseChecks.CheckLicenseKey(ctx, &subscriptionlicensechecks.CheckLicenseKeyRequest{
+				InstanceId: "wrong-instance-id",
+				LicenseKey: createdLicenseKey,
+			})
+			require.NoError(t, err)
+			assert.False(t, got.GetValid())
+			autogold.Expect("license has already been used by another instance").Equal(t, got.GetReason())
+		})
+	})
+
 	t.Run("Revoke license", func(t *testing.T) {
 		got, err := clients.Subscriptions.RevokeEnterpriseSubscriptionLicense(ctx, &subscriptionsv1.RevokeEnterpriseSubscriptionLicenseRequest{
 			LicenseId: createdLicenseID,
@@ -240,6 +280,16 @@ func runLifecycleTest(t *testing.T, ctx context.Context, clients *Clients, runID
 			require.NoError(t, err)
 			prettyPrint(t, got)
 		})
+	})
+
+	t.Run("Check revoked license", func(t *testing.T) {
+		got, err := clients.LicenseChecks.CheckLicenseKey(ctx, &subscriptionlicensechecks.CheckLicenseKeyRequest{
+			InstanceId: "test-instance-id",
+			LicenseKey: createdLicenseKey,
+		})
+		require.NoError(t, err)
+		assert.False(t, got.GetValid())
+		autogold.Expect("license has been revoked").Equal(t, got.GetReason())
 	})
 
 	t.Run("Archive subscription", func(t *testing.T) {

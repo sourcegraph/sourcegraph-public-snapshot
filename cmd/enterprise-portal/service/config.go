@@ -43,6 +43,8 @@ type Config struct {
 		RequiredTags []string
 	}
 
+	SubscriptionLicenseChecksSlackWebhookURL *string
+
 	LicenseExpirationChecker licenseexpiration.Config
 
 	SubscriptionsServiceSlackWebhookURL *string
@@ -114,6 +116,10 @@ func (c *Config) Load(env *runtime.Env) {
 		}
 		return strings.Split(*tags, ",")
 	}()
+
+	c.SubscriptionLicenseChecksSlackWebhookURL = env.GetOptional(
+		"SUBSCRIPTION_LICENSE_CHECKS_SLACK_WEBHOOK_URL",
+		"Destination webhook for subscription license check messages. If not set, messages are logged.")
 
 	c.LicenseExpirationChecker.Interval = env.GetOptionalInterval(
 		"LICENSE_EXPIRATION_CHECKER_INTERVAL",
