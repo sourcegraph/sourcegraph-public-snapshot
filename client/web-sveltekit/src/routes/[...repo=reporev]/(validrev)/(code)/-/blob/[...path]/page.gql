@@ -17,6 +17,27 @@ query BlobDiffViewCommitQuery($repoName: String!, $revspec: String!, $path: Stri
     }
 }
 
+query BlobDiffViewChangelistQuery($repoName: String!, $cid: String!, $path: String!) {
+    repository(name: $repoName) {
+        id
+        changelist(cid: $cid) {
+            cid
+            canonicalURL
+            commit {
+                id
+                perforceChangelist {
+                    cid
+                    canonicalURL
+                }
+                blob(path: $path) {
+                    ...DiffViewGitBlob
+                }
+                ...DiffViewCommit
+            }
+        }
+    }
+}
+
 query BlobFileViewBlobQuery($repoName: String!, $revspec: String!, $path: String!) {
     repository(name: $repoName) {
         id

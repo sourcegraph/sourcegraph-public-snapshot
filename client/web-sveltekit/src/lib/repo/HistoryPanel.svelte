@@ -72,7 +72,12 @@
                         </td>
                         <td class="subject">
                             {#if enableInlineDiff}
-                                <a href={selected ? closeURL : `?rev=${commit.oid}&diff=1`}>{commit.subject}</a>
+                                <a
+                                    href={selected
+                                        ? closeURL
+                                        : `?rev=${isPerforceDepot ? `${revType}%2f${revID}` : revID}&diff=1`}
+                                    >{commit.subject}</a
+                                >
                             {:else}
                                 {commit.subject}
                             {/if}

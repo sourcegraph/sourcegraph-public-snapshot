@@ -19,6 +19,7 @@ import { assertNonNullable } from '$lib/utils'
 import type { PageLoad, PageLoadEvent } from './$types'
 import type { FileViewCodeGraphData } from './FileView.gql'
 import {
+    BlobDiffViewChangelistQuery,
     BlobDiffViewCommitQuery,
     BlobFileViewBlobQuery,
     BlobFileViewCodeGraphDataQuery,
@@ -32,10 +33,26 @@ async function loadDiffView({ params, url }: PageLoadEvent) {
     const revisionOverride = url.searchParams.get('rev')
     const { repoName } = parseRepoRevision(params.repo)
     const filePath = decodeURIComponent(params.path)
+    const revParam = url.searchParams.get('rev')
+    const isPerforceDepot = revParam?.includes('changelist')
+    const cid = revParam?.replace('changelist/', '')
 
     assertNonNullable(revisionOverride, 'revisionOverride is set')
 
-    return {
+    return isPerforceDepot ? {
+        type: 'DiffView' as const,
+        enableInlineDiff: true,
+        enableViewAtCommit: true,
+        filePath,
+        commit: client
+            .query(BlobDiffViewChangelistQuery, {
+                repoName,
+                // @TODO: do better.
+                cid: cid!,
+                path: filePath,
+            })
+            .then(mapOrThrow(result => result.data?.repository?.changelist?.commit ?? null)),
+    } : {
         type: 'DiffView' as const,
         enableInlineDiff: true,
         enableViewAtCommit: true,
@@ -197,11 +214,11 @@ async function loadFileView({ parent, params, url }: PageLoadEvent) {
         // We can ignore the error because if the revision doesn't exist, other queries will fail as well
         revisionOverride: revisionOverride
             ? await client
-                  .query(BlobFileViewCommitQuery_revisionOverride, {
-                      repoName,
-                      revspec: revisionOverride,
-                  })
-                  .then(result => result.data?.repository?.commit)
+                .query(BlobFileViewCommitQuery_revisionOverride, {
+                    repoName,
+                    revspec: revisionOverride,
+                })
+                .then(result => result.data?.repository?.commit)
             : null,
         externalServiceType: parent()
             .then(({ resolvedRevision }) => resolvedRevision.repo?.externalRepository?.serviceType)
