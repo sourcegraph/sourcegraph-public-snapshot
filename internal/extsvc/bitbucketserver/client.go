@@ -304,17 +304,15 @@ func (c *Client) UserPermissions(ctx context.Context, username string) (perms []
 		Permission Perm  `json:"permission"`
 	}
 
-	var ps []permission
-	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &struct {
+	resp := &struct {
 		Values []permission `json:"values"`
-	}{
-		Values: ps,
-	})
+	}{}
+	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, p := range ps {
+	for _, p := range resp.Values {
 		if p.User.Name == username {
 			perms = append(perms, p.Permission)
 		}
