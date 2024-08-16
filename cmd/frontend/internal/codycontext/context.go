@@ -3,6 +3,7 @@ package codycontext
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 
@@ -283,8 +284,10 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
 	// would not be using query text manipulation for this and would be using
 	// the job structs directly.
-	transformedQuery := getTransformedQuery(args)
+	var maxTermsPerWord = 5
+	transformedQuery := getTransformedQuery(args, maxTermsPerWord)
 	lg.Printf("# userQuery -> transformedQuery: %q -> %q", args.Query, transformedQuery)
+	fmt.Printf("# userQuery -> transformedQuery: %q -> %q", args.Query, transformedQuery)
 	keywordQuery := fmt.Sprintf(`repo:%s %s %s`, reposAsRegexp(args.Repos), getKeywordContextExcludeFilePathsQuery(), transformedQuery)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -380,7 +383,7 @@ func fileMatchToContextMatch(fm *result.FileMatch) FileChunkContext {
 	}
 }
 
-func getTransformedQuery(args GetContextArgs) string {
+func getTransformedQuery(args GetContextArgs, maxTermsPerWord int) string {
 	if args.RepoStats == nil {
 		lg.Printf("# no stats set")
 		return args.Query
@@ -394,21 +397,36 @@ func getTransformedQuery(args GetContextArgs) string {
 		}
 	}
 
-	// TODO(beyang): the semantics of what we want to do here aren't super clear.
-	// Do we want to preserve the wholeness of the "words" the user types in (the tokens are camelcased tokenized).
-	// Probably, otherwise the transformed query will yield noisier results.
-	queryToks := idf.Tokenize(args.Query)
+	// TODO(rishabh): currently we are just picking up top-k vocab terms based on idf scores, but we can do a better semantic ranking of terms
+	// current matching is fairly limited based on substring matching, but perhaps stemming/lemmatization might be considered?
+
 	var filteredToks []string
+	// var maxTermsPerWord = 5
 
-	const idfThresh = 0.2
-	for _, qtok := range queryToks {
+	type termScore struct {
+		term  string
+		score float32
+	}
 
+	for _, word := range strings.Fields(args.Query) {
+		if len(word) < 4 {
+			continue
+		}
+		var matches []termScore
 		for _, stats := range args.RepoStats {
-			if stats.GetIDF(qtok) < idfThresh {
-				continue
+			for term, score := range stats.GetTerms() {
+				if strings.Contains(term, word) && len(term) > 4 && score > 3 {
+					matches = append(matches, termScore{term: term, score: score})
+				}
 			}
-			filteredToks = append(filteredToks, qtok)
+		}
+		sort.Slice(matches, func(i, j int) bool {
+			return matches[i].score > matches[j].score
+		})
+		for i := 0; i < min(maxTermsPerWord, len(matches)); i++ {
+			filteredToks = append(filteredToks, matches[i].term)
 		}
 	}
+
 	return strings.Join(filteredToks, " ")
 }
