@@ -139,9 +139,10 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 		subscriptionlicensechecksservice.NewStoreV1(
 			logger,
 			subscriptionlicensechecksservice.NewStoreV1Options{
-				DB:               dbHandle,
-				SlackWebhookURL:  config.SubscriptionLicenseChecksSlackWebhookURL,
-				LicenseKeySigner: config.LicenseKeys.Signer,
+				DB:                     dbHandle,
+				SlackWebhookURL:        config.SubscriptionLicenseChecks.SlackWebhookURL,
+				LicenseKeySigner:       config.LicenseKeys.Signer,
+				BypassAllLicenseChecks: config.SubscriptionLicenseChecks.BypassAllChecks,
 			},
 		),
 		connect.WithInterceptors(otelConnectInterceptor),

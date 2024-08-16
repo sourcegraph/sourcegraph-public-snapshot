@@ -20,6 +20,9 @@ import (
 // github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionlicensechecksservice)
 // used for unit testing.
 type MockStoreV1 struct {
+	// BypassAllLicenseChecksFunc is an instance of a mock function object
+	// controlling the behavior of the method BypassAllLicenseChecks.
+	BypassAllLicenseChecksFunc *StoreV1BypassAllLicenseChecksFunc
 	// GetByLicenseKeyFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByLicenseKey.
 	GetByLicenseKeyFunc *StoreV1GetByLicenseKeyFunc
@@ -44,6 +47,11 @@ type MockStoreV1 struct {
 // return zero values for all results, unless overwritten.
 func NewMockStoreV1() *MockStoreV1 {
 	return &MockStoreV1{
+		BypassAllLicenseChecksFunc: &StoreV1BypassAllLicenseChecksFunc{
+			defaultHook: func() (r0 bool) {
+				return
+			},
+		},
 		GetByLicenseKeyFunc: &StoreV1GetByLicenseKeyFunc{
 			defaultHook: func(context.Context, string) (r0 *subscriptions.SubscriptionLicense, r1 error) {
 				return
@@ -81,6 +89,11 @@ func NewMockStoreV1() *MockStoreV1 {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockStoreV1() *MockStoreV1 {
 	return &MockStoreV1{
+		BypassAllLicenseChecksFunc: &StoreV1BypassAllLicenseChecksFunc{
+			defaultHook: func() bool {
+				panic("unexpected invocation of MockStoreV1.BypassAllLicenseChecks")
+			},
+		},
 		GetByLicenseKeyFunc: &StoreV1GetByLicenseKeyFunc{
 			defaultHook: func(context.Context, string) (*subscriptions.SubscriptionLicense, error) {
 				panic("unexpected invocation of MockStoreV1.GetByLicenseKey")
@@ -118,6 +131,9 @@ func NewStrictMockStoreV1() *MockStoreV1 {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreV1From(i StoreV1) *MockStoreV1 {
 	return &MockStoreV1{
+		BypassAllLicenseChecksFunc: &StoreV1BypassAllLicenseChecksFunc{
+			defaultHook: i.BypassAllLicenseChecks,
+		},
 		GetByLicenseKeyFunc: &StoreV1GetByLicenseKeyFunc{
 			defaultHook: i.GetByLicenseKey,
 		},
@@ -137,6 +153,107 @@ func NewMockStoreV1From(i StoreV1) *MockStoreV1 {
 			defaultHook: i.SetDetectedInstance,
 		},
 	}
+}
+
+// StoreV1BypassAllLicenseChecksFunc describes the behavior when the
+// BypassAllLicenseChecks method of the parent MockStoreV1 instance is
+// invoked.
+type StoreV1BypassAllLicenseChecksFunc struct {
+	defaultHook func() bool
+	hooks       []func() bool
+	history     []StoreV1BypassAllLicenseChecksFuncCall
+	mutex       sync.Mutex
+}
+
+// BypassAllLicenseChecks delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStoreV1) BypassAllLicenseChecks() bool {
+	r0 := m.BypassAllLicenseChecksFunc.nextHook()()
+	m.BypassAllLicenseChecksFunc.appendCall(StoreV1BypassAllLicenseChecksFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// BypassAllLicenseChecks method of the parent MockStoreV1 instance is
+// invoked and the hook queue is empty.
+func (f *StoreV1BypassAllLicenseChecksFunc) SetDefaultHook(hook func() bool) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BypassAllLicenseChecks method of the parent MockStoreV1 instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreV1BypassAllLicenseChecksFunc) PushHook(hook func() bool) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreV1BypassAllLicenseChecksFunc) SetDefaultReturn(r0 bool) {
+	f.SetDefaultHook(func() bool {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreV1BypassAllLicenseChecksFunc) PushReturn(r0 bool) {
+	f.PushHook(func() bool {
+		return r0
+	})
+}
+
+func (f *StoreV1BypassAllLicenseChecksFunc) nextHook() func() bool {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreV1BypassAllLicenseChecksFunc) appendCall(r0 StoreV1BypassAllLicenseChecksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreV1BypassAllLicenseChecksFuncCall
+// objects describing the invocations of this function.
+func (f *StoreV1BypassAllLicenseChecksFunc) History() []StoreV1BypassAllLicenseChecksFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreV1BypassAllLicenseChecksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreV1BypassAllLicenseChecksFuncCall is an object that describes an
+// invocation of method BypassAllLicenseChecks on an instance of
+// MockStoreV1.
+type StoreV1BypassAllLicenseChecksFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreV1BypassAllLicenseChecksFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreV1BypassAllLicenseChecksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreV1GetByLicenseKeyFunc describes the behavior when the

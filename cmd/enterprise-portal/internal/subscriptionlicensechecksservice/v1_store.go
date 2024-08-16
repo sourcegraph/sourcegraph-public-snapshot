@@ -22,6 +22,11 @@ import (
 type StoreV1 interface {
 	Now() time.Time
 
+	// BypassAllLicenseChecks, if true, indicates that all license checks should
+	// return valid. It is an escape hatch to ensure nobody is bricked in an
+	// incident.
+	BypassAllLicenseChecks() bool
+
 	// GetByLicenseKey returns the SubscriptionLicense with the given license key.
 	// If no such SubscriptionLicense exists, it returns (nil, nil).
 	//
@@ -48,28 +53,36 @@ type NewStoreV1Options struct {
 	// LicenseKeySigner is the SSH signer to use for signing license keys. It is
 	// used here for validation only.
 	LicenseKeySigner ssh.Signer
+	// BypassAllLicenseChecks, if true, indicates that all license checks should
+	// return valid. It is an escape hatch to ensure nobody is bricked in an
+	// incident.
+	BypassAllLicenseChecks bool
 }
 
 // NewStoreV1 returns a new StoreV1 using the given resource handles.
 func NewStoreV1(logger log.Logger, opts NewStoreV1Options) StoreV1 {
 	return &storeV1{
-		logger:           logger,
-		licenses:         opts.DB.Subscriptions().Licenses(),
-		subscriptions:    opts.DB.Subscriptions(),
-		slackWebhookURL:  opts.SlackWebhookURL,
-		licensePublicKey: opts.LicenseKeySigner.PublicKey(),
+		logger:                 logger,
+		licenses:               opts.DB.Subscriptions().Licenses(),
+		subscriptions:          opts.DB.Subscriptions(),
+		slackWebhookURL:        opts.SlackWebhookURL,
+		licensePublicKey:       opts.LicenseKeySigner.PublicKey(),
+		bypassAllLicenseChecks: opts.BypassAllLicenseChecks,
 	}
 }
 
 type storeV1 struct {
-	logger           log.Logger
-	licenses         *subscriptions.LicensesStore
-	subscriptions    *subscriptions.Store
-	slackWebhookURL  *string
-	licensePublicKey ssh.PublicKey
+	logger                 log.Logger
+	licenses               *subscriptions.LicensesStore
+	subscriptions          *subscriptions.Store
+	slackWebhookURL        *string
+	licensePublicKey       ssh.PublicKey
+	bypassAllLicenseChecks bool
 }
 
 func (s *storeV1) Now() time.Time { return time.Now() }
+
+func (s *storeV1) BypassAllLicenseChecks() bool { return s.bypassAllLicenseChecks }
 
 var errInvalidLicensekey = errors.New("key is invalid")
 

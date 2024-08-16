@@ -100,14 +100,24 @@ func TestCheckLicenseKey(t *testing.T) {
 	})
 
 	for _, tc := range []struct {
-		name       string
-		req        *subscriptionlicensechecksv1.CheckLicenseKeyRequest
+		name   string
+		req    *subscriptionlicensechecksv1.CheckLicenseKeyRequest
+		bypass bool
+
 		wantResult autogold.Value
 		wantErr    autogold.Value
 
 		wantSetDetectedInstance autogold.Value
 		wantPostToSlack         autogold.Value
 	}{{
+		name: "bypass enabled",
+		req: &subscriptionlicensechecksv1.CheckLicenseKeyRequest{
+			InstanceId: "instance-id",
+			LicenseKey: "license-key",
+		},
+		bypass:     true,
+		wantResult: autogold.Expect(map[string]interface{}{"reason": "", "valid": true}),
+	}, {
 		name: "instance_id required",
 		req: &subscriptionlicensechecksv1.CheckLicenseKeyRequest{
 			InstanceId: "",
@@ -174,6 +184,7 @@ func TestCheckLicenseKey(t *testing.T) {
 			// Clone the underlying mock store, to avoid polluting other test
 			// cases
 			store := NewMockStoreV1From(store)
+			store.BypassAllLicenseChecksFunc.SetDefaultReturn(tc.bypass)
 
 			h := &handlerV1{
 				logger: logtest.Scoped(t),

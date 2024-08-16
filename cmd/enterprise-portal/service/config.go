@@ -43,7 +43,10 @@ type Config struct {
 		RequiredTags []string
 	}
 
-	SubscriptionLicenseChecksSlackWebhookURL *string
+	SubscriptionLicenseChecks struct {
+		BypassAllChecks bool
+		SlackWebhookURL *string
+	}
 
 	LicenseExpirationChecker licenseexpiration.Config
 
@@ -117,7 +120,10 @@ func (c *Config) Load(env *runtime.Env) {
 		return strings.Split(*tags, ",")
 	}()
 
-	c.SubscriptionLicenseChecksSlackWebhookURL = env.GetOptional(
+	c.SubscriptionLicenseChecks.BypassAllChecks = env.GetBool(
+		"SUBSCRIPTION_LICENSE_CHECKS_BYPASS_ALL_CHECKS", "false",
+		"Set to true to bypass all checks for subscription licenses.")
+	c.SubscriptionLicenseChecks.SlackWebhookURL = env.GetOptional(
 		"SUBSCRIPTION_LICENSE_CHECKS_SLACK_WEBHOOK_URL",
 		"Destination webhook for subscription license check messages. If not set, messages are logged.")
 
