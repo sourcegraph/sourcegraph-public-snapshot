@@ -395,7 +395,7 @@ func getTransformedQuery(args GetContextArgs, maxTermsPerWord int) string {
 	}
 
 	for _, repo := range args.Repos {
-		if _, ok := args.RepoStats[repo.Name]; !ok {
+		if stats, ok := args.RepoStats[repo.Name]; !ok || stats == nil {
 			// Don't transform query if one of the repositories lacks an IDF table
 			return args.Query
 		}

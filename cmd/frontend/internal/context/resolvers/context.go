@@ -212,6 +212,9 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 			r.logger.Warn("Error getting idf index value for repo", log.Int32("repoID", int32(repoID)), log.Error(err))
 			continue
 		}
+		if stats == nil {
+			continue
+		}
 		repoStats[repo.Name] = stats
 	}
 
