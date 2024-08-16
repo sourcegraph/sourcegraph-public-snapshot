@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	lg "log"
 	"net/http"
 	"time"
 
@@ -208,9 +207,9 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 
 		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repo.Name}
 
-		stats, err := idf.Get(ctx, repo.Name)
+		stats, err := idf.Get(ctx, r.logger, repo.Name)
 		if err != nil {
-			lg.Printf("Unexpected error getting idf index value for repo %v: %v", repoID, err)
+			r.logger.Warn("Error getting idf index value for repo", log.Int32("repoID", int32(repoID)), log.Error(err))
 			continue
 		}
 		repoStats[repo.Name] = stats

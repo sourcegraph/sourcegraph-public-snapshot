@@ -7,8 +7,6 @@ import (
 	"strings"
 	"sync"
 
-	lg "log"
-
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
@@ -289,16 +287,13 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	// would not be using query text manipulation for this and would be using
 	// the job structs directly.
 	var maxTermsPerWord = 5
-	transformedQuery := getTransformedQuery(args, maxTermsPerWord)
-	lg.Printf("# userQuery -> transformedQuery: %q -> %q", args.Query, transformedQuery)
-	fmt.Printf("# userQuery -> transformedQuery: %q -> %q", args.Query, transformedQuery)
-
+	transformedQuery := getTransformedQuery(args, maxTermsPerWord) // TODO(beyang): track this or alternatives in the response
 	keywordQuery := fmt.Sprintf(
 		`repo:%s file:%s %s %s`,
 		reposAsRegexp(args.Repos),
 		"(?:"+strings.Join(cast.ToStrings(args.FilePatterns), "|")+")",
 		getKeywordContextExcludeFilePathsQuery(),
-		args.Query,
+		transformedQuery,
 	)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -396,14 +391,12 @@ func fileMatchToContextMatch(fm *result.FileMatch) FileChunkContext {
 
 func getTransformedQuery(args GetContextArgs, maxTermsPerWord int) string {
 	if args.RepoStats == nil {
-		lg.Printf("# no stats set")
 		return args.Query
 	}
 
 	for _, repo := range args.Repos {
 		if _, ok := args.RepoStats[repo.Name]; !ok {
 			// Don't transform query if one of the repositories lacks an IDF table
-			lg.Printf("# didn't find stats for repo %s", repo.Name)
 			return args.Query
 		}
 	}
@@ -412,7 +405,6 @@ func getTransformedQuery(args GetContextArgs, maxTermsPerWord int) string {
 	// current matching is fairly limited based on substring matching, but perhaps stemming/lemmatization might be considered?
 
 	var filteredToks []string
-	// var maxTermsPerWord = 5
 
 	type termScore struct {
 		term  string

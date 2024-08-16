@@ -1,6 +1,4 @@
 // Package idf computes and stores the inverse document frequency (IDF) of a set of repositories.
-//
-// TODO(beyang): should probably move this elsewhere
 package idf
 
 import (
@@ -10,23 +8,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"path"
 	"strings"
 	"unicode"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const featureFlagName = "enhanced-index"
+
 var redisCache = rcache.NewWithTTL(redispool.Cache, "idf-index", 10*24*60*60)
 
-func Update(ctx context.Context, repoName api.RepoName) error {
-	fmt.Printf("# idf.Update(%v)\n", repoName)
+func Update(ctx context.Context, logger log.Logger, repoName api.RepoName) error {
+	if !featureflag.FromContext(ctx).GetBoolOr(featureFlagName, false) {
+		return nil
+	}
 
 	stats := NewStatsAggregator()
 
@@ -50,7 +54,7 @@ func Update(ctx context.Context, repoName api.RepoName) error {
 			break // End of archive
 		}
 		if err != nil {
-			log.Printf("Error reading next tar header: %v", err)
+			logger.Error("Error reading next tar header", log.Error(err))
 			continue
 		}
 
@@ -71,25 +75,22 @@ func Update(ctx context.Context, repoName api.RepoName) error {
 		if scanner.Scan() {
 			stats.ProcessDoc(scanner.Text())
 		} else if err := scanner.Err(); err != nil {
-			log.Printf("Error reading file content: %v", err)
+			logger.Error("Error reading file content", log.Error(err))
 		}
 	}
 
 	statsP := stats.EvalProvider()
 	statsBytes, err := json.Marshal(statsP)
-
-	log.Printf("# storing stats: %s", string(statsBytes))
-
 	if err != nil {
 		return errors.Wrap(err, "idf.Update: failed to marshal IDF table")
 	}
 
+	logger.Info("Storing enhanced index", log.Int("numWords", len(statsP.IDF)), log.Int("numBytes", len(statsBytes)))
 	redisCache.Set(fmt.Sprintf("repo:%v", repoName), statsBytes)
 	return nil
 }
 
-func Get(ctx context.Context, repoName api.RepoName) (*StatsProvider, error) {
-	fmt.Printf("# idf.Get(%v)", repoName)
+func Get(ctx context.Context, logger log.Logger, repoName api.RepoName) (*StatsProvider, error) {
 	b, ok := redisCache.Get(fmt.Sprintf("repo:%v", repoName))
 	if !ok {
 		return nil, nil
@@ -100,8 +101,7 @@ func Get(ctx context.Context, repoName api.RepoName) (*StatsProvider, error) {
 		return nil, errors.Wrap(err, "idf.Get: failed to unmarshal IDF table")
 	}
 
-	log.Printf("# fetching stats: %v", stats)
-
+	logger.Info("Fetched enhanced index", log.Int("numWords", len(stats.IDF)))
 	return &stats, nil
 }
 

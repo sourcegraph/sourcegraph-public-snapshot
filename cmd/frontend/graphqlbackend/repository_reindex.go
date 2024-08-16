@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/graph-gophers/graphql-go"
 
@@ -15,9 +14,6 @@ import (
 func (r *schemaResolver) ReindexRepository(ctx context.Context, args *struct {
 	Repository graphql.ID
 }) (*EmptyResponse, error) {
-	// MARK(beyang): this is triggered by the "Reindex now" button on a page like https://sourcegraph.test:3443/github.com/hashicorp/errwrap/-/settings/index
-	fmt.Printf("# schemaResolver.ReindexRepository\n")
-
 	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -28,7 +24,7 @@ func (r *schemaResolver) ReindexRepository(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := idf.Update(ctx, repo.RepoName()); err != nil {
+	if err := idf.Update(ctx, r.logger, repo.RepoName()); err != nil {
 		return nil, err
 	}
 
