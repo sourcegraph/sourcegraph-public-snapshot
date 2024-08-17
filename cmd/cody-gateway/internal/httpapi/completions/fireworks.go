@@ -24,6 +24,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
+type ModelDirectRouteSpec struct {
+	Url         string
+	AccessToken string
+}
+
 func NewFireworksHandler(baseLogger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, rateLimitNotifier notify.RateLimitNotifier, httpClient httpcli.Doer, config config.FireworksConfig, promptRecorder PromptRecorder, upstreamConfig UpstreamHandlerConfig, tracedRequestsCounter metric.Int64Counter) http.Handler {
 	// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
 	// do any retries
@@ -61,7 +66,13 @@ type fireworksRequest struct {
 	Stream      bool      `json:"stream,omitempty"`
 	Echo        bool      `json:"echo,omitempty"`
 	Stop        []string  `json:"stop,omitempty"`
-	LanguageID  string    `json:"languageId,omitempty"`
+	User        string    `json:"user,omitempty"`
+
+	// These are the extra fields, that are used for experimentation purpose
+	// and deleted before sending request to upstream.
+	LanguageID           string `json:"languageId,omitempty"`
+	AnonymousUserID      string `json:"anonymousUserID,omitempty"`
+	ShouldUseDirectRoute bool   `json:"shouldUseDirectRoute,omitempty" default:"false"`
 }
 
 func (fr fireworksRequest) ShouldStream() bool {
@@ -108,10 +119,15 @@ type FireworksHandlerMethods struct {
 	tracedRequestsCounter metric.Int64Counter
 }
 
-func (f *FireworksHandlerMethods) getAPIURL(feature codygateway.Feature, _ fireworksRequest) string {
+func (f *FireworksHandlerMethods) getAPIURL(feature codygateway.Feature, body fireworksRequest) string {
 	if feature == codygateway.FeatureChatCompletions {
 		return "https://api.fireworks.ai/inference/v1/chat/completions"
 	} else {
+		directRouteSpec, ok := f.GetDirectRouteSpec(&body)
+		if ok && directRouteSpec != nil {
+			// Use Direct Route if specified.
+			return directRouteSpec.Url
+		}
 		return "https://api.fireworks.ai/inference/v1/completions"
 	}
 }
@@ -133,27 +149,75 @@ func (f *FireworksHandlerMethods) transformBody(body *fireworksRequest, _ string
 		body.N = 1
 	}
 	modelLanguageId := body.LanguageID
-	// Delete the fields that are not supported by the Fireworks API.
-	if body.LanguageID != "" {
-		body.LanguageID = ""
-	}
 
 	body.Model = pickStarCoderModel(body.Model, f.config)
 	body.Model = pickFineTunedModel(body.Model, modelLanguageId)
+
+	directRouteSpec, ok := f.GetDirectRouteSpec(body)
+	if directRouteSpec != nil && ok && body.AnonymousUserID != "" {
+		body.User = body.AnonymousUserID
+	}
+	// Delete ExtraFields from the body
+	body.LanguageID = ""
+	body.AnonymousUserID = ""
+}
+
+func (f *FireworksHandlerMethods) GetDirectRouteSpec(body *fireworksRequest) (*ModelDirectRouteSpec, bool) {
+	if !body.ShouldUseDirectRoute {
+		return nil, false
+	}
+
+	directRouteUrlMappings := map[string]string{
+		fireworks.DeepseekCoderV2LiteBase: "https://sourcegraph-7ca5ec0c.direct.fireworks.ai/v1/completions",
+	}
+
+	modelURL, exists := directRouteUrlMappings[body.Model]
+	if !exists || modelURL == "" {
+		return nil, false
+	}
+
+	token := f.getDirectAccessToken(body.Model)
+	if token == "" {
+		return nil, false
+	}
+
+	return &ModelDirectRouteSpec{
+		Url:         modelURL,
+		AccessToken: token,
+	}, true
+}
+
+func (f *FireworksHandlerMethods) getDirectAccessToken(model string) string {
+	switch model {
+	case fireworks.DeepseekCoderV2LiteBase:
+		return f.config.DirectRouteConfig.DeepSeekCoderV2LiteBaseAccessToken
+	default:
+		return ""
+	}
 }
 
 func (f *FireworksHandlerMethods) getRequestMetadata(body fireworksRequest) (model string, additionalMetadata map[string]any) {
 	return body.Model, map[string]any{"stream": body.Stream}
 }
 
-func (f *FireworksHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+func (f *FireworksHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request, body *fireworksRequest) {
 	// Enable tracing if the client requests it, see https://readme.fireworks.ai/docs/enabling-tracing
 	if downstreamRequest.Header.Get("X-Fireworks-Genie") == "true" {
 		upstreamRequest.Header.Set("X-Fireworks-Genie", "true")
 		f.tracedRequestsCounter.Add(downstreamRequest.Context(), 1)
 	}
 	upstreamRequest.Header.Set("Content-Type", "application/json")
-	upstreamRequest.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
+
+	directRouteSpec, ok := f.GetDirectRouteSpec(body)
+	if ok && directRouteSpec != nil {
+		if body.AnonymousUserID != "" {
+			upstreamRequest.Header.Set("X-Session-Affinity", body.AnonymousUserID)
+		}
+		upstreamRequest.Header.Set("Authorization", "Bearer "+directRouteSpec.AccessToken)
+	} else {
+		upstreamRequest.Header.Set("Authorization", "Bearer "+f.config.AccessToken)
+	}
+	body.ShouldUseDirectRoute = false
 }
 
 func (f *FireworksHandlerMethods) parseResponseAndUsage(logger log.Logger, reqBody fireworksRequest, r io.Reader, isStreamRequest bool) (promptUsage, completionUsage usageStats) {

@@ -155,7 +155,7 @@ func (a *AnthropicHandlerMethods) getRequestMetadata(body anthropicRequest) (mod
 	}
 }
 
-func (a *AnthropicHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+func (a *AnthropicHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request, _ *anthropicRequest) {
 	// Mimic headers set by the official Anthropic client:
 	// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
 	upstreamRequest.Header.Set("Cache-Control", "no-cache")
