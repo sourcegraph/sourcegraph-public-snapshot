@@ -10,10 +10,11 @@ import (
 	"io"
 	"math"
 	"path"
-	"regexp"
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log"
 

@@ -1,6 +1,6 @@
 extend type Query {
     """
-    Get pieces of context related to the query from a set of repositories.
+    Get a list of context related to the query from a set of repositories. This is the first list from getCodyContextAlternatives
     """
     getCodyContext(
         """
@@ -27,6 +27,9 @@ extend type Query {
         textResultsCount: Int!
     ): [CodyContextResult!]!
 
+    """
+    Get lists of context related to the query from a set of repositories.
+    """
     getCodyContextAlternatives(
         """
         The repositories to search.
