@@ -1,7 +1,6 @@
 import { handleErrorWithSentry } from '@sentry/sveltekit'
 import * as Sentry from '@sentry/sveltekit'
-
-import { asError } from '$lib/common'
+import type { HandleClientError, HttpError, Redirect } from '@sveltejs/kit'
 
 Sentry.init({
     // Disabled if dsn is undefined
@@ -27,7 +26,24 @@ Sentry.init({
     tracesSampleRate: 1.0,
 })
 
-export const handleError = handleErrorWithSentry(({ error }: { error: unknown }) => {
+function isRedirect(value: unknown): value is Redirect {
+    return !!value && typeof value === 'object' && 'status' in value && 'location' in value
+}
+
+function isHttpError(value: unknown): value is HttpError {
+    return !!value && typeof value === 'object' && 'status' in value && 'body' in value
+}
+
+// This class is used to make TypeScript happy. `handleError` has to return an `Error` object.
+export class SgRedirect extends Error {
+    constructor(public redirect: Redirect) {
+        super('Redirect')
+    }
+}
+
+const sentryErrorHandler = handleErrorWithSentry()
+
+export const handleError: HandleClientError = input => {
     // When throwing _expected errors_ in data loaders via SvelteKit's `error`function,
     // the error is wrapped in an object with `status` and `body` properties (an instance
     // of `HTTPError`).
@@ -37,8 +53,28 @@ export const handleError = handleErrorWithSentry(({ error }: { error: unknown })
     // clear why the class is defined multiple times).
     // By unwrapping and returning the error here we can still render the proper error message
     // in the UI, otherwise it would show a generic "Internal Error" message.
-    if (error && typeof error === 'object' && 'body' in error) {
-        return error.body as Error
+    if (isHttpError(input.error)) {
+        return input.error.body
     }
-    return asError(error)
-})
+
+    // The same applies to redirects, which are instances of `Redirect`, but are also not
+    // detected correctly in production builds. In this case we "manually" perform the
+    // redirect (which is not quite what SvelteKit would do; SvelteKit would call
+    // `beforeNavigation` handlers and do client side navigation if the redirect is to
+    // a known route).
+    // The redirect is performed in the `+error.svelte` component. We can't perform the redirect
+    // here because this function is also run during preloading and we don't want to make a
+    // sudden redirect when the user is just hovering over a link.
+    if (isRedirect(input.error)) {
+        return new SgRedirect(input.error)
+    }
+
+    // This issue is tracked in SRCH-926
+
+    // We call the Sentry error handler here to report the error to Sentry. We wrap the
+    // Sentry handle in our own handler instead of the other way around, because
+    // otherwise sentry would report redirects as errors.
+
+    // @ts-expect-error Unclear why Sentry's error handler type doesn't match
+    return sentryErrorHandler(input)
+}
