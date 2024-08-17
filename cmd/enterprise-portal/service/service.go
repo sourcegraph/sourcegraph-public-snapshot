@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/database/importer"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration"
+	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionlicensechecksservice"
 	"github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -92,7 +93,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 	})
 
 	// Prepare instrumentation middleware for ConnectRPC handlers
-	otelConnctInterceptor, err := otelconnect.NewInterceptor(
+	otelConnectInterceptor, err := otelconnect.NewInterceptor(
 		// Keep data low-cardinality
 		otelconnect.WithoutServerPeerAttributes(),
 	)
@@ -113,7 +114,7 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 					config.CodyGatewayEvents),
 			},
 		),
-		connect.WithInterceptors(otelConnctInterceptor),
+		connect.WithInterceptors(otelConnectInterceptor),
 	)
 	subscriptionsservice.RegisterV1(
 		logger,
@@ -130,7 +131,21 @@ func (Service) Initialize(ctx context.Context, logger log.Logger, contract runti
 				SlackWebhookURL:        config.SubscriptionsServiceSlackWebhookURL,
 			},
 		),
-		connect.WithInterceptors(otelConnctInterceptor),
+		connect.WithInterceptors(otelConnectInterceptor),
+	)
+	subscriptionlicensechecksservice.RegisterV1(
+		logger,
+		httpServer,
+		subscriptionlicensechecksservice.NewStoreV1(
+			logger,
+			subscriptionlicensechecksservice.NewStoreV1Options{
+				DB:                     dbHandle,
+				SlackWebhookURL:        config.SubscriptionLicenseChecks.SlackWebhookURL,
+				LicenseKeySigner:       config.LicenseKeys.Signer,
+				BypassAllLicenseChecks: config.SubscriptionLicenseChecks.BypassAllChecks,
+			},
+		),
+		connect.WithInterceptors(otelConnectInterceptor),
 	)
 
 	// Optionally enable reflection handlers and a debug UI

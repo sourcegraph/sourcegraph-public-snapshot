@@ -465,7 +465,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		key := key.NewKey(stack, id.TerraformID("dsn"), &key.KeyConfig{
 			Organization: organization.Id(),
 			Project:      sentryProject.Slug(),
-			Name:         pointers.Ptr("Managed Servcies Platform"),
+			Name:         pointers.Ptr("Managed Services Platform"),
 		})
 
 		cloudRunBuilder.AddEnv("SENTRY_DSN", *key.DsnPublic())

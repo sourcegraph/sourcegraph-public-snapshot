@@ -242,6 +242,20 @@ func TestLicensesStore(t *testing.T) {
 			})
 		})
 
+		t.Run("list by license key hash token", func(t *testing.T) {
+			hash, err := license.ExtractLicenseKeyBasedAccessTokenContents(
+				license.GenerateLicenseKeyBasedAccessToken(signedKeyExample),
+			)
+			require.NoError(t, err)
+			listedLicenses, err := licenses.List(ctx, subscriptions.ListLicensesOpts{
+				LicenseType:    subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
+				LicenseKeyHash: []byte(hash),
+			})
+			require.NoError(t, err)
+			require.Len(t, listedLicenses, 1)
+			assert.Equal(t, subscriptionID1, listedLicenses[0].SubscriptionID)
+		})
+
 		t.Run("List by salesforce opportunity ID", func(t *testing.T) {
 			listedLicenses, err := licenses.List(ctx, subscriptions.ListLicensesOpts{
 				LicenseType:             subscriptionsv1.EnterpriseSubscriptionLicenseType_ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY,
@@ -270,20 +284,41 @@ func TestLicensesStore(t *testing.T) {
 		}
 	})
 
+	t.Run("SetDetectedInstance", func(t *testing.T) {
+		require.NoError(t, licenses.SetDetectedInstance(ctx, createdLicenses[0].ID, subscriptions.SetDetectedInstanceOpts{
+			InstanceID: "instance-id",
+			Message:    t.Name(),
+		}))
+		got, err := licenses.Get(ctx, createdLicenses[0].ID)
+		require.NoError(t, err)
+		assert.Equal(t, "instance-id", *got.DetectedInstanceID)
+	})
+
 	t.Run("Revoke", func(t *testing.T) {
 		for idx, license := range createdLicenses {
-			revokeTime := utctime.FromTime(time.Now().Add(-time.Second))
+			revokeTime := utctime.FromTime(time.Now())
 			got, err := licenses.Revoke(ctx, license.ID, subscriptions.RevokeLicenseOpts{
 				Message: fmt.Sprintf("%s %d", t.Name(), idx),
 				Time:    pointers.Ptr(revokeTime),
 			})
 			require.NoError(t, err)
 			assert.Equal(t, revokeTime.AsTime(), got.RevokedAt.AsTime())
-			require.Len(t, got.Conditions, 2)
-			// Most recent condition is sorted first, and should be the revocation
-			assert.Equal(t, "STATUS_REVOKED", got.Conditions[0].Status)
-			assert.Equal(t, revokeTime.AsTime(), got.Conditions[0].TransitionTime.AsTime())
-			assert.Equal(t, "STATUS_CREATED", got.Conditions[1].Status)
+			if idx > 0 {
+				require.Len(t, got.Conditions, 2)
+				// Most recent condition is sorted first, and should be the revocation
+				assert.Equal(t, "STATUS_REVOKED", got.Conditions[0].Status)
+				assert.Equal(t, revokeTime.AsTime(), got.Conditions[0].TransitionTime.AsTime())
+				assert.Equal(t, "STATUS_CREATED", got.Conditions[1].Status)
+			} else {
+				require.Len(t, got.Conditions, 3)
+				// Most recent condition is sorted first, and should be the revocation
+				assert.Equal(t, "STATUS_REVOKED", got.Conditions[0].Status)
+				assert.Equal(t, revokeTime.AsTime(), got.Conditions[0].TransitionTime.AsTime())
+				// Then, the condition from SetDetectedInstance test
+				assert.Equal(t, "STATUS_INSTANCE_USAGE_DETECTED", got.Conditions[1].Status)
+				// Finally, the subscription creation event
+				assert.Equal(t, "STATUS_CREATED", got.Conditions[2].Status)
+			}
 		}
 	})
 }

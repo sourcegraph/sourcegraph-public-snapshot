@@ -414,3 +414,9 @@
     - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration
       interfaces:
         - Store
+- filename: cmd/enterprise-portal/internal/subscriptionlicensechecksservice/mocks_test.go
+  package: subscriptionlicensechecksservice
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionlicensechecksservice
+      interfaces:
+        - StoreV1

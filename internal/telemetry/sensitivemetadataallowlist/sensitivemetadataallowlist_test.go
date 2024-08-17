@@ -50,6 +50,7 @@ func TestIsAllowed(t *testing.T) {
 			expectAllowed: true,
 			expectAllowlist: []string{
 				"languageId",
+				"otherCompletionProviders",
 			},
 		},
 		{

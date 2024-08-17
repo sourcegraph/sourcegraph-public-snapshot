@@ -21,6 +21,7 @@ go_library(
         "//cmd/enterprise-portal/internal/database/importer",
         "//cmd/enterprise-portal/internal/dotcomdb",
         "//cmd/enterprise-portal/internal/routines/licenseexpiration",
+        "//cmd/enterprise-portal/internal/subscriptionlicensechecksservice",
         "//cmd/enterprise-portal/internal/subscriptionsservice",
         "//internal/codygateway/codygatewayevents",
         "//internal/debugserver",

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { QueryClientProvider } from '@tanstack/react-query'
 import { Navigate, useSearchParams } from 'react-router-dom'
@@ -15,7 +15,6 @@ import {
     getDefaultInputProps,
     useField,
     createRequiredValidator,
-    composeValidators,
     Input,
     Text,
     Label,
@@ -162,19 +161,7 @@ const Page: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
         name: 'salesforceSubscriptionID',
         formApi: formAPI,
         validators: {
-            sync: useMemo(
-                () =>
-                    composeValidators<string, unknown>([
-                        value => {
-                            if (instanceType.input.value !== EnterpriseSubscriptionInstanceType.INTERNAL && !value) {
-                                return 'Salesforce subscription ID is required for non-internal instances.'
-                            }
-                            return
-                        },
-                        SALESFORCE_SUBSCRIPTION_ID_VALIDATOR,
-                    ]),
-                [instanceType.input.value]
-            ),
+            sync: SALESFORCE_SUBSCRIPTION_ID_VALIDATOR,
         },
     })
 
