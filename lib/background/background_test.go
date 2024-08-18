@@ -63,6 +63,7 @@ func TestMonitorBackgroundRoutinesContextCancel(t *testing.T) {
 	}()
 
 	cancel()
+	time.Sleep(10 * time.Millisecond) // Give the goroutine a chance finish starting and exit.
 	<-unblocked
 
 	for _, r := range []*MockRoutine{r1, r2, r3} {
