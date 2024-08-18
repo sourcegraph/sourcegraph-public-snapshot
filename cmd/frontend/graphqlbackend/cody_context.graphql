@@ -1,6 +1,6 @@
 extend type Query {
     """
-    Get pieces of context related to the query from a set of repositories.
+    Get a list of context related to the query from a set of repositories. This is the first list from getCodyContextAlternatives
     """
     getCodyContext(
         """
@@ -26,6 +26,34 @@ extend type Query {
         """
         textResultsCount: Int!
     ): [CodyContextResult!]!
+
+    """
+    Get lists of context related to the query from a set of repositories.
+    """
+    getCodyContextAlternatives(
+        """
+        The repositories to search.
+        """
+        repos: [ID!]!
+        """
+        An optional list of file patterns used to filter the results. The
+        patterns are regex strings. For a file chunk to be returned a context
+        result, the path must match at least one of these patterns.
+        """
+        filePatterns: [String!]
+        """
+        A natural language query string.
+        """
+        query: String!
+        """
+        The number of code results to return.
+        """
+        codeResultsCount: Int!
+        """
+        The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
+        """
+        textResultsCount: Int!
+    ): CodyContextAlternativesResult!
 
     """
     EXPERIMENTAL: Detect intent for a given Cody chat query.
@@ -131,6 +159,33 @@ return other types of context in the future (think code intel definition
 or wiki page).
 """
 union CodyContextResult = FileChunkContext
+
+"""
+EXPERIMENTAL: The result from the Cody context alternatives API, which returns a list
+of context lists, each of which represents a distinct context list that could have been
+used. The first list is the one that should actually be used.
+"""
+type CodyContextAlternativesResult {
+    """
+    List of context lists
+    """
+    contextLists: [CodyContextList!]!
+}
+
+"""
+EXPERIMENTAL: A named list of context items.
+"""
+type CodyContextList {
+    """
+    Name of the list
+    """
+    Name: String!
+
+    """
+    List of context items
+    """
+    contextItems: [CodyContextResult!]!
+}
 
 """
 A piece of context that represents a chunk of a file in a git repository

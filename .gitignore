@@ -76,8 +76,6 @@ eb-bundle.zip
 .bin/
 .env
 
-/vendor/
-
 .gtm/
 
 cmd/gitserver/debug

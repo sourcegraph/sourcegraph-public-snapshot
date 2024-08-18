@@ -17,13 +17,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codycontext"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/idf"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -172,7 +172,7 @@ func (r *Resolver) RankContext(ctx context.Context, args graphqlbackend.RankCont
 	return res, nil
 }
 
-func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) (_ []graphqlbackend.ContextResultResolver, err error) {
+func (r *Resolver) GetCodyContextAlternatives(ctx context.Context, args graphqlbackend.GetContextArgs) (*graphqlbackend.ContextAlternativesResolver, error) {
 	repoIDs, err := graphqlbackend.UnmarshalRepositoryIDs(args.Repos)
 	if err != nil {
 		return nil, err
@@ -196,6 +196,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	}
 
 	repoNameIDs := make([]types.RepoIDName, len(repoIDs))
+	repoStats := make(map[api.RepoName]*idf.StatsProvider)
 	for i, repoID := range repoIDs {
 		repo, ok := repos[repoID]
 		if !ok {
@@ -204,10 +205,21 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		}
 
 		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repo.Name}
+
+		stats, err := idf.Get(ctx, r.logger, repo.Name)
+		if err != nil {
+			r.logger.Warn("Error getting idf index value for repo", log.Int32("repoID", int32(repoID)), log.Error(err))
+			continue
+		}
+		if stats == nil {
+			continue
+		}
+		repoStats[repo.Name] = stats
 	}
 
-	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
+	contextAlternatives, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
 		Repos:            repoNameIDs,
+		RepoStats:        repoStats,
 		FilePatterns:     validatedFilePatterns,
 		Query:            args.Query,
 		CodeResultsCount: args.CodeResultsCount,
@@ -217,12 +229,19 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		return nil, err
 	}
 
-	tr, ctx := trace.New(ctx, "resolveChunks")
-	defer tr.EndWithErr(&err)
+	return graphqlbackend.NewContextAlternativesResolver(r.db, r.gitserverClient, contextAlternatives), nil
+}
 
-	return iter.MapErr(fileChunks, func(fileChunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
-		return r.fileChunkToResolver(ctx, fileChunk)
-	})
+func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) (_ []graphqlbackend.ContextResultResolver, err error) {
+	alts, err := r.GetCodyContextAlternatives(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+	contextLists := alts.ContextLists()
+	if len(contextLists) == 0 {
+		return nil, nil
+	}
+	return contextLists[0].ContextItems(ctx)
 }
 
 // ChatIntent is a quick-and-dirty way to expose our intent detection model to Cody clients.
@@ -430,7 +449,7 @@ func (r *Resolver) rerank(ctx context.Context, args graphqlbackend.RankContextAr
 
 func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Repo) ([]graphqlbackend.RetrieverContextItemResolver, []error, error) {
 	var res []graphqlbackend.RetrieverContextItemResolver
-	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
+	contextAlternatives, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
 		Repos:        []types.RepoIDName{{ID: repo.ID, Name: repo.Name}},
 		FilePatterns: nil, // Not suppported in ChatContext
 		Query:        query,
@@ -438,6 +457,11 @@ func (r *Resolver) fetchZoekt(ctx context.Context, query string, repo *types.Rep
 	if err != nil {
 		return nil, nil, err
 	}
+	if len(contextAlternatives.ContextLists) == 0 {
+		return nil, nil, nil
+	}
+	fileChunks := contextAlternatives.ContextLists[0].FileChunks
+
 	var partialErrors []error
 	for _, fc := range fileChunks {
 		fcr, err := r.fileChunkToResolver(ctx, &fc)
