@@ -18,6 +18,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 	developGitserverClient := testUploadExpirerMockGitserverClient("develop", now)
 
 	runTest := func(t *testing.T, gitserverClient gitserver.Client, policies []policiesshared.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
+		t.Helper()
 		policyMatches, err := NewMatcher(gitserverClient, IndexingExtractor, false, true).CommitsDescribedByPolicy(context.Background(), 50, "r50", policies, now)
 		if err != nil {
 			t.Fatalf("unexpected error finding matches: %s", err)
@@ -159,6 +160,21 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 
 		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
 			"deadbeef04": {PolicyMatch{Name: "deadbeef04", PolicyID: &policyID, PolicyDuration: &testDuration}},
+		})
+	})
+
+	t.Run("matches HEAD commit policies", func(t *testing.T) {
+		policies := []policiesshared.ConfigurationPolicy{
+			{
+				ID:                policyID,
+				Type:              "GIT_COMMIT",
+				Pattern:           "HEAD",
+				IndexCommitMaxAge: &testDuration,
+			},
+		}
+
+		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+			"deadbeef00": {PolicyMatch{Name: "HEAD", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
 

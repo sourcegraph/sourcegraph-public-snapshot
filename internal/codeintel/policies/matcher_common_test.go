@@ -20,6 +20,8 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	//   \                        \               \               \         \                   \
 	//    xy/feature-y            xy/feature-x    zw/feature-z     v1.2.2    v1.2.3              develop
 
+	headCommit := "deadbeef00"
+
 	branchHeads := map[string]string{
 		"develop":      "deadbeef01",
 		"feat/blank":   "deadbeef02",
@@ -48,6 +50,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	}
 
 	createdAt := map[string]time.Time{
+		"deadbeef00": testCommitDateFor("deadbeef00", now),
 		"deadbeef01": testCommitDateFor("deadbeef01", now),
 		"deadbeef02": testCommitDateFor("deadbeef02", now),
 		"deadbeef03": testCommitDateFor("deadbeef03", now),
@@ -60,6 +63,15 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	}
 
 	getCommit := func(ctx context.Context, repo api.RepoName, commitID api.CommitID) (*gitdomain.Commit, error) {
+		if string(commitID) == "HEAD" {
+			return &gitdomain.Commit{
+				ID: api.CommitID(headCommit),
+				Committer: &gitdomain.Signature{
+					Date: createdAt[headCommit],
+				},
+			}, nil
+		}
+
 		commitDate, ok := createdAt[string(commitID)]
 		if !ok {
 			return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(commitID)}
@@ -74,6 +86,16 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 
 	refs := func(ctx context.Context, repo api.RepoName, _ gitserver.ListRefsOpts) ([]gitdomain.Ref, error) {
 		refs := []gitdomain.Ref{}
+
+		refs = append(refs, gitdomain.Ref{
+			Name:        "HEAD",
+			ShortName:   "HEAD",
+			Type:        gitdomain.RefTypeUnknown,
+			IsHead:      true,
+			CreatedDate: createdAt[headCommit],
+			CommitID:    api.CommitID(headCommit),
+		})
+
 		for branch, commit := range branchHeads {
 			branchHeadCreateDate := createdAt[commit]
 			refs = append(refs, gitdomain.Ref{
@@ -141,6 +163,8 @@ func hydrateCommittedAt(expectedPolicyMatches map[string][]PolicyMatch, now time
 
 func testCommitDateFor(commit string, now time.Time) time.Time {
 	switch commit {
+	case "deadbeef00":
+		return now.Add(-time.Hour * 2)
 	case "deadbeef01":
 		return now.Add(-time.Hour * 5)
 	case "deadbeef02":

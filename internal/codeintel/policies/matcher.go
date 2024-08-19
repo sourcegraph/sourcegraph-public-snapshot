@@ -310,8 +310,10 @@ func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContex
 				continue
 			}
 
-			context.commitMap[policy.Pattern] = append(context.commitMap[policy.Pattern], PolicyMatch{
-				Name:           string(commit.ID),
+			commitID := string(commit.ID)
+
+			context.commitMap[commitID] = append(context.commitMap[commitID], PolicyMatch{
+				Name:           policy.Pattern,
 				PolicyID:       &policy.ID,
 				PolicyDuration: policyDuration,
 				CommittedAt:    commit.Committer.Date,
