@@ -160,6 +160,9 @@ compile_app(
         },
     },
     visibility = ["//client/web/dist:__pkg__"],
+    # Without disabling the sandbox we get duplicate module imports which breaks certain SvelteKit behavior.
+    # See SRCH-926 for details.
+    tags = ["no-sandbox"],
 )
 
 playwright_test_bin.playwright_test(
