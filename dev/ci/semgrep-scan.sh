@@ -21,19 +21,13 @@ CODE_SCANNING_ENABLED="false"
 is_code_scanning_enabled() {
   local repo="$1"
 
-  # Try to list code scanning alerts
-  if gh api "repos/$repo/code-scanning/alerts" &>/dev/null; then
-    CODE_SCANNING_ENABLED="true"
+  error=$(gh api "repos/$repo/code-scanning/alerts" || true)
+  if echo "$error" | grep -q "Advanced Security must be enabled"; then
+    CODE_SCANNING_ENABLED="false"
+  elif echo "$error" | grep -q "Not Found"; then
+    CODE_SCANNING_ENABLED="false"
   else
-    # Check the specific error message
-    error=$(gh api "repos/$repo/code-scanning/alerts" 2>&1)
-    if echo "$error" | grep -q "Advanced Security must be enabled"; then
-      CODE_SCANNING_ENABLED="false"
-    elif echo "$error" | grep -q "Not Found"; then
-      CODE_SCANNING_ENABLED="false"
-    else
-      CODE_SCANNING_ENABLED="false"
-    fi
+    CODE_SCANNING_ENABLED="true"
   fi
 }
 
