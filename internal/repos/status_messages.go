@@ -114,7 +114,7 @@ func FetchStatusMessages(ctx context.Context, db database.DB, gitserverClient gi
 		diskUsageThreshold = pointers.Ptr(90)
 	}
 
-	si, err := gitserverClient.SystemsInfo(context.Background())
+	si, err := gitserverClient.SystemsInfo(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching gitserver disk info")
 	}
