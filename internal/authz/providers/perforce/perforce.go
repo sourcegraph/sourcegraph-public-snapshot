@@ -59,8 +59,11 @@ func cacheIsUpToDate(lastUpdate time.Time) bool {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users.
-func NewProvider(logger log.Logger, db database.DB, gitserverClient gitserver.Client, urn, host, user, password string, depots []extsvc.RepoID, ignoreRulesWithHost bool) *Provider {
-	baseURL, _ := url.Parse(host)
+func NewProvider(logger log.Logger, db database.DB, gitserverClient gitserver.Client, urn, host, user, password string, depots []extsvc.RepoID, ignoreRulesWithHost bool) (*Provider, error) {
+	baseURL, err := url.Parse(host)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse Perforce host. Consider prefixing p4.port with `tcp:` or `ssl:`")
+	}
 	return &Provider{
 		db:                  db,
 		logger:              logger,
@@ -73,7 +76,7 @@ func NewProvider(logger log.Logger, db database.DB, gitserverClient gitserver.Cl
 		gitserverClient:     gitserverClient,
 		cachedGroupMembers:  make(map[string][]string),
 		ignoreRulesWithHost: ignoreRulesWithHost,
-	}
+	}, nil
 }
 
 // FetchAccount uses given user's verified emails to match users on the Perforce

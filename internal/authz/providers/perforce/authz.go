@@ -70,7 +70,7 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(logger, db, gitserver.NewClient("authz.perforce"), urn, host, user, password, depotIDs, a.IgnoreRulesWithHost), nil
+	return NewProvider(logger, db, gitserver.NewClient("authz.perforce"), urn, host, user, password, depotIDs, a.IgnoreRulesWithHost)
 }
 
 // ValidateAuthz validates the authorization fields of the given Perforce
