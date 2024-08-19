@@ -152,6 +152,9 @@ compile_app(
         "BAZEL": "1",
     },
     out_dirs = ["build"],
+    # Without disabling the sandbox we get duplicate module imports which breaks certain SvelteKit behavior.
+    # See SRCH-926 for details.
+    tags = ["no-sandbox"],
     test_overrides = {
         "out_dirs": ["test_build"],
         "name": "web-sveltekit-test",
@@ -160,9 +163,6 @@ compile_app(
         },
     },
     visibility = ["//client/web/dist:__pkg__"],
-    # Without disabling the sandbox we get duplicate module imports which breaks certain SvelteKit behavior.
-    # See SRCH-926 for details.
-    tags = ["no-sandbox"],
 )
 
 playwright_test_bin.playwright_test(
