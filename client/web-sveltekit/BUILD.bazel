@@ -142,7 +142,9 @@ npm_link_all_packages(name = "node_modules")
 
 compile_app(
     name = "web-sveltekit",
-    srcs = SRCS + BUILD_DEPS + CONFIGS,
+    srcs = SRCS + BUILD_DEPS + CONFIGS + [
+        ":sveltekit-sync"
+    ],
     args = [
         "build",
         "-c vite.config.ts",
