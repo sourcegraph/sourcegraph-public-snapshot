@@ -1,0 +1,15 @@
+# This file lists special protos that Gazelle knows how to import. This is used to generate
+# code for proto and Go resolvers.
+# proto name,proto label,go import path,go proto label
+google/protobuf/any.proto,@com_google_protobuf//:any_proto,github.com/golang/protobuf/ptypes/any,@com_github_golang_protobuf//ptypes/any
+google/protobuf/api.proto,@com_google_protobuf//:api_proto,google.golang.org/genproto/protobuf/api,@org_golang_google_genproto//protobuf/api
+google/protobuf/compiler/plugin.proto,@com_google_protobuf//:compiler_plugin_proto,github.com/golang/protobuf/protoc-gen-go/plugin,@com_github_golang_protobuf//protoc-gen-go/plugin
+google/protobuf/descriptor.proto,@com_google_protobuf//:descriptor_proto,github.com/golang/protobuf/protoc-gen-go/descriptor,@com_github_golang_protobuf//protoc-gen-go/descriptor
+google/protobuf/duration.proto,@com_google_protobuf//:duration_proto,github.com/golang/protobuf/ptypes/duration,@com_github_golang_protobuf//ptypes/duration
+google/protobuf/empty.proto,@com_google_protobuf//:empty_proto,github.com/golang/protobuf/ptypes/empty,@com_github_golang_protobuf//ptypes/empty
+google/protobuf/field_mask.proto,@com_google_protobuf//:field_mask_proto,google.golang.org/genproto/protobuf/field_mask,@org_golang_google_genproto//protobuf/field_mask
+google/protobuf/source_context.proto,@com_google_protobuf//:source_context_proto,google.golang.org/genproto/protobuf/source_context,@org_golang_google_genproto//protobuf/source_context
+google/protobuf/struct.proto,@com_google_protobuf//:struct_proto,github.com/golang/protobuf/ptypes/struct,@com_github_golang_protobuf//ptypes/struct
+google/protobuf/timestamp.proto,@com_google_protobuf//:timestamp_proto,github.com/golang/protobuf/ptypes/timestamp,@com_github_golang_protobuf//ptypes/timestamp
+google/protobuf/type.proto,@com_google_protobuf//:type_proto,google.golang.org/genproto/protobuf/ptype,@org_golang_google_genproto//protobuf/ptype
+google/protobuf/wrappers.proto,@com_google_protobuf//:wrappers_proto,github.com/golang/protobuf/ptypes/wrappers,@com_github_golang_protobuf//ptypes/wrappers

@@ -1,0 +1,17 @@
+## Used mainly for testing.  
+##  `GRAFANA_VERSION=6.7.1  docker-compose up -d`
+version: "3.7"
+services: 
+    grafana:
+        environment:
+            - GF_AUTH_ANONYMOUS_ENABLED=true
+        container_name: grafana
+        image: "grafana/grafana:${GRAFANA_VERSION}"
+        ports:
+            - 3000:3000
+    headless:
+        container_name: headless-shell
+        image: chromedp/headless-shell:latest
+        shm_size: 2gb
+        ports:
+            - 9222:9222

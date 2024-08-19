@@ -1,0 +1,6 @@
+# Travis-CI configuration.  See
+# http://about.travis-ci.org/docs
+language: go
+install: echo "Skipping default travis install step"
+script:
+ - curl https://raw.github.com/daaku/go.travis/master/install | sh

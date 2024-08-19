@@ -1,0 +1,31 @@
+language: go
+
+env:
+  global:
+    - GO111MODULE=on
+    - PROTOBUF_VERSION="3.8.0"
+
+notifications:
+  email: false
+
+branches:
+  only:
+    - master
+
+jobs:
+  include:
+    - stage: test
+      script: make test
+      go: 1.11.x
+
+    - script: make test
+      go: 1.12.x
+
+    - script: make test
+      go: 1.13.x
+
+    - script: make test
+      go: 1.14.x
+
+    - script: make test
+      go: master

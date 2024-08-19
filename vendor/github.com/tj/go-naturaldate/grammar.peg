@@ -1,0 +1,342 @@
+package naturaldate
+
+import "time"
+
+type parser Peg {
+  t time.Time
+  number int
+  month time.Month
+  weekday time.Weekday
+  direction int
+}
+
+Query
+  <- _ Expr+ EOF
+
+Expr
+  <- NOW
+  / RelativeMinutes
+  / RelativeHours
+  / RelativeDays
+  / RelativeWeeks
+  / RelativeWeekdays
+  / RelativeMonth
+  / RelativeYear
+  / Date
+  / Time
+  / Word
+
+RelativeMinutes
+  <- Number MINUTES AGO
+    {
+      p.t = p.t.Add(-time.Minute * time.Duration(p.number))
+    }
+  / (Number MINUTES FROM_NOW / In Number? MINUTES FROM_NOW?)
+    {
+      p.t = p.t.Add(time.Minute * time.Duration(p.number))
+    }
+  / Last Number? MINUTES
+    {
+      p.t = p.t.Add(-time.Minute * time.Duration(p.number))
+    }
+  / Next Number? MINUTES
+    {
+      p.t = p.t.Add(time.Minute * time.Duration(p.number))
+    }
+  / Number MINUTES
+    { 
+      p.t = p.t.Add(p.withDirection(time.Minute) * time.Duration(p.number))
+    }
+
+RelativeHours
+  <- Number HOURS AGO
+    { 
+      p.t = p.t.Add(-time.Hour * time.Duration(p.number))
+    }
+  / (Number HOURS FROM_NOW / In Number? HOURS FROM_NOW?)
+    { 
+      p.t = p.t.Add(time.Hour * time.Duration(p.number))
+    }
+  / Last Number? HOURS
+    {
+      p.t = p.t.Add(-time.Hour * time.Duration(p.number))
+    }
+  / Next Number? HOURS
+    {
+      p.t = p.t.Add(time.Hour * time.Duration(p.number))
+    }
+  / Number HOURS
+    { 
+      p.t = p.t.Add(p.withDirection(time.Hour) * time.Duration(p.number))
+    }
+
+RelativeDays
+  <- Number DAYS AGO
+    { 
+      p.t = truncateDay(p.t.Add(-day * time.Duration(p.number)))
+    }
+  / (Number DAYS FROM_NOW / In Number? DAYS FROM_NOW?)
+    { 
+      p.t = p.t.Add(day * time.Duration(p.number))
+    }
+  / Last Number? DAYS
+    {
+      p.t = truncateDay(p.t.Add(-day * time.Duration(p.number)))
+    }
+  / Next Number? DAYS
+    {
+      p.t = truncateDay(p.t.Add(day * time.Duration(p.number)))
+    }
+  / Number DAYS
+    { 
+      p.t = truncateDay(p.t.Add(p.withDirection(day) * time.Duration(p.number)))
+    }
+
+RelativeWeeks
+  <- Number WEEKS AGO
+    {
+      p.t = truncateDay(p.t.Add(-week * time.Duration(p.number))) 
+    }
+  / (Number WEEKS FROM_NOW / In Number? WEEKS FROM_NOW?)
+    {
+      p.t = p.t.Add(week * time.Duration(p.number))
+    }
+  / Last Number? WEEKS
+    {
+      p.t = truncateDay(p.t.Add(-week * time.Duration(p.number))) 
+    }
+  / Next Number? WEEKS
+    {
+      p.t = truncateDay(p.t.Add(week * time.Duration(p.number))) 
+    }
+  / Number WEEKS
+    {
+      p.t = truncateDay(p.t.Add(p.withDirection(week) * time.Duration(p.number))) 
+    }
+
+RelativeMonth
+  <- Number MONTHS AGO
+    {
+      p.t = p.t.AddDate(0, -p.number, 0)
+    }
+  / (Number MONTHS FROM_NOW / In Number? MONTHS FROM_NOW?)
+    {
+      p.t = p.t.AddDate(0, p.number, 0)
+    }
+  / Last Number? MONTHS
+    {
+      p.t = p.t.AddDate(0, -p.number, 0)
+    }
+  / Next Number? MONTHS
+    {
+      p.t = p.t.AddDate(0, p.number, 0)
+    }
+  / LAST Month
+    {
+      p.t = prevMonth(p.t, p.month)
+    }
+  / NEXT Month
+    {
+      p.t = nextMonth(p.t, p.month)
+    }
+  / Month
+    {
+      if p.direction < 0 {
+        p.t = prevMonth(p.t, p.month)
+      } else {
+        p.t = nextMonth(p.t, p.month)
+      }
+    }
+
+RelativeYear
+  <- Number YEARS AGO
+    {
+      p.t = p.t.AddDate(-p.number, 0, 0)
+    }
+  / (Number YEARS FROM_NOW / In Number? YEARS FROM_NOW?)
+    {
+      p.t = p.t.AddDate(p.number, 0, 0)
+    }
+  / Last Number? YEARS
+    {
+      p.t = p.t.AddDate(-p.number, 0, 0)
+    }
+  / Next Number? YEARS
+    {
+      p.t = p.t.AddDate(p.number, 0, 0)
+    }
+  / LAST YEARS
+    {
+      p.t = time.Date(p.t.Year() - 1, 1, 1, 0, 0, 0, 0, p.t.Location())
+    }
+  / NEXT YEARS
+    {
+      p.t = time.Date(p.t.Year() + 1, 1, 1, 0, 0, 0, 0, p.t.Location())
+    }
+
+
+RelativeWeekdays
+  <- TODAY
+    {
+      p.t = truncateDay(p.t)
+    }
+  / YESTERDAY 
+    {
+      p.t = truncateDay(p.t.Add(-day))
+    }
+  / TOMORROW
+    {
+      p.t = truncateDay(p.t.Add(+day))
+    }
+  / LAST Weekday
+    {
+      p.t = truncateDay(prevWeekday(p.t, p.weekday))
+    }
+  / NEXT Weekday
+    {
+      p.t = truncateDay(nextWeekday(p.t, p.weekday))
+    }
+  / Weekday
+    {
+      if p.direction < 0 {
+        p.t = truncateDay(prevWeekday(p.t, p.weekday))
+      } else {
+        p.t = truncateDay(nextWeekday(p.t, p.weekday))
+      }
+    }
+
+Date
+  <- (Number Ordinal / Last Number? Number)
+    {
+      t := p.t
+      year, month, _ := t.Date()
+      hour, min, sec := t.Clock()
+      p.t = time.Date(year, month, p.number, hour, min, sec, 0, t.Location())
+    }
+
+Time
+  <- Clock12Hour
+   / Clock24Hour 
+
+Clock12Hour
+  <- Number
+    {
+      year, month, day := p.t.Date()
+      p.t = time.Date(year, month, day, p.number, 0, 0, 0, p.t.Location())
+    }
+    (Minutes Seconds?)?
+    AM
+  / Number
+    {
+      year, month, day := p.t.Date()
+      p.t = time.Date(year, month, day, p.number + 12, 0, 0, 0, p.t.Location())
+    }
+    (Minutes Seconds?)?
+    PM
+
+Clock24Hour
+  <- Number
+    {
+      year, month, day := p.t.Date()
+      p.t = time.Date(year, month, day, p.number, 0, 0, 0, p.t.Location())
+    }
+    (Minutes Seconds?)?
+
+Minutes
+  <- ':' Number
+    {
+      t := p.t
+      year, month, day := t.Date()
+      hour, _, _ := t.Clock()
+      p.t = time.Date(year, month, day, hour, p.number, 0, 0, t.Location())
+    }
+
+Seconds
+  <- ':' Number
+    {
+      t := p.t
+      year, month, day := t.Date()
+      hour, min, _ := t.Clock()
+      p.t = time.Date(year, month, day, hour, min, p.number, 0, t.Location())
+    }
+
+Number
+  <- < [0-9]+ > _ { n, _ := strconv.Atoi(text); p.number = n }
+  / 'one' _       { p.number = 1 }
+  / 'two' _       { p.number = 2 }
+  / 'three' _     { p.number = 3 }
+  / 'four' _      { p.number = 4 }
+  / 'five' _      { p.number = 5 }
+  / 'six' _       { p.number = 6 }
+  / 'seven' _     { p.number = 7 }
+  / 'eight' _     { p.number = 8 }
+  / 'nine' _      { p.number = 9 }
+  / 'ten' _       { p.number = 10 }
+
+Weekday
+  <- 'sunday' _   { p.weekday = time.Sunday }
+  / 'monday' _    { p.weekday = time.Monday }
+  / 'tuesday' _   { p.weekday = time.Tuesday }
+  / 'wednesday' _ { p.weekday = time.Wednesday }
+  / 'thursday' _  { p.weekday = time.Thursday }
+  / 'friday' _    { p.weekday = time.Friday }
+  / 'saturday' _  { p.weekday = time.Saturday }
+
+Month
+  <- 'january' _  { p.month = time.January }
+  / 'february' _  { p.month = time.February }
+  / 'march' _     { p.month = time.March }
+  / 'april' _     { p.month = time.April }
+  / 'may' _       { p.month = time.May }
+  / 'june' _      { p.month = time.June }
+  / 'july' _      { p.month = time.July }
+  / 'august' _    { p.month = time.August }
+  / 'september' _ { p.month = time.September }
+  / 'october' _   { p.month = time.October }
+  / 'november' _  { p.month = time.November }
+  / 'december' _  { p.month = time.December }
+
+In
+  <- IN          { p.number = 1}
+
+Last
+  <- LAST        { p.number = 1 }
+
+Next
+  <- NEXT        { p.number = 1 }
+
+Ordinal
+  <- ('st' / 'nd' / 'rd' / 'th') _
+
+Word
+  <- [a-z]+ _
+
+YEARS      <- 'year' 's'? _
+MONTHS     <- 'month' 's'? _
+WEEKS      <- 'week' 's'? _
+DAYS       <- 'day' 's'? _
+HOURS      <- 'hour' 's'? _
+MINUTES    <- 'minute' 's'? _
+YESTERDAY  <- 'yesterday' _
+TOMORROW   <- 'tomorrow' _
+TODAY      <- 'today' _
+AGO        <- 'ago' _
+FROM_NOW   <- 'from now' _
+NOW        <- 'now' _
+AM         <- 'am' _
+PM         <- 'pm' _
+NEXT       <- 'next' _
+IN         <- ('in an' / 'in a' / 'in') _
+LAST       <- ('last' / 'past' / 'previous') _
+
+_
+  <- Whitespace*
+
+Whitespace
+  <- ' ' / '\t' / EOL
+
+EOL
+  <- '\r\n' / '\n' / '\r'
+
+EOF
+  <- !.

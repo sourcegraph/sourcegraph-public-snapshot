@@ -1,0 +1,193 @@
+Permutation algorithm
+
+The main concept of this algorithm:
+1) use simple operations like swap with elements;
+2) need simple rule that know which of elements need to swap in next step;
+
+As a result of my experiments with permutation of elements,
+I realized that one exchange is not enough. Need another operation.
+It is "flip". It consists of several swaps.
+Example flip of n elements:
+
+	1 2 3 ... n
+	<---------> - flip of n elements
+	n ... 3 2 1
+
+Using only the flip operation, you can get all permutations of elements.
+There is a problem how many elements need to flip at each step.
+For solving this problem I used additional array.
+Size of this array equal size array of the elements minus one.
+All the elements are integer and initialized zero.
+
+the first element can take values: [0, 1]
+the second element: [0, 1, 2]
+the third element:  [0, 1, 2, 3]
+the 4th element:    [0, 1, 2, 3, 4]
+the n-th element:   [0, 1, ... n]
+...
+
+For first permutation don't need any actions.
+In next step for calculation count of the elements
+which need to flip I used index of element in additional array.
+For every iteration in the begin the index initialized zero.
+Then for element with this index add 1.
+If this element less (index+2) then number of first elements
+which need to flip are (index+2). Otherwise the element with
+this index reset to zero and the index is incrementing.
+Then check next element with the next index.
+If the index equal index of the last element then stop permutation.
+
++-----+-----------+-------+
+| no. | elements  | flip  |
++-----+-----------+-------+
+|     |           |       |
+|  1  |  1  2  3  |       |
+|     |  <-->     |   2   |
+|  2  |  2  1  3  |       |
+|     |  <----->  |   3   |
+|  3  |  3  1  2  |       |
+|     |  <-->     |   2   |
+|  4  |  1  3  2  |       |
+|     |  <----->  |   3   |
+|  5  |  2  3  1  |       |
+|     |  <-->     |   2   |
+|  6  |  3  2  1  |       |
+|     |           |       |
++-----+-----------+-------+
+
++-----+--------------+-------+
+| no. |   elements   | flip  |
++-----+--------------+-------+
+|     |              |       |
+|  1  |  1  2  3  4  |       |
+|     |  <-->        |   2   |
+|  2  |  2  1  3  4  |       |
+|     |  <----->     |   3   |
+|  3  |  3  1  2  4  |       |
+|     |  <-->        |   2   |
+|  4  |  1  3  2  4  |       |
+|     |  <----->     |   3   |
+|  5  |  2  3  1  4  |       |
+|     |  <-->        |   2   |
+|  6  |  3  2  1  4  |       |
+|     |  <-------->  |   4   |
+|  7  |  4  1  2  3  |       |
+|     |  <-->        |   2   |
+|  8  |  1  4  2  3  |       |
+|     |  <----->     |   3   |
+|  9  |  2  4  1  3  |       |
+|     |  <-->        |   2   |
+| 10  |  4  2  1  3  |       |
+|     |  <----->     |   3   |
+| 11  |  1  2  4  3  |       |
+|     |  <-->        |   2   |
+| 12  |  2  1  4  3  |       |
+|     |  <-------->  |   4   |
+| 13  |  3  4  1  2  |       |
+|     |  <-->        |   2   |
+| 14  |  4  3  1  2  |       |
+|     |  <----->     |   3   |
+| 15  |  1  3  4  2  |       |
+|     |  <-->        |   2   |
+| 16  |  3  1  4  2  |       |
+|     |  <----->     |   3   |
+| 17  |  4  1  3  2  |       |
+|     |  <-->        |   2   |
+| 18  |  1  4  3  2  |       |
+|     |  <-------->  |   4   |
+| 19  |  2  3  4  1  |       |
+|     |  <-->        |   2   |
+| 20  |  3  2  4  1  |       |
+|     |  <----->     |   3   |
+| 21  |  4  2  3  1  |       |
+|     |  <-->        |   2   |
+| 22  |  2  4  3  1  |       |
+|     |  <----->     |   3   |
+| 23  |  3  4  2  1  |       |
+|     |  <-->        |   2   |
+| 24  |  4  3  2  1  |       |
+|     |              |       |
++-----+--------------+-------+
+
+
+flip examples:
+
+1 2 3 4
+<->         flip(2)
+2 1 3 4
+
+1 2 3 4
+<--->       flip(3)
+3 2 1 4
+
+1 2 3 4
+<----->     flip(4)
+4 3 2 1
+
+1 2 3 4 5
+<->         flip(2)
+2 1 3 4 5
+
+1 2 3 4 5
+<--->       flip(3)
+3 2 1 4 5
+
+1 2 3 4 5
+<----->     flip(4)
+4 3 2 1 5
+
+1 2 3 4 5
+<------->   flip(5)
+5 4 3 2 1
+
+
+Fs(B[n]) -> { B[n+1], fs }
+
+fs - flip size
+
++----+-------+-----+
+| no.|   B   | fs  |
++----+-------+-----+
+|  1 | 0 0 0 |  -  |
+|  2 | 1 0 0 |  2  |
+|  3 | 0 1 0 |  3  |
+|  4 | 1 1 0 |  2  |
+|  5 | 0 2 0 |  3  |
+|  6 | 1 2 0 |  2  |
+|  7 | 0 0 1 |  4  |
+|  8 | 1 0 1 |  2  |
+|  9 | 0 1 1 |  3  |
+| 10 | 1 1 1 |  2  |
+| 11 | 0 2 1 |  3  |
+| 12 | 1 2 1 |  2  |
+| 13 | 0 0 2 |  4  |
+| 14 | 1 0 2 |  2  |
+| 15 | 0 1 2 |  3  |
+| 16 | 1 1 2 |  2  |
+| 17 | 0 2 2 |  3  |
+| 18 | 1 2 2 |  2  |
+| 19 | 0 0 3 |  4  |
+| 20 | 1 0 3 |  2  |
+| 21 | 0 1 3 |  3  |
+| 22 | 1 1 3 |  2  |
+| 23 | 0 2 3 |  3  |
+| 24 | 1 2 3 |  2  |
++----+-------+-----+
+| 25 | 0 0 0 | -1  |
++----+-------+-----+
+
+The last (-1) check finish and return to begin state
+
+
+Author: Manuilov Yaroslav (Chander)
+Email:  jpochander@gmail.com
+
+       +-+  +-+
+      /  | /
+      \  | \
+       +-+  +-+
+       / | / |
+      /  |/  |
+     /   +   |
+    /        |
++--+--+   +--+--+

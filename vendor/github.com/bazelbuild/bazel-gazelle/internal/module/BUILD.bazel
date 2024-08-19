@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "module",
+    srcs = ["module.go"],
+    importpath = "github.com/bazelbuild/bazel-gazelle/internal/module",
+    visibility = ["//:__subpackages__"],
+    deps = ["@com_github_bazelbuild_buildtools//build"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "module.go",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":module",
+    visibility = ["//:__subpackages__"],
+)

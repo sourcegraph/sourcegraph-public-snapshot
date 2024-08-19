@@ -1,0 +1,138 @@
+<div id="grpc-form">
+  <table class="grpc-desc">
+    <tr>
+      <td>
+        <table id="grpc-desc-selects">
+          <!-- service -->
+          <tr>
+            <td>
+              <div class="grpc-form-label">Service name:</div>
+            </td>
+            <td id="grpc-service-select">
+              <select name="grpc-service" id="grpc-service">
+                {{ range .Services }}
+                <option value="{{.}}">{{.}}</option>
+                {{ end }}
+              </select>
+            </td>
+          </tr>
+          <!-- method -->
+          <tr>
+            <td>
+              <div class="grpc-form-label">Method name:</div>
+            </td>
+            <td id="grpc-method-select">
+              <select name="grpc-method" id="grpc-method">
+                <!-- populated by JavaScript when grpc-service is selected -->
+              </select>
+            </td>
+          </tr>
+        </table>
+      </td>
+      <td id="grpc-descriptions">
+        <button id="grpc-descriptions-toggle">»</button>
+        <pre id="grpc-service-description"></pre>
+        <pre id="grpc-method-description"></pre>
+        <pre id="grpc-service-description-end"></pre>
+      </td>
+    </tr>
+  </table>
+
+  <div id="grpc-container">
+    <div id="grpc-request-examples-container" style="display: none">
+      <h3>Examples</h3>
+      <ol id="grpc-request-examples"/>
+    </div>
+    <div id="grpc-request-response">
+      <ul>
+          <li id="#grpc-request-tab-button"><a href="#grpc-request-tab">Request Form</a></li>
+          <li id="#grpc-request-raw-tab-button"><a href="#grpc-request-raw-tab">Raw Request (JSON)</a></li>
+          <li id="#grpc-response-tab-button"><a href="#grpc-response-tab">Response</a></li>
+          <li id="#grpc-history-tab-button"><a href="#grpc-history-tab">History</a></li>
+      </ul>
+      <div class="grpc-tabcontent" id="grpc-request-tab">
+        <h3>Request Metadata</h3>
+        <div id="grpc-request-metadata">
+          <table class="grpc-request-table" id="grpc-request-metadata-form">
+              <tr><th></th><th class="name">Name</th><th class="value">Value</th></tr>
+              <tr><td><button id="grpc-request-metadata-add-row" class="add">+</button></td><td colspan="2"><span class="add-row-label">Add item</span></td></tr>
+          </table>
+        </div>
+
+        <h3>Request Data</h3>
+        <div id="grpc-request-form"></div>
+
+        <h3>Request Timeout</h3>
+        <div id="grpc-request-timeout">
+          <input/> seconds
+        </div>
+
+        <button class="grpc-invoke" disabled>Invoke</button>
+      </div>
+      <div class="grpc-tabcontent" id="grpc-request-raw-tab">
+        <textarea id="grpc-request-raw-text"></textarea><br/>
+        <button class="grpc-invoke" disabled>Invoke</button>
+      </div>
+      <div class="grpc-tabcontent" id="grpc-response-tab">
+        <h3>Response Headers</h3>
+        <table class="grpc-metadata-table" id="grpc-response-headers"></table>
+        <h3>Response Data</h3>
+        <div id="grpc-response-req-stats"></div>
+        <div class="grpc-response-messages" id="grpc-response-data"></div>
+        <div id="grpc-response-error">
+          <div id="grpc-response-error-summary">
+              <span id="grpc-response-error-desc"></span> <span id="grpc-response-error-num"></span>
+          </div>
+          <div id = "response-error-extra">
+            <span id="grpc-response-error-msg"></span>
+            <div id="grpc-response-error-details-container">
+              <h4>Error Details:</h4>
+              <div class="grpc-response-messages" id="grpc-response-error-details"></div>
+            </div>
+          </div>
+        </div>
+        <h3>Response Trailers</h3>
+        <table class="grpc-metadata-table" id="grpc-response-trailers"></table>
+      </div>
+      <div class="grpc-tabcontent" id="grpc-history-tab">
+        <button class="grpc-history-clear" id="grpc-history-clear">Clear History</button>
+        <button class="grpc-history-save" id="grpc-history-save">Save History</button>
+        <div class="grpc-history-list" id="grpc-history-list">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<datalist id="grpc-message-types"></datalist>
+
+<script type="application/javascript">
+(function() {
+    var services = {
+    {{- range .Services}}
+        "{{.}}": [
+        {{- range $i, $elt := index $.Methods .}}
+            "{{$elt}}",
+        {{- end}}
+        ],
+    {{- end}}
+    };
+    var svcDescs = {
+    {{- range $name, $desc := .SvcDescs}}
+        "{{$name}}": "{{$desc}}",
+    {{- end}}
+    };
+    var mtdDescs = {
+    {{- range $name, $desc := .MtdDescs}}
+        "{{$name}}": "{{$desc}}",
+    {{- end}}
+    };
+    var headers = [
+    {{- range .DefaultMetadata}}
+        {"name": "{{.Name}}", "value": "{{.Value}}"},
+    {{- end}}
+    ];
+
+    initGRPCForm(services, svcDescs, mtdDescs, '{{ .InvokeURI }}', '{{ .MetadataURI }}', {{ .Debug }}, headers);
+})();
+</script>

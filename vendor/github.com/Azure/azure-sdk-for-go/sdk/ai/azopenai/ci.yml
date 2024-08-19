@@ -1,0 +1,46 @@
+# NOTE: Please refer to https://aka.ms/azsdk/engsys/ci-yaml before editing this file.
+trigger:
+  branches:
+    include:
+      - main
+      - feature/*
+      - hotfix/*
+      - release/*
+  paths:
+    include:
+      - sdk/ai/azopenai
+      - eng/
+
+pr:
+  branches:
+    include:
+      - main
+      - feature/*
+      - hotfix/*
+      - release/*
+  paths:
+    include:
+      - sdk/ai/azopenai
+
+stages:
+  - template: /eng/pipelines/templates/jobs/archetype-sdk-client.yml
+    parameters:
+      # We need to allow for longer retry times with tests that run against the public endpoint
+      # which throttles under load. Note, I left a little wiggle room since the TimeoutInMinutes
+      # controls the overall pipeline and TestRunTime configures the individual `go test -timeout` parameter.
+      TimeoutInMinutes: 35
+      TestRunTime: 30m
+      ServiceDirectory: "ai/azopenai"
+      RunLiveTests: true
+      UsePipelineProxy: false
+      CloudConfig:
+        Public:
+          SubscriptionConfigurations:
+            - $(sub-config-azure-cloud-test-resources)
+            - $(sub-config-openai-test-resources) # TestSecrets-openai
+      EnvVars:
+        AZURE_TEST_RUN_LIVE: "true" # use when utilizing the New-TestResources Script
+        AZURE_CLIENT_ID: $(AZOPENAI_CLIENT_ID)
+        AZURE_CLIENT_SECRET: $(AZOPENAI_CLIENT_SECRET)
+        AZURE_TENANT_ID: $(AZOPENAI_TENANT_ID)
+        AZURE_SUBSCRIPTION_ID: $(AZOPENAI_SUBSCRIPTION_ID)

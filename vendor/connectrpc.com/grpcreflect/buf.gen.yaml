@@ -1,0 +1,9 @@
+version: v1
+managed:
+  enabled: true
+  go_package_prefix:
+    default: connectrpc.com/grpcreflect/internal/gen/go
+plugins:
+  - plugin: go
+    out: internal/gen/go
+    opt: paths=source_relative

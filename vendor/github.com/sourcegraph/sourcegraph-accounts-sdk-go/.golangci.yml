@@ -1,0 +1,33 @@
+linters-settings:
+  nakedret:
+    max-func-lines: 0 # Disallow any unnamed return statement
+  depguard:
+    rules:
+      main:
+        deny:
+          - pkg: "errors"
+            desc: use "github.com/sourcegraph/sourcegraph/lib/errors" instead
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+
+linters:
+  enable:
+    - unused
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - nakedret
+    - gofmt
+    - rowserrcheck
+    - unconvert
+    - goimports
+    - unparam
+    - depguard
+    - gosec

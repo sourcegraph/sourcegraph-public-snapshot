@@ -1,0 +1,5 @@
+package grammar
+
+const (
+	SP = ' '
+)

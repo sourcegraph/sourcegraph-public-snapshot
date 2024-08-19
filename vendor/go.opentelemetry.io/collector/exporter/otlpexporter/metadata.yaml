@@ -1,0 +1,12 @@
+type: otlp
+
+status:
+  class: exporter
+  stability:
+    stable: [traces, metrics]
+    beta: [logs]
+  distributions: [core, contrib]
+
+tests:
+  config:
+    endpoint: otelcol:4317

@@ -1,0 +1,17 @@
+language: go
+
+go:
+  - tip
+
+install:
+  - go get github.com/gomodule/redigo/redis
+
+script:
+  - go test -race
+
+notifications:
+  email:
+    recipients:
+      - adm@rafael.net.br
+    on_success: change
+    on_failure: always

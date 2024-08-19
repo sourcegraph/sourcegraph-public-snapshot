@@ -1,0 +1,143 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load(":def.bzl", "std_package_list")
+
+# gazelle:exclude testdata
+
+# TODO(jayconrod): test that the checked-in static file matches the generated
+# file. The generated code is checked in so that Gazelle can still be built
+# with "go get".
+std_package_list(
+    name = "std_package_list",
+    out = "std_package_list.go",
+)
+
+go_library(
+    name = "go",
+    srcs = [
+        "build_constraints.go",
+        "config.go",
+        "constants.go",
+        "embed.go",
+        "fileinfo.go",
+        "fix.go",
+        "generate.go",
+        "kinds.go",
+        "lang.go",
+        "modules.go",
+        "package.go",
+        "resolve.go",
+        "std_package_list.go",
+        "stdlib_links.go",
+        "update.go",
+        "utils.go",
+        "work.go",
+    ],
+    importpath = "github.com/bazelbuild/bazel-gazelle/language/go",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//config",
+        "//flag",
+        "//internal/module",
+        "//internal/version",
+        "//label",
+        "//language",
+        "//language/proto",
+        "//pathtools",
+        "//repo",
+        "//resolve",
+        "//rule",
+        "@com_github_bazelbuild_buildtools//build",
+        "@org_golang_x_mod//modfile",
+        "@org_golang_x_mod//module",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+go_test(
+    name = "go_test",
+    srcs = [
+        "build_constraints_test.go",
+        "config_test.go",
+        "fileinfo_go_test.go",
+        "fileinfo_test.go",
+        "fix_test.go",
+        "generate_test.go",
+        "resolve_test.go",
+        "stubs_test.go",
+        "update_import_test.go",
+    ],
+    data = glob(
+        ["testdata/**"],
+        # Empty when distributed.
+        allow_empty = True,
+    ),
+    embed = [":go"],
+    deps = [
+        "//config",
+        "//label",
+        "//language",
+        "//language/proto",
+        "//merger",
+        "//pathtools",
+        "//repo",
+        "//resolve",
+        "//rule",
+        "//testtools",
+        "//walk",
+        "@com_github_bazelbuild_buildtools//build",
+        "@com_github_google_go_cmp//cmp",
+        "@io_bazel_rules_go//go/tools/bazel:go_default_library",
+        "@org_golang_x_tools_go_vcs//:vcs",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "build_constraints.go",
+        "build_constraints_test.go",
+        "config.go",
+        "config_test.go",
+        "constants.go",
+        "def.bzl",
+        "embed.go",
+        "fileinfo.go",
+        "fileinfo_go_test.go",
+        "fileinfo_test.go",
+        "fix.go",
+        "fix_test.go",
+        "generate.go",
+        "generate_test.go",
+        "kinds.go",
+        "lang.go",
+        "modules.go",
+        "package.go",
+        "resolve.go",
+        "resolve_test.go",
+        "std_package_list.go",
+        "stdlib_links.go",
+        "stubs_test.go",
+        "update.go",
+        "update_import_test.go",
+        "utils.go",
+        "work.go",
+        "//language/go/gen_std_package_list:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":go",
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "def",
+    srcs = ["def.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["@io_bazel_rules_go//go:def"],
+)

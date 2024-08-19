@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bigquerywriter",
+    srcs = ["bigquerywriter.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/bigquerywriter",
+    tags = [TAG_INFRA_CORESERVICES],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@com_google_cloud_go_bigquery//:bigquery",
+    ],
+)

@@ -1,0 +1,8 @@
+# PEGN-AST (v0.1.0) github.com/di-wu/parser
+
+Node     <-- '[' Integer ',' (Children / Literal) ']'
+Literal  <-- '"' Character* '"'
+Character <- Escaped / [x20-x21] / [x23-x5B] / [x5D-x10FFFF]
+Escaped   <- '\' ('b' / 'f' / 'n' / 'r' / 't' / '"' / '\')
+Children <-- '[' Node (',' Node)* ']'
+Integer  <-- '-'? ('0' / [1-9][0-9]*)

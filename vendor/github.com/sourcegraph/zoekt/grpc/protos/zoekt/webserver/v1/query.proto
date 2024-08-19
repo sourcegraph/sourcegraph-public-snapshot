@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package zoekt.webserver.v1;
+
+option go_package = "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1";
+
+message Q {
+  oneof query {
+    RawConfig raw_config = 1;
+    Regexp regexp = 2;
+    Symbol symbol = 3;
+    Language language = 4;
+    bool const = 5;
+    Repo repo = 6;
+    RepoRegexp repo_regexp = 7;
+    BranchesRepos branches_repos = 8;
+    RepoIds repo_ids = 9;
+    RepoSet repo_set = 10;
+    FileNameSet file_name_set = 11;
+    Type type = 12;
+    Substring substring = 13;
+    And and = 14;
+    Or or = 15;
+    Not not = 16;
+    Branch branch = 17;
+    Boost boost = 18;
+  }
+}
+
+// RawConfig filters repositories based on their encoded RawConfig map.
+message RawConfig {
+  enum Flag {
+    FLAG_UNKNOWN_UNSPECIFIED = 0x00;
+    FLAG_ONLY_PUBLIC = 0x01;
+    FLAG_ONLY_PRIVATE = 0x02;
+    FLAG_ONLY_FORKS = 0x04;
+    FLAG_NO_FORKS = 0x08;
+    FLAG_ONLY_ARCHIVED = 0x10;
+    FLAG_NO_ARCHIVED = 0x20;
+  }
+
+  repeated Flag flags = 1;
+}
+
+// Regexp is a query looking for regular expressions matches.
+message Regexp {
+  string regexp = 1;
+  bool file_name = 2;
+  bool content = 3;
+  bool case_sensitive = 4;
+}
+
+message Symbol {
+  Q expr = 1;
+}
+
+message Language {
+  string language = 1;
+}
+
+message Repo {
+  string regexp = 1;
+}
+
+message RepoRegexp {
+  string regexp = 1;
+}
+
+// BranchesRepos is a slice of BranchRepos to match.
+message BranchesRepos {
+  repeated BranchRepos list = 1;
+}
+
+// BranchRepos is a (branch, sourcegraph repo ids bitmap) tuple. It is a
+// Sourcegraph addition.
+message BranchRepos {
+  string branch = 1;
+  // a serialized roaring bitmap of the target repo ids
+  bytes repos = 2;
+}
+
+// Similar to BranchRepos but will be used to match only by repoid and
+// therefore matches all branches
+message RepoIds {
+  // a serialized roaring bitmap of the target repo ids
+  bytes repos = 1;
+}
+
+// RepoSet is a list of repos to match.
+message RepoSet {
+  map<string, bool> set = 1;
+}
+
+// FileNameSet is a list of file names to match.
+message FileNameSet {
+  repeated string set = 1;
+}
+
+// Type changes the result type returned.
+message Type {
+  enum Kind {
+    KIND_UNKNOWN_UNSPECIFIED = 0;
+    KIND_FILE_MATCH = 1;
+    KIND_FILE_NAME = 2;
+    KIND_REPO = 3;
+  }
+
+  Q child = 1;
+  // TODO: type constants
+  Kind type = 2;
+}
+
+message Substring {
+  string pattern = 1;
+  bool case_sensitive = 2;
+
+  // Match only filename
+  bool file_name = 3;
+
+  // Match only content
+  bool content = 4;
+}
+
+// And is matched when all its children are.
+message And {
+  repeated Q children = 1;
+}
+
+// Or is matched when any of its children is matched.
+message Or {
+  repeated Q children = 1;
+}
+
+// Not inverts the meaning of its child.
+message Not {
+  Q child = 1;
+}
+
+// Branch limits search to a specific branch.
+message Branch {
+  string pattern = 1;
+  // exact is true if we want to Pattern to equal branch.
+  bool exact = 2;
+}
+
+// Boost multiplies the score of its child by the boost factor.
+message Boost {
+  Q child = 1;
+  double boost = 2;
+}

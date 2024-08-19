@@ -1,0 +1,12 @@
+root = true
+
+[*.{go},go.mod,go.sum]
+indent_style = tab
+indent_size = 8
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.md]
+indent_size = 4
+trim_trailing_whitespace = false

@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<article>
+  <title>Protocol Documentation</title>
+  {{range .Files}}
+  <section>
+    <title>{{.Name}}</title>
+    {{para .Description}}
+    {{range .Messages}}
+    <section id="{{.FullName}}">
+      <title>{{.LongName}}</title>
+      {{para .Description}}
+      {{if .HasFields}}
+      <table frame="all">
+        <title><classname>{{.LongName}}</classname> Fields</title>
+        <tgroup cols="4">
+          <colspec colwidth="*"/>
+          <colspec colwidth="*"/>
+          <colspec colwidth="0.5*"/>
+          <colspec colwidth="3*"/>
+          <thead>
+            <row>
+              <entry>Field</entry>
+              <entry>Type</entry>
+              <entry>Label</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            {{range .Fields}}
+            <row>
+              <entry>{{.Name}}</entry>
+              <entry><link linkend="{{.FullType}}">{{.LongType}}</link></entry>
+              <entry>{{.Label}}</entry>
+              <entry>{{if (index .Options "deprecated"|default false)}}<emphasis>Deprecated.</emphasis>{{end}}{{para .Description}}{{if .DefaultValue}}<para>Default: {{.DefaultValue}}</para>{{end}}</entry>
+            </row>
+            {{end}}
+          </tbody>
+        </tgroup>
+      </table>
+      {{end}}
+      {{if .HasExtensions}}
+      <table frame="all">
+        <title><classname>{{.LongName}}</classname> Nested Extensions</title>
+        <tgroup cols="5">
+          <colspec colwidth="*"/>
+          <colspec colwidth="*"/>
+          <colspec colwidth="*"/>
+          <colspec colwidth="0.5*"/>
+          <colspec colwidth="3*"/>
+          <thead>
+            <row>
+              <entry>Extension</entry>
+              <entry>Type</entry>
+              <entry>Base</entry>
+              <entry>Number</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            {{range .Extensions}}
+            <row>
+              <entry>{{.Name}}</entry>
+              <entry><link linkend="{{.FullType}}">{{.LongType}}</link></entry>
+              <entry><link linkend="{{.ContainingFullType}}">{{.ContainingLongType}}</link></entry>
+              <entry>{{.Number}}</entry>
+              <entry>{{para .Description}}{{if .DefaultValue}}<para>Default: {{.DefaultValue}}</para>{{end}}</entry>
+            </row>
+            {{end}}
+          </tbody>
+        </tgroup>
+      </table>
+      {{end}}
+    </section>
+    {{end}}
+    {{range .Enums}}
+    <section id="{{.FullName}}">
+      <title>{{.LongName}}</title>
+      {{para .Description}}
+      <table frame="all">
+        <title><classname>{{.LongName}}</classname> Values</title>
+        <tgroup cols="3">
+          <colspec colwidth="*"/>
+          <colspec colwidth="*"/>
+          <colspec colwidth="3*"/>
+          <thead>
+            <row>
+              <entry>Name</entry>
+              <entry>Number</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            {{range .Values}}
+            <row>
+              <entry>{{.Name}}</entry>
+              <entry>{{.Number}}</entry>
+              <entry>{{para .Description}}</entry>
+            </row>
+            {{end}}
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    {{end}}
+
+    {{if .HasExtensions}}
+    <section>
+      <title>File-level Extensions</title>
+      <informaltable frame="all">
+        <tgroup cols="5">
+          <colspec colwidth="*"/>
+          <colspec colwidth="*"/>
+          <colspec colwidth="*"/>
+          <colspec colwidth="0.5*"/>
+          <colspec colwidth="3*"/>
+          <thead>
+            <row>
+              <entry>Extension</entry>
+              <entry>Type</entry>
+              <entry>Base</entry>
+              <entry>Number</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            {{range .Extensions}}
+            <row>
+              <entry>{{.Name}}</entry>
+              <entry><link linkend="{{.FullType}}">{{.LongType}}</link></entry>
+              <entry><link linkend="{{.ContainingFullType}}">{{.ContainingLongType}}</link></entry>
+              <entry>{{.Number}}</entry>
+              <entry>{{para .Description}}{{if .DefaultValue}}<para>Default: {{.DefaultValue}}</para>{{end}}</entry>
+            </row>
+            {{end}}
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </section>
+    {{end}}
+
+    {{range .Services}}
+    <section id="{{.FullName}}">
+      <title>{{.Name}}</title>
+      {{para .Description}}
+      <table frame="all">
+        <title><classname>{{.Name}}</classname> Methods</title>
+        <tgroup cols="4">
+          <colspec colwidth="*"/>
+          <colspec colwidth="*"/>
+          <colspec colwidth="*"/>
+          <colspec colwidth="3*"/>
+          <thead>
+            <row>
+              <entry>Method Name</entry>
+              <entry>Request Type</entry>
+              <entry>Response Type</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            {{range .Methods}}
+            <row>
+              <entry>{{.Name}}</entry>
+              <entry><link linkend="{{.RequestFullType}}">{{.RequestLongType}}</link>{{if .RequestStreaming}} stream{{end}}</entry>
+              <entry><link linkend="{{.ResponseFullType}}">{{.ResponseLongType}}</link>{{if .ResponseStreaming}} stream{{end}}</entry>
+              <entry>{{para .Description}}</entry>
+            </row>
+            {{end}}
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    {{end}}
+  </section>
+  {{end}}
+
+  <section>
+    <title>Scalar Value Types</title>
+    <informaltable frame="all">
+      <tgroup cols="5">
+        <colspec colwidth="*"/>
+        <colspec colwidth="5*"/>
+        <colspec colwidth="*"/>
+        <colspec colwidth="*"/>
+        <colspec colwidth="*"/>
+        <thead>
+          <row>
+            <entry>.proto Type</entry>
+            <entry>Notes</entry>
+            <entry>C++</entry>
+            <entry>Java</entry>
+            <entry>Python</entry>
+            <entry>Go</entry>
+            <entry>C#</entry>
+            <entry>PHP</entry>
+            <entry>Ruby</entry>
+          </row>
+        </thead>
+        <tbody>
+          {{range .Scalars}}
+          <row>
+            <entry id="{{.ProtoType}}">{{.ProtoType}}</entry>
+            <entry>{{.Notes}}</entry>
+            <entry>{{.CppType}}</entry>
+            <entry>{{.JavaType}}</entry>
+            <entry>{{.PythonType}}</entry>
+            <entry>{{.GoType}}</entry>
+            <entry>{{.CSharp}}</entry>
+            <entry>{{.PhpType}}</entry>
+            <entry>{{.RubyType}}</entry>
+          </row>
+          {{end}}
+        </tbody>
+      </tgroup>
+    </informaltable>
+  </section>
+
+</article>

@@ -1,0 +1,19 @@
+env:
+  global:
+    - GO111MODULE=on
+    - CC_TEST_REPORTER_ID=020a0df92e2e72cc304c893d0811de2f1103826ec3c9ec3e6cddb90425ecedc5
+
+dist: xenial
+language: go
+go:
+  - 1.11.x
+  - tip
+install: go mod vendor
+script: go test -mod vendor -coverprofile=c.out -covermode=atomic
+
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+after_script:
+  - ./cc-test-reporter after-build --coverage-input-type gocov --exit-code $TRAVIS_TEST_RESULT

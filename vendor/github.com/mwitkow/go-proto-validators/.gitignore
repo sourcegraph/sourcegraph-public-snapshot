@@ -1,0 +1,11 @@
+# IDE configurations.
+*~
+*.idea
+*.iml
+.idea_modules
+.vscode
+
+# Build and script artefacts.
+deps/
+bazel-*
+

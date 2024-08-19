@@ -1,0 +1,55 @@
+# This file contains all available configuration options
+# with their default values.
+
+# Options for analysis running
+run:
+  concurrency: 4
+  timeout: 10m
+  issues-exit-code: 1
+  tests: true
+
+# Output configuration options
+output:
+  format: line-number
+
+# All available settings of specific linters
+linters-settings:
+  misspell:
+    locale: US
+    ignore-words:
+    - noteable
+
+linters:
+  enable:
+    - asciicheck
+    - dogsled
+    - errorlint
+    - exportloopref
+    - goconst
+    - gosimple
+    - govet
+    - ineffassign
+    - megacheck
+    - misspell
+    - nakedret
+    - nolintlint
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
+  disable:
+    - errcheck
+  disable-all: false
+  fast: false
+
+issues:
+  # List of regexps of issue texts to exclude.
+  exclude:
+    - "^.*, make it a constant$"
+
+  # Maximum issues count per one linter (set to 0 to disable)
+  max-issues-per-linter: 0
+
+  # Maximum count of issues with the same text (set to 0 to disable)
+  max-same-issues: 0

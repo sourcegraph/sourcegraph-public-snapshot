@@ -1,0 +1,9 @@
+# Configuration and application files
+.idea
+.envrc
+.task
+.vite
+.vscode
+
+# System junk
+.DS_Store

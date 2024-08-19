@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "grafanaclient",
+    srcs = ["grafanaclient.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/monitoring/grafanaclient",
+    tags = [TAG_INFRA_DEVINFRA],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "//monitoring/grafanaclient/headertransport",
+        "@com_github_grafana_tools_sdk//:sdk",
+    ],
+)

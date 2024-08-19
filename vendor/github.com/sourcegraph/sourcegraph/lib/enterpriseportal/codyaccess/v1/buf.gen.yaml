@@ -1,0 +1,25 @@
+# Configuration file for https://buf.build/, which we use for Protobuf code generation.
+version: v1
+plugins:
+  - plugin: buf.build/grpc/go:v1.3.0
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/protocolbuffers/go:v1.33.0
+    out: .
+    opt:
+      - paths=source_relative
+
+  # Generate connectrpc bindings in Go
+  - plugin: buf.build/connectrpc/go:v1.16.1
+    out: .
+    opt:
+      - paths=source_relative
+
+  # Generate connectrpc bindings in Typescript: https://buf.build/connectrpc/query-es?version=v1.4.1
+  - plugin: buf.build/connectrpc/query-es:v1.4.1
+    out: ../../../../client/web/src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportalgen
+    opt: target=ts
+  - plugin: buf.build/bufbuild/es:v1.10.0
+    out: ../../../../client/web/src/enterprise/site-admin/dotcom/productSubscriptions/enterpriseportalgen
+    opt: target=ts

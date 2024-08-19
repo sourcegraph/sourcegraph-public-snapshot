@@ -1,0 +1,13 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/frankban/quicktest.svg)](https://pkg.go.dev/github.com/frankban/quicktest#section-documentation)
+[![Build Status](https://github.com/frankban/quicktest/actions/workflows/ci.yaml/badge.svg)](https://github.com/frankban/quicktest/actions/workflows/ci.yaml)
+
+[//]: # (Generated with: godocdown -template=.godocdown.template -o README.md && sed -i= 's/^# /### /' README.md )
+
+# quicktest
+
+`go get github.com/frankban/quicktest@latest`
+
+{{ .EmitSynopsis }}
+
+For a complete API reference, see the
+[package documentation](https://pkg.go.dev/github.com/frankban/quicktest#section-documentation).

@@ -1,0 +1,37 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scip",
+    srcs = [
+        "document.go",
+        "index.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip",
+    tags = [TAG_PLATFORM_GRAPH],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/codeintel/lsif/conversion",
+        "//lib/codeintel/precise",
+        "//lib/codeintel/upload",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)
+
+go_test(
+    name = "scip_test",
+    timeout = "short",
+    srcs = [
+        "document_test.go",
+        "index_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":scip"],
+    tags = [TAG_PLATFORM_GRAPH],
+    deps = [
+        "//lib/codeintel/precise",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)

@@ -1,0 +1,463 @@
+syntax = "proto3";
+
+package enterpriseportal.subscriptions.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph/lib/enterpriseportal/subscriptions/v1";
+
+// SubscriptionsService is the service API specification for Enterprise Portal's
+// core Enterprise subscription and Enterprise license management capabilities.
+//
+// Extensions to support additional Enterprise services are expected to be
+// defined as separate gRPC services in 'lib/enterpriseportal' - these are
+// generally all be implemented by the Enterprise Portal Service directly for
+// now.
+service SubscriptionsService {
+  // GetEnterpriseSubscription retrieves an exact match on an Enterprise subscription.
+  rpc GetEnterpriseSubscription(GetEnterpriseSubscriptionRequest) returns (GetEnterpriseSubscriptionResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // ListEnterpriseSubscriptions queries for Enterprise subscriptions.
+  rpc ListEnterpriseSubscriptions(ListEnterpriseSubscriptionsRequest) returns (ListEnterpriseSubscriptionsResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // ListEnterpriseSubscriptionLicenses queries for licenses associated with
+  // Enterprise subscription licenses, with the ability to list licenses across
+  // all subscriptions, or just a specific subscription.
+  //
+  // Each subscription owns a collection of licenses, typically a series of
+  // licenses with the most recent one being a subscription's active license.
+  rpc ListEnterpriseSubscriptionLicenses(ListEnterpriseSubscriptionLicensesRequest) returns (ListEnterpriseSubscriptionLicensesResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
+
+  // CreateEnterpriseSubscription creates license for an Enterprise subscription.
+  rpc CreateEnterpriseSubscriptionLicense(CreateEnterpriseSubscriptionLicenseRequest) returns (CreateEnterpriseSubscriptionLicenseResponse) {
+    // Not idempotent - we could implement https://google.aip.dev/155 for
+    // optional idempotency in the future.
+  }
+
+  // RevokeEnterpriseSubscriptionLicense revokes an existing license for an
+  // Enterprise subscription, permanently disabling its use for features
+  // managed by Sourcegraph. Revocation cannot be undone.
+  rpc RevokeEnterpriseSubscriptionLicense(RevokeEnterpriseSubscriptionLicenseRequest) returns (RevokeEnterpriseSubscriptionLicenseResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // UpdateEnterpriseSubscription updates an existing enterprise subscription.
+  rpc UpdateEnterpriseSubscription(UpdateEnterpriseSubscriptionRequest) returns (UpdateEnterpriseSubscriptionResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // ArchiveEnterpriseSubscriptionRequest archives an existing Enterprise
+  // subscription. This is a permanent operation, and cannot be undone.
+  //
+  // Archiving a subscription also immediately and permanently revokes all
+  // associated licenses.
+  rpc ArchiveEnterpriseSubscription(ArchiveEnterpriseSubscriptionRequest) returns (ArchiveEnterpriseSubscriptionResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+
+  // CreateEnterpriseSubscription creates an Enterprise subscription.
+  rpc CreateEnterpriseSubscription(CreateEnterpriseSubscriptionRequest) returns (CreateEnterpriseSubscriptionResponse) {
+    // Not idempotent - we could implement https://google.aip.dev/155 for
+    // optional idempotency in the future.
+  }
+
+  // UpdateEnterpriseSubscriptionMembership updates an enterprise subscription
+  // membership in an authoritative manner.
+  rpc UpdateEnterpriseSubscriptionMembership(UpdateEnterpriseSubscriptionMembershipRequest) returns (UpdateEnterpriseSubscriptionMembershipResponse) {
+    option idempotency_level = IDEMPOTENT;
+  }
+}
+
+message EnterpriseSubscriptionCondition {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // Subscription creation status.
+    STATUS_CREATED = 1;
+    // Subscription archival status. i.e. 'is_archived'
+    STATUS_ARCHIVED = 2;
+    // Subscription import status, from the one-time migration from the
+    // predecessor in-dotcom database to Enterprise Portal.
+    STATUS_IMPORTED = 3;
+  }
+
+  // The time this subscription transitioned into this status.
+  google.protobuf.Timestamp last_transition_time = 1;
+  // Status is the type of status corresponding to this condition.
+  Status status = 2;
+  // Message is a description of the status transition and why it happened.
+  string message = 3;
+}
+
+message EnterpriseSubscriptionSalesforceMetadata {
+  // The Salesforce subscription ID associated with this Enterprise subscription.
+  string subscription_id = 1;
+}
+
+// EnterpriseSubscriptionInstanceType describes what kind of Sourcegraph
+// instance an Enterprise Subscription is designated for.
+enum EnterpriseSubscriptionInstanceType {
+  ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_UNSPECIFIED = 0;
+  // Represents a primary, production instance.
+  ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_PRIMARY = 1;
+  // Represents a secondary (e.g. dev or testing) instance.
+  ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_SECONDARY = 2;
+  // Represents a Sourcegraph-internal instance.
+  ENTERPRISE_SUBSCRIPTION_INSTANCE_TYPE_INTERNAL = 3;
+}
+
+// EnterpriseSubscription represents a Sourcegraph Enterprise subscription.
+message EnterpriseSubscription {
+  // ID is the external, prefixed UUID-format identifier for this subscription
+  // (e.g. "es_...").
+  string id = 1;
+  // Timeline of key events corresponding to this subscription.
+  repeated EnterpriseSubscriptionCondition conditions = 2;
+  // Display name of this subscription, e.g. "Acme, Inc."
+  string display_name = 3;
+  // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
+  string instance_domain = 4;
+
+  // Salesforce details associated with this subscription.
+  EnterpriseSubscriptionSalesforceMetadata salesforce = 5;
+
+  // The use case for the instance used in this Enterprise subscription.
+  EnterpriseSubscriptionInstanceType instance_type = 6;
+}
+
+// EnterpriseSubscriptionLicenseKey is the classic offline Sourcegraph license
+// key, and corresponds to ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
+message EnterpriseSubscriptionLicenseKey {
+  // Read-only information embedded into ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
+  message Info {
+    // The tags that indicate which features are activated by this license.
+    repeated string tags = 1;
+    // The number of users for which this product subscription is valid.
+    uint64 user_count = 2;
+    // The expiration date of this product license. In license data, this is
+    // called 'expires_at', expressed as the number of seconds since the epoch.
+    google.protobuf.Timestamp expire_time = 3;
+    // The Salesforce subscription ID associated with this license's parent
+    // Enterprise Subscription.
+    string salesforce_subscription_id = 4;
+    // The Salesforce opportunity ID associated with this product license's
+    // creation. Opportunities in Salesforce generally lead to the creation of a
+    // new license key.
+    string salesforce_opportunity_id = 5;
+  }
+
+  // Version of this classic license's information schema. It is incremented
+  // whenever a major change is made to the shape of Info to indicate what
+  // fields can be expected from the information embedded in the license key.
+  uint32 info_version = 1;
+  // Read-only information embedded into ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY.
+  Info info = 2;
+  // The signed license key.
+  string license_key = 3;
+  // Generated display name representing the plan and some high-level attributes
+  // about the plan.
+  string plan_display_name = 4;
+}
+
+message EnterpriseSubscriptionLicenseCondition {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    // License creation status.
+    STATUS_CREATED = 1;
+    // License revocation status, i.e. 'is_revoked'
+    STATUS_REVOKED = 2;
+    // License usage from a Sourcegraph instance was detected.
+    STATUS_INSTANCE_USAGE_DETECTED = 3;
+  }
+
+  // The time this subscription transitioned into this status.
+  google.protobuf.Timestamp last_transition_time = 1;
+  // Status is the type of status corresponding to this condition.
+  Status status = 2;
+  // Message is a description of the status transition and why it happened.
+  string message = 3;
+}
+
+// EnterpriseSubscriptionLicense represents a license for a Sourcegraph
+// Enterprise product. Multiple licenses are associated with a single
+// subscription, typically a series of licenses with the most recent one being
+// a subscription's active license.
+message EnterpriseSubscriptionLicense {
+  // ID is the external, prefixed UUID-format identifier for this license key.
+  string id = 1;
+  // The external, prefixed UUID-format identifier for the subscription that
+  // owns this license.
+  string subscription_id = 2;
+  // Timeline of key events corresponding to this license.
+  repeated EnterpriseSubscriptionLicenseCondition conditions = 3;
+  // License data, based on the type of the license.
+  oneof license {
+    EnterpriseSubscriptionLicenseKey key = 4;
+  }
+}
+
+message GetEnterpriseSubscriptionRequest {
+  // Query specifies the lookup strategy for this get request.
+  oneof query {
+    // Look up a subscription using its external, prefixed UUID-format identifier.
+    string id = 1;
+  }
+}
+
+message GetEnterpriseSubscriptionResponse {
+  EnterpriseSubscription subscription = 1;
+}
+
+// EnterpriseSubscriptionLicenseType can be used to denote different types of
+// licenses.
+enum EnterpriseSubscriptionLicenseType {
+  ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_UNSPECIFIED = 0;
+  // The 'license key' type is the classic licensing mechanism that Sourcegraph
+  // has always had. They are signed by a private key and offline-validated by
+  // a public key that ships with all Sourcegraph builds.
+  //
+  // Each Subscription is expected to have at most one active Sourcegraph classic
+  // license used by a Sourcegraph instance at a time.
+  ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY = 1;
+}
+
+message ListEnterpriseSubscriptionsFilter {
+  oneof filter {
+    // Filter by exact match on the Enterprise Subscription ID.
+    string subscription_id = 1;
+    // Return only product subscriptions with the given archival status.
+    bool is_archived = 2;
+    // Return only product subscriptions that satisfies the given permission.
+    Permission permission = 3;
+    // Filter by partial match on display name. The query must be at least 3
+    // characters long.
+    string display_name = 4;
+    // Filter by exact match on Salesforce metadata.
+    EnterpriseSubscriptionSalesforceMetadata salesforce = 5;
+    // Filter by partial match on instance domain. The query must be a valid
+    // domain.
+    string instance_domain = 6;
+  }
+}
+
+message ListEnterpriseSubscriptionsRequest {
+  // Clients use this field to specify the maximum number of results to be
+  // returned by the server. The server may further constrain the maximum number
+  // of results returned in a single page. If the page_size is 0, the server
+  // will decide the number of results to be returned.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  int32 page_size = 1;
+  // The client uses this field to request a specific page of the list results.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  string page_token = 2;
+
+  // Filters define the lookup strategy for this list request. Multiple filters
+  // are treated as AND-concatenated.
+  repeated ListEnterpriseSubscriptionsFilter filters = 3;
+}
+
+message ListEnterpriseSubscriptionsResponse {
+  // This field represents the pagination token to retrieve the next page of
+  // results. If the value is "", it means no further results for the request.
+  string next_page_token = 1;
+  // The list of subscriptions that matched the given query.
+  repeated EnterpriseSubscription subscriptions = 2;
+}
+
+message ListEnterpriseSubscriptionLicensesFilter {
+  oneof filter {
+    // Return only licenses corresponding to the given subscription ID, with the
+    // most recently issued licenses first.
+    string subscription_id = 1;
+    // Return only licenses of the given type.
+    EnterpriseSubscriptionLicenseType type = 2;
+    // Return only licenses that are active.
+    bool is_revoked = 3;
+    // Return only licenses where the signed license key contains this substring.
+    // Query must be at least 3 characters.
+    //
+    // MUST be used in conjunction with the type = 'ENTERPRISE_SUBSCRIPTION_LICENSE_TYPE_KEY'
+    // filter.
+    string license_key_substring = 4;
+    // Return only licenses associated with this Salesforce opportunity ID.
+    // MUST be used in conjunction with the 'type' filter.
+    string salesforce_opportunity_id = 5;
+  }
+}
+
+message ListEnterpriseSubscriptionLicensesRequest {
+  // Clients use this field to specify the maximum number of results to be
+  // returned by the server. The server may further constrain the maximum number
+  // of results returned in a single page. If the page_size is 0, the server
+  // will decide the number of results to be returned.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  int32 page_size = 1;
+  // The client uses this field to request a specific page of the list results.
+  // A zero value requests the first page.
+  //
+  // See pagination concepts from https://cloud.google.com/apis/design/design_patterns#list_pagination
+  //
+  // TODO: Create an internal pagination token type: https://protobuf.dev/programming-guides/api/#encode-opaque-data-in-strings
+  string page_token = 2;
+
+  // Filters define the lookup strategy for this list request. Multiple filters
+  // are treated as AND-concatenated.
+  repeated ListEnterpriseSubscriptionLicensesFilter filters = 3;
+}
+
+message ListEnterpriseSubscriptionLicensesResponse {
+  // This field represents the pagination token to retrieve the next page of
+  // results. If the value is "", it means no further results for the request.
+  string next_page_token = 1;
+  // The list of licenses that matched the given query, sorted by the most
+  // recently created licenses first.
+  repeated EnterpriseSubscriptionLicense licenses = 2;
+}
+
+message CreateEnterpriseSubscriptionLicenseRequest {
+  // The license to create.
+  //
+  // Required attributes:
+  // - subscription_id (this is the parent resource, EnterpriseSubscription)
+  // - license
+  //
+  // `license` supports the following types. At least one must be provided:
+  //
+  // - license.key, which requires:
+  //   - license.key.info_version
+  //   - license.key.info.tags
+  //   - license.key.info.user_count
+  //   - license.key.info.expire_time
+  //   - license.key.info.salesforce_opportunity_id
+  EnterpriseSubscriptionLicense license = 1;
+
+  // Message to associate with the license creation event.
+  string message = 2;
+}
+
+message CreateEnterpriseSubscriptionLicenseResponse {
+  // The license that was created.
+  EnterpriseSubscriptionLicense license = 1;
+}
+
+message RevokeEnterpriseSubscriptionLicenseRequest {
+  // The ID of the license to revoke.
+  string license_id = 1;
+  // Human-readable explanation for revoking the license.
+  string reason = 2;
+}
+
+message RevokeEnterpriseSubscriptionLicenseResponse {}
+
+message UpdateEnterpriseSubscriptionRequest {
+  // The subscription to update.
+  // The following fields are used to identify the membership to update:
+  //  - id
+  // Multiple fields are treated as AND-concatenated.
+  EnterpriseSubscription subscription = 1;
+
+  // The list of fields to update, fields are specified relative to the EnterpriseSubscription.
+  // Updatable fields are:
+  //  - instance_domain
+  //  - instance_type
+  //  - display_name
+  //  - salesforce.subscription_id
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message UpdateEnterpriseSubscriptionResponse {
+  // The updated subscription.
+  EnterpriseSubscription subscription = 1;
+}
+
+message ArchiveEnterpriseSubscriptionRequest {
+  // The ID of the subscription to archive.
+  string subscription_id = 1;
+  // Human-readable explanation for revoking the license.
+  string reason = 2;
+}
+
+message ArchiveEnterpriseSubscriptionResponse {}
+
+message CreateEnterpriseSubscriptionRequest {
+  // The subscription to create.
+  //
+  // Required attributes:
+  // - display_name
+  // - instance_type
+  //
+  // Optional attributes:
+  // - instance_domain
+  // - salesforce.subscription_id
+  EnterpriseSubscription subscription = 1;
+
+  // Message to associate with the subscription creation event.
+  string message = 2;
+}
+
+message CreateEnterpriseSubscriptionResponse {
+  // The created subscription.
+  EnterpriseSubscription subscription = 1;
+}
+
+message EnterpriseSubscriptionMembership {
+  // The external, prefixed UUID-format identifier of the subscription.
+  string subscription_id = 1;
+  // The instance domain associated with this subscription, e.g. "acme.sourcegraphcloud.com".
+  string instance_domain = 2;
+  // The SAMS account ID of the member.
+  string member_sams_account_id = 3;
+  // The roles of the member. The roles provided are authoritative - all roles
+  // not on the list are revoked.
+  repeated Role member_roles = 4;
+}
+
+message UpdateEnterpriseSubscriptionMembershipRequest {
+  // The membership to update.
+  // The first non-empty field of the following fields is used to identify the product subscription to update:
+  //  - subscription_id
+  //  - instance_domain
+  // Multiple fields are treated as AND-concatenated.
+  EnterpriseSubscriptionMembership membership = 1;
+}
+
+message UpdateEnterpriseSubscriptionMembershipResponse {}
+
+// Role represents a role that can be granted to a user.
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  reserved 1; // discontinued value
+  ROLE_SUBSCRIPTION_CUSTOMER_ADMIN = 2;
+}
+
+// Permission represents a permission that can be performed by a user.
+message Permission {
+  // The type of the permission.
+  PermissionType type = 1;
+  // The relation between the user and the resource.
+  PermissionRelation relation = 2;
+  // The SAMS account ID of the user.
+  string sams_account_id = 3;
+}
+
+// PermissionType defines a class of objects with similar characteristics.
+// https://openfga.dev/docs/concepts#what-is-a-type
+enum PermissionType {
+  PERMISSION_TYPE_UNSPECIFIED = 0;
+  PERMISSION_TYPE_SUBSCRIPTION_CODY_ANALYTICS = 1;
+}
+
+// PermissionRelation represents the relation between the user and the resource.
+enum PermissionRelation {
+  PERMISSION_RELATION_UNSPECIFIED = 0;
+  PERMISSION_RELATION_VIEW = 1;
+}

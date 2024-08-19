@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package clients.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/sourcegraph/sourcegraph-accounts-sdk-go/clients/v1;clientsv1";
+
+service UsersService {
+  // GetUser returns the SAMS user with the given query. It returns connect.CodeNotFound
+  // if no such user exists.
+  //
+  // Required scope: profile
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  // GetUsers returns the list of SAMS users matching the provided IDs.
+  //
+  // NOTE: It silently ignores any invalid user IDs, i.e. the length of the return
+  // slice may be less than the length of the input slice.
+  //
+  // Required scopes: profile
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+  // GetUserRoles returns all roles that have been assigned to the SAMS user
+  // with the given ID and scoped by the service.
+  //
+  // Required scopes: sams::user.roles::read
+  rpc GetUserRoles(GetUserRolesRequest) returns (GetUserRolesResponse);
+}
+
+// Exactly one attribute can be set.
+message GetUserRequest {
+  // The user's external ID.
+  string id = 1;
+  // The user's verified email address.
+  string email = 2;
+}
+
+message User {
+  // The external ID.
+  string id = 1;
+  // The display name.
+  string name = 2;
+  // The primary email address.
+  string email = 3;
+  // Whether the email address has been verified.
+  bool email_verified = 4;
+  // The profile avatar URL.
+  string avatar_url = 5;
+  // The time the user was created.
+  google.protobuf.Timestamp created_at = 6;
+  // The time the user information was last updated.
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message GetUsersRequest {
+  // The user's external IDs.
+  repeated string ids = 1;
+}
+
+message GetUsersResponse {
+  repeated User users = 1;
+}
+
+message GetUserRolesRequest {
+  // The user's external ID.
+  string id = 1;
+  // The service slug.
+  string service = 2;
+}
+
+message GetUserRolesResponse {
+  repeated string roles = 1;
+}
+
+service SessionsService {
+  // GetSession returns the SAMS session with the given ID. It returns
+  // connect.CodeNotFound if no such session exists. The session's `User` field is
+  // populated if the session is authenticated by a user.
+  //
+  // Required scope: sams::session::read
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse);
+  // SignOutSession revokes the authenticated state of the session with the given
+  // ID for the given user. It does not return error if the session does not exist
+  // or is not authenticated. It returns clientsv1.ErrorRecordMismatch in the
+  // error detail if the session is authenticated by a different user than the
+  // given user.
+  //
+  // Required scope: sams::session::write
+  rpc SignOutSession(SignOutSessionRequest) returns (SignOutSessionResponse);
+}
+
+message GetSessionRequest {
+  // The session's ID.
+  string id = 1;
+}
+
+message Session {
+  // The session's ID.
+  string id = 1;
+  // When not empty, the authenticated user.
+  optional User user = 2;
+}
+
+message GetSessionResponse {
+  Session session = 1;
+}
+
+message SignOutSessionRequest {
+  // The session's ID.
+  string id = 1;
+  // The user's external ID.
+  string user_id = 2;
+}
+
+message SignOutSessionResponse {}
+
+// ErrorRecordMismatch is returned in the error details when the record does not match the expected record,
+// e.g. the desired user ID does not match the actual user ID.
+message ErrorRecordMismatch {}
+
+service TokensService {
+  // IntrospectToken takes a SAMS access token and returns relevant metadata.
+  //
+  // 🚨SECURITY: SAMS will return a successful result if the token is valid, but
+  // is no longer active. It is critical that the caller not honor tokens where
+  // `.Active == false`.
+  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+}
+
+message IntrospectTokenRequest {
+  // The access token to introspect.
+  string token = 1;
+}
+
+message IntrospectTokenResponse {
+  // Active indicates whether the token is currently active. The value is "true"
+  // if the token has been issued by the SAMS instance, has not been revoked, and
+  // has not expired.
+  bool active = 1;
+  // Scopes is the list of scopes granted by the token.
+  repeated string scopes = 2;
+  // ClientID is the identifier of the SAMS client that the token was issued to.
+  string client_id = 3;
+  // ExpiresAt indicates when the token expires.
+  google.protobuf.Timestamp expires_at = 4;
+}

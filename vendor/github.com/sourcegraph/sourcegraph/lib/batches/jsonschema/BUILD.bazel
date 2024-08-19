@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "jsonschema",
+    srcs = ["jsonschema.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/jsonschema",
+    tags = [TAG_SEARCHSUITE],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@com_github_xeipuuv_gojsonschema//:gojsonschema",
+    ],
+)
