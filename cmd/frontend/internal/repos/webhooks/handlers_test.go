@@ -22,9 +22,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -158,7 +158,7 @@ func TestGitHubHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	targetURL := fmt.Sprintf("%s/github-webhooks", globals.ExternalURL())
+	targetURL := fmt.Sprintf("%s/github-webhooks", conf.ExternalURLParsed())
 	req, err := http.NewRequest("POST", targetURL, bytes.NewReader(payload))
 	if err != nil {
 		t.Fatal(err)

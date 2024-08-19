@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -10,4 +11,10 @@ go_library(
         "//internal/unpack",
         "//lib/errors",
     ],
+)
+
+go_test(
+    name = "download_test",
+    srcs = ["download_test.go"],
+    embed = [":download"],
 )

@@ -1,7 +1,12 @@
 <svelte:options immutable />
 
 <script context="module" lang="ts">
-    export type SearchResultsCapture = number
+    export interface SearchResultsCapture {
+        // The search results scroll offset
+        scroll: number
+        // The currently focused search result (if any)
+        focused: number | undefined
+    }
     interface ResultStateCache {
         count: number
         expanded: Set<SearchMatch>
@@ -15,7 +20,7 @@
 
 <script lang="ts">
     import type { Observable } from 'rxjs'
-    import { onMount, tick } from 'svelte'
+    import { afterUpdate, onMount, tick } from 'svelte'
     import { writable } from 'svelte/store'
 
     import { beforeNavigate, goto } from '$app/navigation'
@@ -45,23 +50,45 @@
 
     import PreviewPanel from './PreviewPanel.svelte'
     import SearchAlert from './SearchAlert.svelte'
+    import type { SearchJob } from './searchJob'
     import { getSearchResultComponent } from './searchResultFactory'
     import { setSearchResultsContext } from './searchResultsContext'
+    import { focusedResultIndex, nextResult, nthFocusableResult } from './searchResultsFocus'
     import StreamingProgress from './StreamingProgress.svelte'
 
     export let stream: Observable<AggregateStreamingSearchResults>
     export let queryFromURL: string
     export let selectedFilters: URLQueryFilter[]
     export let queryState: QueryStateStore
+    export let searchJob: SearchJob | undefined = undefined
 
     export function capture(): SearchResultsCapture {
-        return $resultContainer?.scrollTop ?? 0
+        return {
+            scroll: $resultContainer?.scrollTop ?? 0,
+            focused: $resultContainer ? focusedResultIndex($resultContainer) : undefined,
+        }
     }
 
     export function restore(capture?: SearchResultsCapture): void {
-        if ($resultContainer) {
-            $resultContainer.scrollTop = capture ?? 0
+        if ($resultContainer && capture) {
+            $resultContainer.scrollTop = capture.scroll
+            if (capture.focused) {
+                nthFocusableResult($resultContainer, capture.focused)?.focus({ preventScroll: true })
+            }
         }
+    }
+
+    export function focusNextResult(direction: 'up' | 'down'): boolean {
+        if ($resultContainer) {
+            const nextFocus = nextResult($resultContainer, direction)
+            if (!nextFocus) {
+                return false
+            }
+            nextFocus.focus({ preventScroll: true })
+            nextFocus.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+            return true
+        }
+        return false
     }
 
     const resultContainer = writable<HTMLElement | null>(null)
@@ -77,6 +104,18 @@
             resultCount: $stream.progress.matchCount,
         })
     }
+
+    let haveSetFocus = false // gets reset on query resubmission or filter changes
+    afterUpdate(() => {
+        if (!$isViewportMobile && !haveSetFocus && results.length > 0) {
+            const firstFocusableResult = $resultContainer?.querySelector<HTMLElement>('[data-focusable-search-result]')
+            if (firstFocusableResult) {
+                firstFocusableResult.focus()
+                haveSetFocus = true
+            }
+        }
+    })
+    $: selectedFilters, (haveSetFocus = false) // reset focus on filter change
 
     // Logic for maintaining list state (scroll position, rendered items, open
     // items) for backwards navigation.
@@ -146,6 +185,7 @@
     }
 
     function handleSubmit() {
+        haveSetFocus = false // reset focus when a new query is submitted
         TELEMETRY_RECORDER.recordEvent('search', 'submit', {
             metadata: { source: TELEMETRY_SEARCH_SOURCE_TYPE['nav'] },
         })
@@ -195,7 +235,7 @@
                             data-scope-button>Filters</Button
                         >
                     {/if}
-                    <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} />
+                    <StreamingProgress {state} progress={$stream.progress} on:submit={onResubmitQuery} {searchJob} />
                 </aside>
                 <div class="result-list" bind:this={$resultContainer}>
                     {#if $stream.alert}
@@ -311,6 +351,14 @@
                 padding: 0;
                 margin: 0;
                 list-style: none;
+            }
+
+            :global([data-focusable-search-result]) {
+                // Set a scroll margin on the focused search results
+                // so that it doesn't underlay the sticky headers and
+                // so that there is a little bit of space between the
+                // result and the scroll box.
+                scroll-margin: 4rem;
             }
         }
 

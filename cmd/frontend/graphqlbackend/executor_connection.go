@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type executorConnectionResolver struct {
@@ -20,9 +20,9 @@ func (r *executorConnectionResolver) TotalCount(ctx context.Context) int32 {
 	return int32(r.totalCount)
 }
 
-func (r *executorConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
+func (r *executorConnectionResolver) PageInfo(ctx context.Context) *gqlutil.PageInfo {
 	if r.nextOffset == nil {
-		return graphqlutil.HasNextPage(false)
+		return gqlutil.HasNextPage(false)
 	}
-	return graphqlutil.EncodeIntCursor(r.nextOffset)
+	return gqlutil.EncodeIntCursor(r.nextOffset)
 }

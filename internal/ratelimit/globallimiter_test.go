@@ -24,8 +24,8 @@ func TestGlobalRateLimiter(t *testing.T) {
 	// This test is verifying the basic functionality of the rate limiter.
 	// We should be able to get a token once the token bucket config is set.
 	prefix := "__test__" + t.Name()
-	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	kv := redisKeyValueForTest(t, prefix)
+	rl := getTestRateLimiter(prefix, kv.Pool(), testBucketName)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
@@ -135,8 +135,8 @@ func TestGlobalRateLimiter_TimeToWaitExceedsLimit(t *testing.T) {
 	// This test is verifying that if the amount of time needed to wait for a token
 	// exceeds the context deadline, a TokenGrantExceedsLimitError is returned.
 	prefix := "__test__" + t.Name()
-	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	kv := redisKeyValueForTest(t, prefix)
+	rl := getTestRateLimiter(prefix, kv.Pool(), testBucketName)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
@@ -176,8 +176,8 @@ func TestGlobalRateLimiter_TimeToWaitExceedsLimit(t *testing.T) {
 func TestGlobalRateLimiter_AllBlockedError(t *testing.T) {
 	// Verify that a limit of 0 means "block all".
 	prefix := "__test__" + t.Name()
-	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	kv := redisKeyValueForTest(t, prefix)
+	rl := getTestRateLimiter(prefix, kv.Pool(), testBucketName)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
@@ -205,8 +205,8 @@ func TestGlobalRateLimiter_AllBlockedError(t *testing.T) {
 func TestGlobalRateLimiter_Inf(t *testing.T) {
 	// Verify that a rate of -1 means inf.
 	prefix := "__test__" + t.Name()
-	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	kv := redisKeyValueForTest(t, prefix)
+	rl := getTestRateLimiter(prefix, kv.Pool(), testBucketName)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
@@ -235,8 +235,8 @@ func TestGlobalRateLimiter_UnconfiguredLimiter(t *testing.T) {
 	// This test is verifying the basic functionality of the rate limiter.
 	// We should be able to get a token once the token bucket config is set.
 	prefix := "__test__" + t.Name()
-	pool := redisPoolForTest(t, prefix)
-	rl := getTestRateLimiter(prefix, pool, testBucketName)
+	kv := redisKeyValueForTest(t, prefix)
+	rl := getTestRateLimiter(prefix, kv.Pool(), testBucketName)
 
 	clock := glock.NewMockClock()
 	rl.nowFunc = clock.Now
@@ -303,37 +303,23 @@ func getTestRateLimiter(prefix string, pool *redis.Pool, bucketName string) glob
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship
 // between the two packages becomes cleaner.
-func redisPoolForTest(t *testing.T, prefix string) *redis.Pool {
+func redisKeyValueForTest(t *testing.T, prefix string) redispool.KeyValue {
 	t.Helper()
 
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", "127.0.0.1:6379")
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-
-	c := pool.Get()
-	t.Cleanup(func() {
-		_ = c.Close()
-	})
-
-	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
+	store := redispool.NewTestKeyValue()
+	if err := redispool.DeleteAllKeysWithPrefix(store, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 
-	return pool
+	return store
 }
 
 func TestLimitInfo(t *testing.T) {
 	ctx := context.Background()
 	prefix := "__test__" + t.Name()
-	pool := redisPoolForTest(t, prefix)
+
+	store := redisKeyValueForTest(t, prefix)
+	pool := store.Pool()
 
 	r1 := getTestRateLimiter(prefix, pool, "extsvc:github:1")
 	// 1/s allowed.
@@ -345,7 +331,7 @@ func TestLimitInfo(t *testing.T) {
 	// No requests allowed.
 	require.NoError(t, r3.SetTokenBucketConfig(ctx, 0, time.Hour))
 
-	info, err := GetGlobalLimiterStateFromPool(ctx, pool, prefix)
+	info, err := GetGlobalLimiterStateFromStore(store, prefix)
 	require.NoError(t, err)
 
 	if diff := cmp.Diff(map[string]GlobalLimiterInfo{
@@ -377,7 +363,7 @@ func TestLimitInfo(t *testing.T) {
 	// Now claim 3 tokens from the limiter.
 	require.NoError(t, r1.WaitN(ctx, 3))
 
-	info, err = GetGlobalLimiterStateFromPool(ctx, pool, prefix)
+	info, err = GetGlobalLimiterStateFromStore(store, prefix)
 	require.NoError(t, err)
 
 	if diff := cmp.Diff(map[string]GlobalLimiterInfo{

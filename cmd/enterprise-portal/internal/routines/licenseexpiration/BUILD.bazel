@@ -1,0 +1,59 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_mockgen.bzl", "go_mockgen")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "licenseexpiration",
+    srcs = [
+        "licenseexpiration.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration",
+    visibility = ["//cmd/enterprise-portal:__subpackages__"],
+    deps = [
+        "//cmd/enterprise-portal/internal/database/subscriptions",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/redislock",
+        "//internal/redispool",
+        "//internal/slack",
+        "//internal/trace",
+        "//lib/background",
+        "//lib/enterpriseportal/subscriptions/v1:subscriptions",
+        "//lib/errors",
+        "//lib/managedservicesplatform/runtime/contract",
+        "//lib/pointers",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "licenseexpiration_test",
+    srcs = [
+        "licenseexpiration_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":licenseexpiration"],
+    deps = [
+        "//cmd/enterprise-portal/internal/database/subscriptions",
+        "//cmd/enterprise-portal/internal/database/utctime",
+        "//internal/slack",
+        "//lib/pointers",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+go_mockgen(
+    name = "generate_mocks",
+    out = "mocks_test.go",
+    manifests = [
+        "//:mockgen.yaml",
+        "//:mockgen.test.yaml",
+        "//:mockgen.temp.yaml",
+    ],
+    deps = [":licenseexpiration"],
+)

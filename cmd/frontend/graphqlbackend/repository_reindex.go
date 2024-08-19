@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/idf"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 )
@@ -20,6 +21,10 @@ func (r *schemaResolver) ReindexRepository(ctx context.Context, args *struct {
 
 	repo, err := r.repositoryByID(ctx, args.Repository)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := idf.Update(ctx, r.logger, repo.RepoName()); err != nil {
 		return nil, err
 	}
 

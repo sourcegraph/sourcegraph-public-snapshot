@@ -34,7 +34,7 @@ type MultiHandler struct {
 	executorStore         database.ExecutorStore
 	jobTokenStore         executorstore.JobTokenStore
 	metricsStore          metricsstore.DistributedStore
-	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
+	AutoIndexQueueHandler QueueHandler[uploadsshared.AutoIndexJob]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
 	DequeueCache          *rcache.Cache
 	dequeueCacheConfig    *schema.DequeueCacheConfig
@@ -46,7 +46,7 @@ func NewMultiHandler(
 	executorStore database.ExecutorStore,
 	jobTokenStore executorstore.JobTokenStore,
 	metricsStore metricsstore.DistributedStore,
-	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
+	autoIndexQueueHandler QueueHandler[uploadsshared.AutoIndexJob],
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
 	siteConfig := conf.Get().SiteConfiguration
@@ -59,7 +59,7 @@ func NewMultiHandler(
 		executorStore:         executorStore,
 		jobTokenStore:         jobTokenStore,
 		metricsStore:          metricsStore,
-		CodeIntelQueueHandler: codeIntelQueueHandler,
+		AutoIndexQueueHandler: autoIndexQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
 		DequeueCache:          dequeueCache,
 		dequeueCacheConfig:    dequeueCacheConfig,
@@ -167,8 +167,8 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 			logger.Error("Failed to transform record", log.String("queue", selectedQueue), log.Error(err))
 			return executortypes.Job{}, false, err
 		}
-	case m.CodeIntelQueueHandler.Name:
-		record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
+	case m.AutoIndexQueueHandler.Name:
+		record, dequeued, err := m.AutoIndexQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
 		if err != nil {
 			err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", selectedQueue)
 			logger.Error("Failed to dequeue", log.String("queue", selectedQueue), log.Error(err))
@@ -180,9 +180,9 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 			return executortypes.Job{}, false, nil
 		}
 
-		job, err = m.CodeIntelQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
+		job, err = m.AutoIndexQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
 		if err != nil {
-			markErr := markRecordAsFailed(ctx, m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
+			markErr := markRecordAsFailed(ctx, m.AutoIndexQueueHandler.Store, record.RecordID(), err, logger)
 			err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", selectedQueue)
 			logger.Error("Failed to transform record", log.String("queue", selectedQueue), log.Error(err))
 			return executortypes.Job{}, false, err
@@ -262,7 +262,7 @@ func (m *MultiHandler) SelectEligibleQueues(queues []string) ([]string, error) {
 		switch queue {
 		case m.BatchesQueueHandler.Name:
 			limit = m.dequeueCacheConfig.Batches.Limit
-		case m.CodeIntelQueueHandler.Name:
+		case m.AutoIndexQueueHandler.Name:
 			limit = m.dequeueCacheConfig.Codeintel.Limit
 		}
 		if len(dequeues) < limit {
@@ -282,18 +282,19 @@ func (m *MultiHandler) SelectNonEmptyQueues(ctx context.Context, queueNames []st
 	var nonEmptyQueues []string
 	for _, queue := range queueNames {
 		var err error
-		var count int
+		var isNonEmpty bool
+		statesBitset := dbworkerstore.StateQueued | dbworkerstore.StateErrored
 		switch queue {
 		case m.BatchesQueueHandler.Name:
-			count, err = m.BatchesQueueHandler.Store.QueuedCount(ctx, false)
-		case m.CodeIntelQueueHandler.Name:
-			count, err = m.CodeIntelQueueHandler.Store.QueuedCount(ctx, false)
+			isNonEmpty, err = m.BatchesQueueHandler.Store.Exists(ctx, statesBitset)
+		case m.AutoIndexQueueHandler.Name:
+			isNonEmpty, err = m.AutoIndexQueueHandler.Store.Exists(ctx, statesBitset)
 		}
 		if err != nil {
 			m.logger.Error("fetching queue size", log.Error(err), log.String("queue", queue))
 			return nil, err
 		}
-		if count != 0 {
+		if isNonEmpty {
 			nonEmptyQueues = append(nonEmptyQueues, queue)
 		}
 	}
@@ -381,8 +382,8 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 		switch queue.QueueName {
 		case m.BatchesQueueHandler.Name:
 			known, cancel, err = m.BatchesQueueHandler.Store.Heartbeat(ctx, queue.JobIDs, heartbeatOptions)
-		case m.CodeIntelQueueHandler.Name:
-			known, cancel, err = m.CodeIntelQueueHandler.Store.Heartbeat(ctx, queue.JobIDs, heartbeatOptions)
+		case m.AutoIndexQueueHandler.Name:
+			known, cancel, err = m.AutoIndexQueueHandler.Store.Heartbeat(ctx, queue.JobIDs, heartbeatOptions)
 		}
 
 		if err != nil {

@@ -1,7 +1,7 @@
 <script context="module" lang="ts">
     import type { Keys } from '$lib/Hotkey'
 
-    import type { RepositoryGitRefs, RevPickerGitCommit } from './RepositoryRevPicker.gql'
+    import type { RepositoryGitRefs, RevPickerChangelist, RevPickerGitCommit } from './RepositoryRevPicker.gql'
 
     export type RepositoryBranches = RepositoryGitRefs['gitRefs']
     export type RepositoryBranch = RepositoryBranches['nodes'][number]
@@ -12,6 +12,9 @@
 
     export type RepositoryCommits = { nodes: RevPickerGitCommit[] }
     export type RepositoryGitCommit = RevPickerGitCommit
+
+    export type DepotChangelists = { nodes: RevPickerChangelist[] }
+    export type DepotChangelist = RevPickerChangelist
 
     const branchesHotkey: Keys = {
         key: 'shift+b',
@@ -28,6 +31,7 @@
 
 <script lang="ts">
     import type { Placement } from '@floating-ui/dom'
+    import type { ComponentProps } from 'svelte'
     import type { HTMLButtonAttributes } from 'svelte/elements'
 
     import { goto } from '$app/navigation'
@@ -50,18 +54,26 @@
         revision?: string
         commitID?: string
         defaultBranch: string
+        display?: ComponentProps<ButtonGroup>['display']
         placement?: Placement
         onSelect?: (revision: string) => void
-        getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
-        getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
-        getRepositoryBranches: (query: string) => PromiseLike<RepositoryBranches>
-    }
+    } & (
+            | {
+                  getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
+                  getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
+                  getRepositoryBranches: (query: string) => PromiseLike<RepositoryBranches>
+              }
+            | {
+                  getDepotChangelists: (query: string) => PromiseLike<DepotChangelists>
+              }
+        )
 
-    export let repoURL: string
-    export let revision: string | undefined = undefined
-    export let commitID: string | undefined = undefined
-    export let defaultBranch: string
-    export let placement: Placement = 'right-start'
+    export let repoURL: $$Props['repoURL']
+    export let revision: $$Props['revision'] = undefined
+    export let commitID: $$Props['commitID'] = undefined
+    export let defaultBranch: $$Props['defaultBranch']
+    export let placement: $$Props['placement'] = 'right-start'
+    export let display: $$Props['display'] = undefined
     /**
      * Optional handler for revision selection.
      * If not provided, the default handler will replace the revision in the current URL.
@@ -69,9 +81,10 @@
     export let onSelect = defaultHandleSelect
 
     // Pickers data sources
-    export let getRepositoryTags: (query: string) => PromiseLike<RepositoryTags>
-    export let getRepositoryCommits: (query: string) => PromiseLike<RepositoryCommits>
-    export let getRepositoryBranches: (query: string) => PromiseLike<RepositoryBranches>
+    export let getRepositoryTags: ((query: string) => PromiseLike<RepositoryTags>) | undefined = undefined
+    export let getRepositoryCommits: ((query: string) => PromiseLike<RepositoryCommits>) | undefined = undefined
+    export let getRepositoryBranches: ((query: string) => PromiseLike<RepositoryBranches>) | undefined = undefined
+    export let getDepotChangelists: ((query: string) => PromiseLike<DepotChangelists>) | undefined = undefined
 
     function defaultHandleSelect(revision: string) {
         goto(replaceRevisionInURL(location.pathname + location.search + location.hash, revision))
@@ -87,7 +100,7 @@
 
 <Popover let:registerTrigger let:registerTarget let:toggle {placement}>
     <span use:registerTarget data-repo-rev-picker-trigger>
-        <ButtonGroup>
+        <ButtonGroup {display}>
             <button use:registerTrigger class="{buttonClass} rev-name" on:click={() => toggle()} {...$$restProps}>
                 @{revisionLabel}
             </button>
@@ -104,7 +117,7 @@
             </CopyButton>
 
             {#if isOnSpecificRev}
-                <Tooltip tooltip="Go to default branch">
+                <Tooltip tooltip={getDepotChangelists ? 'Go to most recent changelist' : 'Go to default branch'}>
                     <button
                         class="{buttonClass} close-button hoverable-button"
                         on:click={() => onSelect(defaultBranch)}
@@ -118,83 +131,102 @@
 
     <div slot="content" class="content" let:toggle>
         <Tabs>
-            <TabPanel title="Branches" shortcut={branchesHotkey}>
-                <Picker
-                    name="branches"
-                    seeAllItemsURL={`${repoURL}/-/branches`}
-                    getData={getRepositoryBranches}
-                    toOption={branch => ({ value: branch.id, label: branch.displayName })}
-                    onSelect={branch => {
-                        toggle(false)
-                        onSelect(branch.abbrevName)
-                    }}
-                    let:value
-                >
-                    <RepositoryRevPickerItem
-                        icon={ILucideGitBranch}
-                        label={value.displayName}
-                        author={value.target.commit?.author}
+            {#if getRepositoryCommits && getRepositoryTags && getRepositoryBranches}
+                <TabPanel title="Branches" shortcut={branchesHotkey}>
+                    <Picker
+                        name="branches"
+                        seeAllItemsURL={`${repoURL}/-/branches`}
+                        getData={getRepositoryBranches}
+                        toOption={branch => ({ value: branch.id, label: branch.displayName })}
+                        onSelect={branch => {
+                            toggle(false)
+                            onSelect(branch.abbrevName)
+                        }}
+                        let:value
                     >
-                        <svelte:fragment slot="title">
-                            <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
-                            <Badge variant="link">{value.displayName}</Badge>
-                            {#if value.displayName === defaultBranch}
-                                <Badge variant="secondary" small>DEFAULT</Badge>
-                            {/if}
-                        </svelte:fragment>
-                    </RepositoryRevPickerItem>
-                </Picker>
-            </TabPanel>
-            <TabPanel title="Tags" shortcut={tagsHotkey}>
-                <Picker
-                    name="tags"
-                    seeAllItemsURL={`${repoURL}/-/tags`}
-                    getData={getRepositoryTags}
-                    toOption={tag => ({ value: tag.id, label: tag.displayName })}
-                    onSelect={tag => {
-                        toggle(false)
-                        onSelect(tag.abbrevName)
-                    }}
-                    let:value
-                >
-                    <RepositoryRevPickerItem
-                        icon={ILucideTag}
-                        label={value.displayName}
-                        author={value.target.commit?.author}
-                    />
-                </Picker>
-            </TabPanel>
-            <TabPanel title="Commits" shortcut={commitsHotkey}>
-                <Picker
-                    name="commits"
-                    seeAllItemsURL={`${repoURL}/-/commits`}
-                    getData={getRepositoryCommits}
-                    toOption={commit => ({ value: commit.id, label: commit.oid })}
-                    onSelect={commit => {
-                        toggle(false)
-                        onSelect(commit.oid)
-                    }}
-                    let:value
-                >
-                    <RepositoryRevPickerItem label="" author={value.author}>
-                        <svelte:fragment slot="title">
-                            <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
-                            <Badge variant="link">{value.abbreviatedOID}</Badge>
-                            <span class="commit-subject">{value.subject}</span>
-                        </svelte:fragment>
-                    </RepositoryRevPickerItem>
-                </Picker>
-            </TabPanel>
+                        <RepositoryRevPickerItem
+                            icon={ILucideGitBranch}
+                            label={value.displayName}
+                            author={value.target.commit?.author}
+                        >
+                            <svelte:fragment slot="title">
+                                <Icon icon={ILucideGitBranch} inline aria-hidden="true" />
+                                <Badge variant="link">{value.displayName}</Badge>
+                                {#if value.displayName === defaultBranch}
+                                    <Badge variant="secondary" small>DEFAULT</Badge>
+                                {/if}
+                            </svelte:fragment>
+                        </RepositoryRevPickerItem>
+                    </Picker>
+                </TabPanel>
+                <TabPanel title="Tags" shortcut={tagsHotkey}>
+                    <Picker
+                        name="tags"
+                        seeAllItemsURL={`${repoURL}/-/tags`}
+                        getData={getRepositoryTags}
+                        toOption={tag => ({ value: tag.id, label: tag.displayName })}
+                        onSelect={tag => {
+                            toggle(false)
+                            onSelect(tag.abbrevName)
+                        }}
+                        let:value
+                    >
+                        <RepositoryRevPickerItem
+                            icon={ILucideTag}
+                            label={value.displayName}
+                            author={value.target.commit?.author}
+                        />
+                    </Picker>
+                </TabPanel>
+                <TabPanel title="Commits" shortcut={commitsHotkey}>
+                    <Picker
+                        name="commits"
+                        seeAllItemsURL={`${repoURL}/-/commits`}
+                        getData={getRepositoryCommits}
+                        toOption={commit => ({ value: commit.id, label: commit.oid })}
+                        onSelect={commit => {
+                            toggle(false)
+                            onSelect(commit.oid)
+                        }}
+                        let:value
+                    >
+                        <RepositoryRevPickerItem label="" author={value.author}>
+                            <svelte:fragment slot="title">
+                                <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
+                                <Badge variant="link">{value.abbreviatedOID}</Badge>
+                                <span class="subject">{value.subject}</span>
+                            </svelte:fragment>
+                        </RepositoryRevPickerItem>
+                    </Picker>
+                </TabPanel>
+            {:else if getDepotChangelists}
+                <TabPanel title="Changelists" shortcut={commitsHotkey}>
+                    <Picker
+                        name="changelists"
+                        seeAllItemsURL={`${repoURL}/-/changelists`}
+                        getData={getDepotChangelists}
+                        toOption={changelist => ({ value: changelist.id, label: changelist.perforceChangelist?.cid })}
+                        onSelect={changelist => {
+                            toggle(false)
+                            onSelect(`changelist/${changelist.perforceChangelist?.cid}` ?? '')
+                        }}
+                        let:value
+                    >
+                        <RepositoryRevPickerItem label="" author={value.author}>
+                            <svelte:fragment slot="title">
+                                <Icon icon={ILucideGitCommitVertical} inline aria-hidden="true" />
+                                <Badge variant="link">{value.perforceChangelist?.cid}</Badge>
+                                <span class="subject">{value.subject}</span>
+                            </svelte:fragment>
+                        </RepositoryRevPickerItem>
+                    </Picker>
+                </TabPanel>
+            {/if}
         </Tabs>
     </div>
 </Popover>
 
 <style lang="scss">
-    span[data-repo-rev-picker-trigger] > :global(*) {
-        width: 100%;
-        height: 100%;
-    }
-
     .rev-name {
         overflow: hidden;
         white-space: nowrap;
@@ -260,13 +292,14 @@
             }
         }
 
-        .commit-subject {
+        .subject {
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
-        // Local override for commits picker abbreviatedOID badge
-        :global([data-tab-panel='Commits']) :global([data-badge]) {
+        // Local override for commits/changelists picker abbreviatedOID/ChangelistID badge
+        :global([data-tab-panel='Commits']) :global([data-badge]),
+        :global([data-tab-panel='Changelists']) :global([data-badge]) {
             flex-shrink: 0;
         }
     }

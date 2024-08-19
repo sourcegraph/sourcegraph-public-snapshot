@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -19,7 +20,7 @@ func TestGetIndexers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(observation.TestContextTB(t), db)
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	insertUploads(t, db,
 		shared.Upload{ID: 1, Indexer: "scip-typescript"},
@@ -139,40 +140,40 @@ func TestRecentIndexesSummary(t *testing.T) {
 	r1 := 1
 	r2 := 2
 
-	addDefaults := func(index uploadsshared.Index) uploadsshared.Index {
-		index.Commit = makeCommit(index.ID)
-		index.RepositoryID = 50
-		index.RepositoryName = "n-50"
-		index.DockerSteps = []uploadsshared.DockerStep{}
-		index.IndexerArgs = []string{}
-		index.LocalSteps = []string{}
-		return index
+	addDefaults := func(job uploadsshared.AutoIndexJob) uploadsshared.AutoIndexJob {
+		job.Commit = makeCommit(job.ID)
+		job.RepositoryID = 50
+		job.RepositoryName = "n-50"
+		job.DockerSteps = []uploadsshared.DockerStep{}
+		job.IndexerArgs = []string{}
+		job.LocalSteps = []string{}
+		return job
 	}
 
-	indexes := []uploadsshared.Index{
-		addDefaults(uploadsshared.Index{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
-		addDefaults(uploadsshared.Index{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
-		addDefaults(uploadsshared.Index{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),        // visible (group 1)
-		addDefaults(uploadsshared.Index{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),      // visible (group 2)
-		addDefaults(uploadsshared.Index{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),      // visible (group 3)
-		addDefaults(uploadsshared.Index{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),        // shadowed
-		addDefaults(uploadsshared.Index{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),      // visible (group 4)
-		addDefaults(uploadsshared.Index{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
-		addDefaults(uploadsshared.Index{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
-		addDefaults(uploadsshared.Index{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+	jobs := []uploadsshared.AutoIndexJob{
+		addDefaults(uploadsshared.AutoIndexJob{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
+		addDefaults(uploadsshared.AutoIndexJob{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
+		addDefaults(uploadsshared.AutoIndexJob{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),        // visible (group 1)
+		addDefaults(uploadsshared.AutoIndexJob{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),      // visible (group 2)
+		addDefaults(uploadsshared.AutoIndexJob{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),      // visible (group 3)
+		addDefaults(uploadsshared.AutoIndexJob{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),        // shadowed
+		addDefaults(uploadsshared.AutoIndexJob{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),      // visible (group 4)
+		addDefaults(uploadsshared.AutoIndexJob{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+		addDefaults(uploadsshared.AutoIndexJob{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+		addDefaults(uploadsshared.AutoIndexJob{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
 	}
-	insertIndexes(t, db, indexes...)
+	insertAutoIndexJobs(t, db, jobs...)
 
-	summary, err := store.GetRecentIndexesSummary(ctx, 50)
+	summary, err := store.GetRecentAutoIndexJobsSummary(ctx, 50)
 	if err != nil {
 		t.Fatalf("unexpected error querying recent index summary: %s", err)
 	}
 
-	expected := []uploadsshared.IndexesWithRepositoryNamespace{
-		{Root: "r1", Indexer: "i1", Indexes: []uploadsshared.Index{indexes[0], indexes[1], indexes[2]}},
-		{Root: "r1", Indexer: "i2", Indexes: []uploadsshared.Index{indexes[3]}},
-		{Root: "r2", Indexer: "i1", Indexes: []uploadsshared.Index{indexes[4]}},
-		{Root: "r2", Indexer: "i2", Indexes: []uploadsshared.Index{indexes[6]}},
+	expected := []uploadsshared.GroupedAutoIndexJobs{
+		{Root: "r1", Indexer: "i1", Indexes: []uploadsshared.AutoIndexJob{jobs[0], jobs[1], jobs[2]}},
+		{Root: "r1", Indexer: "i2", Indexes: []uploadsshared.AutoIndexJob{jobs[3]}},
+		{Root: "r2", Indexer: "i1", Indexes: []uploadsshared.AutoIndexJob{jobs[4]}},
+		{Root: "r2", Indexer: "i2", Indexes: []uploadsshared.AutoIndexJob{jobs[6]}},
 	}
 	if diff := cmp.Diff(expected, summary); diff != "" {
 		t.Errorf("unexpected index summary (-want +got):\n%s", diff)
@@ -211,20 +212,20 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 		shared.Upload{ID: 171, RepositoryID: 58, State: "failed", FinishedAt: &t2},
 		shared.Upload{ID: 172, RepositoryID: 58, State: "failed", FinishedAt: &t3},
 	)
-	insertIndexes(t, db,
-		uploadsshared.Index{ID: 201, RepositoryID: 51},                  // Repo 51 = success
-		uploadsshared.Index{ID: 202, RepositoryID: 52, State: "failed"}, // Repo 52 = failing index
-		uploadsshared.Index{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ failing upload)
+	insertAutoIndexJobs(t, db,
+		uploadsshared.AutoIndexJob{ID: 201, RepositoryID: 51},                  // Repo 51 = success
+		uploadsshared.AutoIndexJob{ID: 202, RepositoryID: 52, State: "failed"}, // Repo 52 = failing index
+		uploadsshared.AutoIndexJob{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ failing upload)
 
 		// Repo 56 = multiple failures for same project
-		uploadsshared.Index{ID: 250, RepositoryID: 56, State: "failed", FinishedAt: &t1},
-		uploadsshared.Index{ID: 251, RepositoryID: 56, State: "failed", FinishedAt: &t2},
-		uploadsshared.Index{ID: 252, RepositoryID: 56, State: "failed", FinishedAt: &t3},
+		uploadsshared.AutoIndexJob{ID: 250, RepositoryID: 56, State: "failed", FinishedAt: &t1},
+		uploadsshared.AutoIndexJob{ID: 251, RepositoryID: 56, State: "failed", FinishedAt: &t2},
+		uploadsshared.AutoIndexJob{ID: 252, RepositoryID: 56, State: "failed", FinishedAt: &t3},
 
 		// Repo 57 = multiple failures for different projects
-		uploadsshared.Index{ID: 260, RepositoryID: 57, State: "failed", FinishedAt: &t1, Root: "proj1"},
-		uploadsshared.Index{ID: 261, RepositoryID: 57, State: "failed", FinishedAt: &t2, Root: "proj2"},
-		uploadsshared.Index{ID: 262, RepositoryID: 57, State: "failed", FinishedAt: &t3, Root: "proj3"},
+		uploadsshared.AutoIndexJob{ID: 260, RepositoryID: 57, State: "failed", FinishedAt: &t1, Root: "proj1"},
+		uploadsshared.AutoIndexJob{ID: 261, RepositoryID: 57, State: "failed", FinishedAt: &t2, Root: "proj2"},
+		uploadsshared.AutoIndexJob{ID: 262, RepositoryID: 57, State: "failed", FinishedAt: &t3, Root: "proj3"},
 	)
 
 	// Query page 1

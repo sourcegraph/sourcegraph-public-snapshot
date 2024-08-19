@@ -11,14 +11,17 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/auth"
 	workerauthz "github.com/sourcegraph/sourcegraph/cmd/worker/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/completions"
 	repoembeddings "github.com/sourcegraph/sourcegraph/cmd/worker/internal/embeddings/repo"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/eventlogs"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executormultiqueue"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/executors"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/githubapps"
@@ -36,15 +39,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/sourcegraphaccounts"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetrygatewayexporter"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/users"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
 	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -104,6 +106,10 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"permission-sync-job-scheduler":         permissions.NewPermissionSyncJobScheduler(),
 		"export-usage-telemetry":                telemetry.NewTelemetryJob(),
 		"telemetrygateway-exporter":             telemetrygatewayexporter.NewJob(),
+		"event-logs-janitor":                    eventlogs.NewEventLogsJanitorJob(),
+		"cody-llm-token-counter":                completions.NewTokenUsageJob(),
+		"aggregated-users-statistics":           users.NewAggregatedUsersStatisticsJob(),
+		"refresh-analytics-cache":               adminanalytics.NewRefreshAnalyticsCacheJob(),
 
 		"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
 		"codeintel-autoindexing-summary-builder":      codeintel.NewAutoindexingSummaryBuilder(),
@@ -382,22 +388,4 @@ func jobNames(jobs map[string]workerjob.Job) []string {
 	sort.Strings(names)
 
 	return names
-}
-
-// SetAuthzProviders waits for the database to be initialized, then periodically refreshes the
-// global authz providers. This changes the repositories that are visible for reads based on the
-// current actor stored in an operation's context, which is likely an internal actor for many of
-// the jobs configured in this service. This also enables repository update operations to fetch
-// permissions from code hosts.
-func setAuthzProviders(ctx context.Context, observationCtx *observation.Context) {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("authz-provider"), observationCtx)
-	db, err := workerdb.InitDB(observationCtx)
-	if err != nil {
-		return
-	}
-
-	for range time.NewTicker(providers.RefreshInterval(conf.Get())).C {
-		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
-		authz.SetProviders(allowAccessByDefault, authzProviders)
-	}
 }

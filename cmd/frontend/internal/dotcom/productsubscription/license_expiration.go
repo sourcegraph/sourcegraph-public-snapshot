@@ -3,7 +3,6 @@ package productsubscription
 import (
 	"context"
 	"fmt"
-	"sync/atomic"
 	"time"
 
 	"github.com/derision-test/glock"
@@ -19,14 +18,11 @@ import (
 
 const lastLicenseExpirationCheckKey = "last_license_expiration_check"
 
-var licenseExpirationCheckers uint32
-
 // StartCheckForUpcomingLicenseExpirations checks for upcoming license expirations once per day.
+//
+// TODO(@bobheadxi): Migrate to Enterprise Portal
+// https://linear.app/sourcegraph/issue/CORE-183
 func StartCheckForUpcomingLicenseExpirations(logger log.Logger, db database.DB) {
-	if atomic.AddUint32(&licenseExpirationCheckers, 1) != 1 {
-		panic("StartCheckForUpcomingLicenseExpirations called more than once")
-	}
-
 	dotcom := conf.Get().Dotcom
 	if dotcom == nil {
 		return

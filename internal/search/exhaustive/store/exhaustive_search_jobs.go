@@ -60,6 +60,7 @@ var exhaustiveSearchJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("cancel"),
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("is_aggregated"),
 }
 
 func (s *Store) CreateExhaustiveSearchJob(ctx context.Context, job types.ExhaustiveSearchJob) (_ int64, err error) {
@@ -264,8 +265,11 @@ const aggStateSubQuery = `
 			CASE
 				WHEN canceled > 0 THEN 'canceled'
 				WHEN processing > 0 THEN 'processing'
-				WHEN queued > 0 THEN 'queued'
+				-- errored jobs will be retried, so we treat them as processing
 				WHEN errored > 0 THEN 'processing'
+				WHEN queued > 0 AND completed is null THEN 'queued'
+				-- this condition is necessary to avoid returning 'queued' when there are no jobs processing at the moment
+				WHEN queued > 0 THEN 'processing'
 				WHEN failed > 0 THEN 'failed'
 				WHEN completed > 0 THEN 'completed'
 			    -- This should never happen
@@ -546,6 +550,7 @@ func defaultScanTargets(job *types.ExhaustiveSearchJob) []any {
 		&job.Cancel,
 		&job.CreatedAt,
 		&job.UpdatedAt,
+		&job.IsAggregated,
 	}
 }
 

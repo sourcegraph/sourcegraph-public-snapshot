@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
@@ -38,7 +37,7 @@ func TestJobExecutionCheckIn(t *testing.T) {
 		internal: internalContract{
 			service:       mockServiceMetadata{t},
 			logger:        logtest.Scoped(t),
-			environmentID: "test",
+			environmentID: fmt.Sprintf("test-%d", time.Now().Minute()),
 		},
 	}
 
@@ -62,36 +61,4 @@ func TestJobExecutionCheckIn(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestInferJobExecutionID(t *testing.T) {
-	t.Run("with CLOUD_RUN_EXECUTION", func(t *testing.T) {
-		t.Setenv("CLOUD_RUN_EXECUTION", "my-job-abcde")
-
-		autogold.Expect("my-job-abcde").Equal(t, inferJobExecutionID(context.Background()))
-
-		t.Run("with CLOUD_RUN_TASK_INDEX", func(t *testing.T) {
-			t.Setenv("CLOUD_RUN_TASK_INDEX", "1")
-			autogold.Expect("my-job-abcde-1").Equal(t, inferJobExecutionID(context.Background()))
-
-			t.Run("with CLOUD_RUN_TASK_ATTEMPT", func(t *testing.T) {
-				t.Setenv("CLOUD_RUN_TASK_ATTEMPT", "2")
-				autogold.Expect("my-job-abcde-1-2").Equal(t, inferJobExecutionID(context.Background()))
-			})
-		})
-
-		t.Run("with CLOUD_RUN_TASK_ATTEMPT", func(t *testing.T) {
-			t.Setenv("CLOUD_RUN_TASK_ATTEMPT", "2")
-			autogold.Expect("my-job-abcde-2").Equal(t, inferJobExecutionID(context.Background()))
-		})
-	})
-
-	t.Run("with trace ID", func(t *testing.T) {
-		// Do not use noop provider, so that the trace ID is not zero.
-		ctx, span := oteltracesdk.NewTracerProvider().
-			Tracer(t.Name()).
-			Start(context.Background(), "test")
-		t.Cleanup(func() { span.End() })
-		assert.Equal(t, span.SpanContext().TraceID().String(), inferJobExecutionID(ctx))
-	})
 }

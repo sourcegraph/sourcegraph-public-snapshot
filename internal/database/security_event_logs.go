@@ -70,6 +70,9 @@ const (
 	SecurityEventBitbucketCloudAuthSucceeded SecurityEventName = "BitbucketCloudAuthSucceeded"
 	SecurityEventBitbucketCloudAuthFailed    SecurityEventName = "BitbucketCloudAuthFailed"
 
+	SecurityEventBitbucketServerAuthSucceeded SecurityEventName = "BitbucketServerAuthSucceeded"
+	SecurityEventBitbucketServerAuthFailed    SecurityEventName = "BitbucketServerAuthFailed"
+
 	SecurityEventAzureDevOpsAuthSucceeded SecurityEventName = "AzureDevOpsAuthSucceeded"
 	SecurityEventAzureDevOpsAuthFailed    SecurityEventName = "AzureDevOpsAuthFailed"
 
@@ -93,7 +96,6 @@ const (
 	SecurityEventNameOrgCreated        SecurityEventName = "OrganizationCreated"
 	SecurityEventNameOrgUpdated        SecurityEventName = "OrganizationUpdated"
 	SecurityEventNameOrgSettingsViewed SecurityEventName = "OrganizationSettingsViewed"
-	SecurityEventNameDotComOrgViewed   SecurityEventName = "DotComOrganizationViewed"
 
 	SecurityEventNameOutboundReqViewed SecurityEventName = "OutboundRequestViewed"
 

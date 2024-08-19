@@ -1,6 +1,7 @@
 package search
 
 import (
+	"archive/tar"
 	"archive/zip"
 	"bytes"
 	"context"
@@ -463,14 +464,19 @@ func TestPathMatches(t *testing.T) {
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
 	FetchTar:       fetchTarFromGithub,
+	FilterTar:      noFilterTar,
 	Path:           "/tmp/search_test/store",
 	Logger:         observation.TestContext.Logger,
 	ObservationCtx: &observation.TestContext,
 }
 
-func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-	r, err := fetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
+func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
+	r, err := fetchTarFromGithubWithPaths(ctx, repo, commit, paths)
 	return r, err
+}
+
+func noFilterTar(ctx context.Context, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
+	return func(hdr *tar.Header) bool { return false }, nil
 }
 
 func init() {

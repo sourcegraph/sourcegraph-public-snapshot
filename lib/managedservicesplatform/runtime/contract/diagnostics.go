@@ -7,7 +7,6 @@ import (
 	"math"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/getsentry/sentry-go"
@@ -240,7 +239,7 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, f
 		c.cronSchedule != nil &&
 		c.cronDeadline != nil
 
-	executionID := inferJobExecutionID(ctx)
+	executionID := uuid.Must(uuid.NewV7()).String()
 	logger := opentelemetry.TracedLogger(ctx, c.internal.logger).
 		Scoped("execution.checkin").
 		With(
@@ -255,7 +254,6 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, f
 
 	logCompletion := func(err error) {
 		d := log.Duration("duration", time.Since(start))
-
 		if err != nil {
 			logger.Error("job execution failed", log.Error(err), d)
 		} else {
@@ -320,10 +318,10 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, f
 		defer sentryClient.Flush(time.Second)
 
 		status := sentry.CheckInStatusOK
-
 		if err != nil {
 			status = sentry.CheckInStatusError
 		}
+
 		logCompletion(err)
 		_ = sentryClient.CaptureCheckIn(
 			&sentry.CheckIn{
@@ -339,30 +337,4 @@ func (c diagnosticsContract) JobExecutionCheckIn(ctx context.Context) (string, f
 
 func (c diagnosticsContract) useSentry() bool {
 	return c.sentryDSN != nil
-}
-
-func inferJobExecutionID(ctx context.Context) string {
-	// Extract an identifier based on Cloud Run job environment variables.
-	// https://cloud.google.com/run/docs/container-contract#env-vars
-	// We reference them directly here instead of as part of Contract to keep
-	// this opaque to other callsites.
-	if id := os.Getenv("CLOUD_RUN_EXECUTION"); id != "" {
-		if idx := os.Getenv("CLOUD_RUN_TASK_INDEX"); idx != "" {
-			id = fmt.Sprintf("%s-%s", id, idx)
-		}
-		if attempt := os.Getenv("CLOUD_RUN_TASK_ATTEMPT"); attempt != "" {
-			id = fmt.Sprintf("%s-%s", id, attempt)
-		}
-		return id
-	}
-	// Otherwise, use the trace ID if there is one as the execution
-	if span := trace.SpanContextFromContext(ctx); span.HasTraceID() {
-		return span.TraceID().String()
-	}
-	// Otherwise, generate a random UUID.
-	id, err := uuid.NewV7()
-	if err != nil {
-		panic(errors.Wrap(err, "failed to generate event ID"))
-	}
-	return id.String()
 }

@@ -15,11 +15,19 @@ commandTests:
     exitCode: 0
 
 fileExistenceTests:
-- name: '/mnt/cache/frontend'
-  path: '/mnt/cache/frontend'
+- name: '/version.txt'
+  path: '/version.txt'
   shouldExist: true
-  uid: 100
-  gid: 101
+  uid: 0
+  gid: 0
+- name: '/timestamp.txt'
+  path: '/timestamp.txt'
+  shouldExist: true
+  uid: 0
+  gid: 0
+- name: '/assets-dist/web.manifest.json'
+  path: '/assets-dist/web.manifest.json'
+  shouldExist: true
 
 metadataTest:
   envVars:

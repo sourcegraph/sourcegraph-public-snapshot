@@ -6,17 +6,23 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/enforcement"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/resolvers"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+)
+
+var (
+	enableUpcomingLicenseExpirationChecker = env.MustGetBool("DOTCOM_ENABLE_UPCOMING_LICENSE_EXPIRATION_CHECKER", true,
+		"If false, we do not monitor for upcoming license expirations to post in Slack.")
+	enableAnomalousLicenseChecker = env.MustGetBool("DOTCOM_ENABLE_ANOMALOUS_LICENSE_CHECKER", true,
+		"If false, we do not monitor for anomalous license checks to post in Slack.")
 )
 
 func Init(
@@ -41,12 +47,16 @@ func Init(
 
 	if dotcom.SourcegraphDotComMode() {
 		logger := log.Scoped("licensing")
-		goroutine.Go(func() {
-			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
-		})
-		goroutine.Go(func() {
-			productsubscription.StartCheckForAnomalousLicenseUsage(logger, db)
-		})
+		if enableUpcomingLicenseExpirationChecker {
+			goroutine.Go(func() {
+				productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
+			})
+		}
+		if enableAnomalousLicenseChecker {
+			goroutine.Go(func() {
+				productsubscription.StartCheckForAnomalousLicenseUsage(logger, db)
+			})
+		}
 	}
 
 	return nil

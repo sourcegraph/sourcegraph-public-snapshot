@@ -7,8 +7,8 @@ import (
 	sams "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
 	"github.com/sourcegraph/sourcegraph-accounts-sdk-go/scopes"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -48,14 +48,14 @@ func SignOut(w http.ResponseWriter, r *http.Request, sessionKey string, getProvi
 		return "", nil
 	}
 
-	p := getProvider(data.ID.ID)
-	if p == nil {
-		return "", errors.Errorf("unable to revoke token or end session for OpenID Connect because no provider %q exists", data.ID)
+	p, oidcClient, safeErrMsg, err := GetProviderAndClient(r.Context(), data.ID.ID, GetProvider)
+	if err != nil {
+		return "", errors.Newf("unable to revoke token or end session for OpenID Connect because failed to get OpenID Connect provider: %s", safeErrMsg)
 	}
 
-	endSessionEndpoint = p.oidc.EndSessionEndpoint
-	if p.oidc.RevocationEndpoint != "" {
-		if err := revokeToken(r.Context(), p, data.AccessToken, data.TokenType); err != nil {
+	endSessionEndpoint = oidcClient.EndSessionEndpoint
+	if oidcClient.RevocationEndpoint != "" {
+		if err := revokeToken(r.Context(), p, oidcClient.RevocationEndpoint, data.AccessToken, data.TokenType); err != nil {
 			return endSessionEndpoint, errors.Wrap(err, "revoking OpenID Connect token")
 		}
 	}

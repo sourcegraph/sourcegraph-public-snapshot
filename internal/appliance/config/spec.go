@@ -88,8 +88,26 @@ type IndexedSearchSpec struct {
 	Replicas int32 `json:"replicas,omitempty"`
 }
 
+type NodeExporterSpec struct {
+	StandardConfig
+}
+
+type OtelAgentSpec struct {
+	StandardConfig
+}
+
 type OtelCollectorSpec struct {
 	StandardConfig
+
+	// Read how to configure sampling in the [OpenTelemetry
+	// documentation](https://docs.sourcegraph.com/admin/observability/opentelemetry#sampling-traces)
+	Processors map[string]any `json:"processors,omitempty"`
+
+	// Read how to configure different backends in the [OpenTelemetry
+	// documentation](https://opentelemetry.io/docs/collector/configuration/#exporters)
+	Exporters map[string]any `json:"exporters,omitempty"`
+
+	ExportersTLSSecretName string `json:"exportersTlsSecretName,omitempty"`
 }
 
 type JaegerSpec struct {
@@ -226,9 +244,14 @@ type SourcegraphSpec struct {
 	// IndexedSearch defines the desired state of the Indexed Search service.
 	IndexedSearch IndexedSearchSpec `json:"indexedSearch,omitempty"`
 
+	// Jaeger defines the desired state of the Jaeger service.
 	Jaeger JaegerSpec `json:"jaeger,omitempty"`
 
-	OtelCollector OtelCollectorSpec `json:"openTelemetry,omitempty"`
+	// NodeExporter defines the desired state of the NodeExporter service.
+	NodeExporter NodeExporterSpec `json:"nodeExporter,omitempty"`
+
+	OtelAgent     OtelAgentSpec     `json:"openTelemetryAgent,omitempty"`
+	OtelCollector OtelCollectorSpec `json:"openTelemetryCollector,omitempty"`
 
 	// PGSQL defines the desired state of the PostgreSQL database.
 	PGSQL PGSQLSpec `json:"pgsql,omitempty"`
@@ -264,21 +287,34 @@ type SourcegraphSpec struct {
 	StorageClass StorageClassSpec `json:"storageClass,omitempty"`
 }
 
-// SetupStatus defines the observes status of the setup process.
-type SetupStatus struct {
-	Progress int32
+// SourcegraphServicesToReconcile is a list of all Sourcegraph services that will be reconciled by appliance.
+var SourcegraphServicesToReconcile = []string{
+	"blobstore",
+	"cadvisor",
+	"code-insights-db",
+	"code-intel-db",
+	"frontend",
+	"gitserver",
+	"grafana",
+	"indexed-searcher",
+	"jaeger",
+	"nodeexporter",
+	"otel",
+	"pgsql",
+	"precise-code-intel",
+	"prometheus",
+	"redis",
+	"repo-updater",
+	"searcher",
+	"symbols",
+	"syntect",
+	"worker",
 }
 
 // SourcegraphStatus defines the observed state of Sourcegraph
 type SourcegraphStatus struct {
 	// CurrentVersion is the version of Sourcegraph currently running.
 	CurrentVersion string `json:"currentVersion"`
-
-	// Setup tracks the progress of the setup process.
-	Setup SetupStatus `json:"setup,omitempty"`
-
-	// Represents the latest available observations of Sourcegraph's current state.
-	Conditions []metav1.Condition `json:"conditions,omitempty"`
 }
 
 // Sourcegraph is the Schema for the Sourcegraph API

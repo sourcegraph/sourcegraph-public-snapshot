@@ -271,7 +271,7 @@ export class GraphQLMockServer {
 
         // Must be a root query. We resolve the query here to make sure we
         // resolve operation-specific overrides correctly.
-        if (info.parentType.name === 'Query') {
+        if (info.parentType.name === 'Query' || info.parentType.name === 'Mutation') {
             if (info.operation.name) {
                 const operationMock = this.operationMocks[info.operation.name.value]
                 if (operationMock) {

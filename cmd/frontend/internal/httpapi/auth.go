@@ -65,7 +65,7 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 			}
 		}
 
-		if headerValue := r.Header.Get("Authorization"); headerValue != "" && token == "" {
+		if headerValue := parseAuthorizationHeaderValue(r); headerValue != "" && token == "" {
 			// Handle Authorization header
 			var err error
 			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
@@ -276,4 +276,15 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func parseAuthorizationHeaderValue(r *http.Request) string {
+	headerValue := r.Header.Get("Authorization")
+
+	// Special case for `/.api/llm/` endpoints for compatibility with OpenAI clients,
+	// which send `Authorization: Bearer $TOKEN` instead of `Authorization: token $TOKEN`.
+	if strings.HasPrefix(headerValue, "Bearer ") && r.URL.Path == "/.api/llm/chat/completions" {
+		return fmt.Sprintf("token %s", strings.TrimPrefix(headerValue, "Bearer "))
+	}
+	return headerValue
 }

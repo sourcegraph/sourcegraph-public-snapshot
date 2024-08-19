@@ -6,11 +6,14 @@ import { useNavigate } from 'react-router-dom'
 
 import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import { EVENT_LOGGER } from '@sourcegraph/shared/src/telemetry/web/eventLogger'
-import { Alert, Container, Button, Input, Label, Text, PageHeader, Checkbox, Link } from '@sourcegraph/wildcard'
+import { Alert, Container, Button, Input, Label, Text, PageHeader, Checkbox, Link, Badge } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import type { GitHubAppDomain, GitHubAppKind } from '../../graphql-operations'
+import { GitHubAppKind as AppKindEnum } from '../../graphql-operations'
 import { PageTitle } from '../PageTitle'
+
+import styles from '../fuzzyFinder/FuzzyModal.module.scss'
 
 interface StateResponse {
     state?: string
@@ -244,6 +247,18 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             )}
 
             <Container className="mb-3">
+                {(appKind === AppKindEnum.SITE_CREDENTIAL || appKind === AppKindEnum.USER_CREDENTIAL) && (
+                    <div className="mb-3">
+                        <Badge
+                            variant="info"
+                            tooltip="Please reach out to our support team if you encounter problems or have questions."
+                            className={styles.experimentalBadge}
+                        >
+                            Experimental
+                        </Badge>
+                    </div>
+                )}
+
                 {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}
                 <Text>
                     Provide the details for a new GitHub App with the form below. Once you click "Create GitHub App",

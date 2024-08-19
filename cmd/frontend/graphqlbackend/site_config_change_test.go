@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -16,7 +16,7 @@ func TestSiteConfigurationDiff(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t), nil).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
@@ -57,17 +57,17 @@ func TestSiteConfigurationDiff(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		args *graphqlutil.ConnectionResolverArgs
+		args *gqlutil.ConnectionResolverArgs
 	}{
 		// We have tests for pagination so we can skip that here and just check for the diff for all
 		// the nodes in both the directions.
 		{
 			name: "first: 10",
-			args: &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(10))},
+			args: &gqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(10))},
 		},
 		{
 			name: "last: 10",
-			args: &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(10))},
+			args: &gqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(10))},
 		},
 	}
 

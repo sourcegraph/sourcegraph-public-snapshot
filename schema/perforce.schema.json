@@ -67,10 +67,9 @@
       "type": "object",
       "description": "Configuration for the experimental p4-fusion client",
       "additionalProperties": false,
-      "required": ["enabled"],
       "properties": {
         "enabled": {
-          "description": "Enable the p4-fusion client for cloning and fetching repos",
+          "description": "DEPRECATED. p4-fusion is always enabled.",
           "type": "boolean",
           "default": false
         },
@@ -122,6 +121,11 @@
         },
         "fsyncEnable": {
           "description": " Enable fsync() while writing objects to disk to ensure they get written to permanent storage immediately instead of being cached. This is to mitigate data loss in events of hardware failure.",
+          "type": "boolean",
+          "default": false
+        },
+        "noConvertLabels": {
+          "description": "Disable Perforce label to git tag conversion.",
           "type": "boolean",
           "default": false
         }

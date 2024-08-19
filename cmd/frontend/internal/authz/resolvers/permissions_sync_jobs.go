@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -21,7 +20,7 @@ import (
 
 const permissionsSyncJobIDKind = "PermissionsSyncJob"
 
-func NewPermissionsSyncJobsResolver(logger log.Logger, db database.DB, args graphqlbackend.ListPermissionsSyncJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
+func NewPermissionsSyncJobsResolver(logger log.Logger, db database.DB, args graphqlbackend.ListPermissionsSyncJobsArgs) (*gqlutil.ConnectionResolver[graphqlbackend.PermissionsSyncJobResolver], error) {
 	store := &permissionsSyncJobConnectionStore{
 		logger: logger.Scoped("permissions_sync_jobs_resolver"),
 		db:     db,
@@ -32,7 +31,7 @@ func NewPermissionsSyncJobsResolver(logger log.Logger, db database.DB, args grap
 		return nil, errors.New("please provide either userID or repoID, but not both.")
 	}
 
-	return graphqlutil.NewConnectionResolver[graphqlbackend.PermissionsSyncJobResolver](
+	return gqlutil.NewConnectionResolver[graphqlbackend.PermissionsSyncJobResolver](
 		store, &args.ConnectionResolverArgs, nil)
 }
 

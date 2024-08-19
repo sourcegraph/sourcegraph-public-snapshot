@@ -7,26 +7,22 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
-
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -375,32 +371,35 @@ func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {
 	return &gqlutil.DateTime{Time: r.user.UpdatedAt}
 }
 
-func (r *UserResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{User: &r.user.ID}
-}
-
 func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// settings, because they may contain secrets or other sensitive data.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
 		return nil, err
 	}
 
-	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
+	settings, err := r.db.Settings().GetLatest(ctx, subject.toSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{user: r}, settings, nil}, nil
+	return &settingsResolver{db: r.db, subject: subject, settings: settings}, nil
 }
 
-func (r *UserResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: r}}
+func (r *UserResolver) SettingsCascade(ctx context.Context) (*settingsCascade, error) {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsCascade{db: r.db, subject: subject}, nil
 }
 
-func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
+func (r *UserResolver) ConfigurationCascade(ctx context.Context) (*settingsCascade, error) {
+	return r.SettingsCascade(ctx)
+}
 
 func (r *UserResolver) SiteAdmin() (bool, error) {
 	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
@@ -514,7 +513,7 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 	}
 
 	// 🚨 SECURITY: Only the authenticated user can update their properties.
-	if err := auth.CheckSameUser(ctx, userID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
@@ -764,7 +763,7 @@ func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatc
 	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
 }
 
-func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
+func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*gqlutil.ConnectionResolver[RoleResolver], error) {
 	// 🚨 SECURITY: In dotcom mode, only allow site admins to check roles.
 	if dotcom.SourcegraphDotComMode() && auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
 		return nil, errors.New("unauthorized")
@@ -774,16 +773,16 @@ func (r *UserResolver) Roles(ctx context.Context, args *ListRoleArgs) (*graphqlu
 		db:     r.db,
 		userID: userID,
 	}
-	return graphqlutil.NewConnectionResolver[RoleResolver](
+	return gqlutil.NewConnectionResolver[RoleResolver](
 		connectionStore,
 		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverOptions{
 			AllowNoLimit: true,
 		},
 	)
 }
 
-func (r *UserResolver) Permissions() (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+func (r *UserResolver) Permissions() (*gqlutil.ConnectionResolver[PermissionResolver], error) {
 	userID := r.user.ID
 	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, userID); err != nil {
 		return nil, err
@@ -792,10 +791,10 @@ func (r *UserResolver) Permissions() (*graphqlutil.ConnectionResolver[Permission
 		db:     r.db,
 		userID: userID,
 	}
-	return graphqlutil.NewConnectionResolver[PermissionResolver](
+	return gqlutil.NewConnectionResolver[PermissionResolver](
 		connectionStore,
-		&graphqlutil.ConnectionResolverArgs{},
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverArgs{},
+		&gqlutil.ConnectionResolverOptions{
 			AllowNoLimit: true,
 		},
 	)

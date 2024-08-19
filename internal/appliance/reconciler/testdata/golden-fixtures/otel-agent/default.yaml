@@ -1,0 +1,287 @@
+resources:
+  - apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+        deprecated.daemonset.template.generation: "1"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      generation: 1
+      labels:
+        app.kubernetes.io/component: otel-agent
+        app.kubernetes.io/name: sourcegraph
+        app.kubernetes.io/version: 5.3.9104
+        deploy: sourcegraph
+      name: otel-agent
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+    spec:
+      minReadySeconds: 10
+      revisionHistoryLimit: 10
+      selector:
+        matchLabels:
+          app: otel-agent
+      template:
+        metadata:
+          annotations:
+            kubectl.kubernetes.io/default-container: otel-agent
+          creationTimestamp: null
+          labels:
+            app: otel-agent
+            deploy: sourcegraph
+          name: otel-agent
+        spec:
+          containers:
+            - command:
+                - /bin/otelcol-sourcegraph
+                - --config=/etc/otel-agent/config.yaml
+              image: index.docker.io/sourcegraph/opentelemetry-collector:5.3.9104
+              imagePullPolicy: IfNotPresent
+              livenessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /
+                  port: 13133
+                  scheme: HTTP
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              name: otel-agent
+              ports:
+                - containerPort: 55679
+                  hostPort: 55679
+                  name: zpages
+                  protocol: TCP
+                - containerPort: 4317
+                  hostPort: 4317
+                  name: otel-grpc
+                  protocol: TCP
+                - containerPort: 4318
+                  hostPort: 4318
+                  name: otel-http
+                  protocol: TCP
+              readinessProbe:
+                failureThreshold: 3
+                httpGet:
+                  path: /
+                  port: 13133
+                  scheme: HTTP
+                periodSeconds: 10
+                successThreshold: 1
+                timeoutSeconds: 1
+              resources:
+                limits:
+                  cpu: 500m
+                  memory: 500Mi
+                requests:
+                  cpu: 100m
+                  memory: 100Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                runAsGroup: 101
+                runAsUser: 100
+              terminationMessagePath: /dev/termination-log
+              terminationMessagePolicy: FallbackToLogsOnError
+              volumeMounts:
+                - mountPath: /etc/otel-agent
+                  name: config
+          dnsPolicy: ClusterFirst
+          restartPolicy: Always
+          schedulerName: default-scheduler
+          securityContext:
+            fsGroup: 101
+            fsGroupChangePolicy: OnRootMismatch
+            runAsGroup: 101
+            runAsUser: 100
+          terminationGracePeriodSeconds: 30
+          volumes:
+            - configMap:
+                defaultMode: 511
+                items:
+                  - key: config.yaml
+                    path: config.yaml
+                name: otel-agent
+              name: config
+      updateStrategy:
+        rollingUpdate:
+          maxSurge: 0
+          maxUnavailable: 1
+        type: RollingUpdate
+    status:
+      currentNumberScheduled: 0
+      desiredNumberScheduled: 0
+      numberMisscheduled: 0
+      numberReady: 0
+  - apiVersion: v1
+    data:
+      config.yaml: |
+        receivers:
+          otlp:
+            protocols:
+              grpc: # port 4317
+              http: # port 4318
+
+        exporters:
+          otlp:
+            endpoint: "otel-collector:4317"
+            tls:
+              insecure: true
+            sending_queue:
+              num_consumers: 4
+              queue_size: 100
+            retry_on_failure:
+              enabled: true
+
+        # TODO: allow configuring processors through values
+        #processors:
+        #  batch:
+        #  memory_limiter:
+        #    # 80% of maximum memory up to 2G
+        #    limit_mib: 400
+        #    # 25% of limit up to 2G
+        #    spike_limit_mib: 100
+        #    check_interval: 5s
+
+        extensions:
+          health_check:
+            endpoint: ":13133"
+          zpages:
+            endpoint: "localhost:55679"
+
+        service:
+          extensions:
+            - zpages
+            - health_check
+          pipelines:
+            traces:
+              receivers:
+                - otlp
+              exporters:
+                - otlp
+    immutable: false
+    kind: ConfigMap
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: otel-agent
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+  - apiVersion: v1
+    data:
+      spec: |
+        spec:
+          requestedVersion: "5.3.9104"
+
+          blobstore:
+            disabled: true
+
+          codeInsights:
+            disabled: true
+
+          codeIntel:
+            disabled: true
+
+          frontend:
+            disabled: true
+
+          grafana:
+            disabled: true
+
+          gitServer:
+            disabled: true
+
+          indexedSearch:
+            disabled: true
+
+          nodeExporter:
+            disabled: true
+
+          openTelemetryAgent: {}
+
+          openTelemetryCollector:
+            disabled: true
+
+          pgsql:
+            disabled: true
+
+          postgresExporter:
+            disabled: true
+
+          preciseCodeIntel:
+            disabled: true
+
+          redisCache:
+            disabled: true
+
+          redisExporter:
+            disabled: true
+
+          redisStore:
+            disabled: true
+
+          repoUpdater:
+            disabled: true
+
+          searcher:
+            disabled: true
+
+          symbols:
+            disabled: true
+
+          syntectServer:
+            disabled: true
+
+          worker:
+            disabled: true
+
+          prometheus:
+            disabled: true
+    kind: ConfigMap
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/currentVersion: 5.3.9104
+        appliance.sourcegraph.com/managed: "true"
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      name: sg
+      namespace: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING
+  - apiVersion: v1
+    kind: ServiceAccount
+    metadata:
+      annotations:
+        appliance.sourcegraph.com/configHash: c84ac276e60e85a888146303bb5d592cb42507dc290a515051c6ecedc03d6f4c
+      creationTimestamp: "2024-04-19T00:00:00Z"
+      labels:
+        deploy: sourcegraph
+      name: otel-agent
+      namespace: NORMALIZED_FOR_TESTING
+      ownerReferences:
+        - apiVersion: v1
+          blockOwnerDeletion: true
+          controller: true
+          kind: ConfigMap
+          name: sg
+          uid: NORMALIZED_FOR_TESTING
+      resourceVersion: NORMALIZED_FOR_TESTING
+      uid: NORMALIZED_FOR_TESTING

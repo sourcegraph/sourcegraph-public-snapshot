@@ -18,26 +18,26 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph/codegraphmocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/storemocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	objectmocks "github.com/sourcegraph/sourcegraph/internal/object/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
+	dbworkermocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHandle(t *testing.T) {
-	setupRepoMocks(t)
-
 	upload := shared.Upload{
 		ID:           42,
 		Root:         "",
@@ -47,21 +47,27 @@ func TestHandle(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockLSIFStore := NewMockLSIFStore()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockLSIFStore := codegraphmocks.NewMockDataStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+		if commit != "deadbeef" {
+			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", commit)
+		}
+		return "", nil
+	})
 
 	// Set default transaction behavior
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
 
 	// Set default transaction behavior
-	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
+	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s codegraph.DataStore) error) error { return f(mockLSIFStore) })
 
 	// Track writes to symbols table
-	scipWriter := NewMockLSIFSCIPWriter()
+	scipWriter := codegraphmocks.NewMockSCIPWriter()
 	mockLSIFStore.NewPreciseSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	scipWriter.InsertDocumentFunc.SetDefaultHook(func(_ context.Context, _ string, _ *scip.Document) error {
@@ -96,11 +102,11 @@ func TestHandle(t *testing.T) {
 	})
 
 	svc := &handler{
-		store:           mockDBStore,
-		lsifStore:       mockLSIFStore,
-		gitserverClient: gitserverClient,
-		repoStore:       mockRepoStore,
-		workerStore:     mockWorkerStore,
+		store:              mockDBStore,
+		codeGraphDataStore: mockLSIFStore,
+		gitserverClient:    gitserverClient,
+		repoStore:          mockRepoStore,
+		workerStore:        mockWorkerStore,
 	}
 
 	requeued, err := svc.HandleRawUpload(context.Background(), logtest.Scoped(t), upload, mockUploadStore, observation.TestTraceLogger(logtest.Scoped(t)))
@@ -238,7 +244,7 @@ func TestHandle(t *testing.T) {
 			t.Fatalf("unexpected value for upload id. want=%d have=%d", 42, call.Arg1)
 		}
 
-		expectedMetadata := lsifstore.ProcessedMetadata{
+		expectedMetadata := codegraph.ProcessedMetadata{
 			TextDocumentEncoding: "UTF8",
 			ToolName:             "scip-typescript",
 			ToolVersion:          "0.3.3",
@@ -285,8 +291,6 @@ func TestHandle(t *testing.T) {
 }
 
 func TestHandleError(t *testing.T) {
-	setupRepoMocks(t)
-
 	upload := shared.Upload{
 		ID:           42,
 		Root:         "root/",
@@ -296,19 +300,19 @@ func TestHandleError(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockLSIFStore := NewMockLSIFStore()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockLSIFStore := codegraphmocks.NewMockDataStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
 
 	// Set default transaction behavior
 	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s store.Store) error) error { return f(mockDBStore) })
-	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s lsifstore.Store) error) error { return f(mockLSIFStore) })
+	mockLSIFStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s codegraph.DataStore) error) error { return f(mockLSIFStore) })
 
 	// Track writes to symbols table
-	scipWriter := NewMockLSIFSCIPWriter()
+	scipWriter := codegraphmocks.NewMockSCIPWriter()
 	mockLSIFStore.NewPreciseSCIPWriterFunc.SetDefaultReturn(scipWriter, nil)
 
 	// Give correlation package a valid input dump
@@ -330,8 +334,8 @@ func TestHandleError(t *testing.T) {
 	mockDBStore.SetRepositoryAsDirtyFunc.SetDefaultReturn(errors.Errorf("uh-oh!"))
 
 	svc := &handler{
-		store:     mockDBStore,
-		lsifStore: mockLSIFStore,
+		store:              mockDBStore,
+		codeGraphDataStore: mockLSIFStore,
 		// lsifstore:       mockLSIFStore,
 		gitserverClient: gitserverClient,
 		repoStore:       mockRepoStore,
@@ -362,10 +366,10 @@ func TestHandleCloneInProgress(t *testing.T) {
 		ContentType:  "application/x-protobuf+scip",
 	}
 
-	mockWorkerStore := NewMockWorkerStore[shared.Upload]()
-	mockDBStore := NewMockStore()
+	mockWorkerStore := dbworkermocks.NewMockStore[shared.Upload]()
+	mockDBStore := storemocks.NewMockStore()
 	mockRepoStore := defaultMockRepoStore()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockUploadStore := objectmocks.NewMockStorage()
 	gitserverClient := gitserver.NewMockClient()
 
 	mockRepoStore.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
@@ -427,27 +431,6 @@ var scipDirectoryChildren = map[string][]string{
 		"template/src/util/uri.test.ts",
 		"template/src/util/uri.ts",
 	},
-}
-
-func setupRepoMocks(t *testing.T) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.Get = nil
-		backend.Mocks.Repos.ResolveRev = nil
-	})
-
-	backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-		if repoID != api.RepoID(50) {
-			t.Errorf("unexpected repository name. want=%d have=%d", 50, repoID)
-		}
-		return &types.Repo{ID: repoID}, nil
-	}
-
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo api.RepoName, rev string) (api.CommitID, error) {
-		if rev != "deadbeef" {
-			t.Errorf("unexpected commit. want=%s have=%s", "deadbeef", rev)
-		}
-		return "", nil
-	}
 }
 
 func defaultMockRepoStore() *dbmocks.MockRepoStore {

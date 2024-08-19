@@ -157,12 +157,6 @@ export const PositionSettingsGallery: StoryFn = () => {
     )
 }
 
-PositionSettingsGallery.parameters = {
-    chromatic: {
-        disableSnapshot: false,
-    },
-}
-
 export const StandardExample: StoryFn = () => (
     <ScrollCenterBox title="Root scroll block" className={styles.container}>
         <div className={styles.content}>

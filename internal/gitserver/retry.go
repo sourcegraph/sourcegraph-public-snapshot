@@ -185,4 +185,9 @@ func (r *automaticRetryClient) CommitLog(ctx context.Context, in *proto.CommitLo
 	return r.base.CommitLog(ctx, in, opts...)
 }
 
+func (r *automaticRetryClient) MergeBaseOctopus(ctx context.Context, in *proto.MergeBaseOctopusRequest, opts ...grpc.CallOption) (*proto.MergeBaseOctopusResponse, error) {
+	opts = append(defaults.RetryPolicy, opts...)
+	return r.base.MergeBaseOctopus(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &automaticRetryClient{}

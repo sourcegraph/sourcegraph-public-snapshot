@@ -68,6 +68,17 @@ func NewVolumeFromConfigMap(name, configMapName string) corev1.Volume {
 	}
 }
 
+func NewVolumeFromSecret(name, secretName string) corev1.Volume {
+	return corev1.Volume{
+		Name: name,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secretName,
+			},
+		},
+	}
+}
+
 func NewVolumeHostPath(name, path string) corev1.Volume {
 	return corev1.Volume{
 		Name: name,

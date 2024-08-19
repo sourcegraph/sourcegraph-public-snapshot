@@ -23,6 +23,7 @@ export interface AuthProvider {
         | 'github'
         | 'gitlab'
         | 'bitbucketCloud'
+        | 'bitbucketServer'
         | 'http-header'
         | 'openidconnect'
         | 'sourcegraph-operator'
@@ -195,6 +196,12 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     batchChangesDisableWebhooksWarning: boolean
 
     batchChangesWebhookLogsEnabled: boolean
+
+    /**
+     * Whether this sourcegraph instance is managed by Appliance
+     */
+    applianceUpdateTarget: string
+    applianceMenuTarget: string
 
     /**
      * Whether Cody is enabled on this instance. Check

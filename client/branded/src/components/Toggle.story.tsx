@@ -36,12 +36,6 @@ export const Interactive: StoryFn = () => {
     return <ToggleExample value={value} onToggle={onToggle} />
 }
 
-Interactive.parameters = {
-    chromatic: {
-        disable: true,
-    },
-}
-
 export const Variants: StoryFn = () => (
     <>
         <ToggleExample value={true} onToggle={onToggle} />

@@ -5,7 +5,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -49,27 +50,114 @@ func (s *fakeEventLogStore) loggedEventNames() []string {
 
 func TestOwnSearchEventNames(t *testing.T) {
 	type wantEvents struct {
-		legacy []string // we retain manual instrumentation of existing events
-		new    []string // https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
+		legacy autogold.Value // we retain manual instrumentation of existing events
+		new    autogold.Value // https://docs-legacy.sourcegraph.com/dev/background-information/telemetry
 	}
-	for literal, wantEventNames := range map[string]wantEvents{
-		"file:has.owner(one@example.com)": {
-			legacy: []string{"FileHasOwnerSearch", "search.latencies.file"},
-			new:    []string{"search.latencies - file", "search - file.hasOwners"},
+
+	cases := []struct {
+		query      string
+		searchType query.SearchType
+		want       wantEvents
+	}{
+		// result types
+		{
+			query:      "sourcegraph type:repo",
+			searchType: query.SearchTypeKeyword,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.repo"}),
+				new:    autogold.Expect([]string{"search.latencies - repo"}),
+			},
 		},
-		"select:file.owners": {
-			legacy: []string{"SelectFileOwnersSearch", "search.latencies.repo"},
-			new:    []string{"search.latencies - repo", "search - select.fileOwners"},
+		{
+			query:      "sourcegraph type:diff",
+			searchType: query.SearchTypeKeyword,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.diff"}),
+				new:    autogold.Expect([]string{"search.latencies - diff"}),
+			},
 		},
-	} {
-		t.Run(literal, func(t *testing.T) {
-			q, err := query.ParseLiteral(literal)
-			if err != nil {
-				t.Fatalf("ParseLiteral: %s", err)
-			}
+		{
+			query:      "search results type:file",
+			searchType: query.SearchTypeKeyword,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.keyword"}),
+				new:    autogold.Expect([]string{"search.latencies - keyword"}),
+			},
+		},
+		{
+			query:      "search results type:path",
+			searchType: query.SearchTypeKeyword,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.file"}),
+				new:    autogold.Expect([]string{"search.latencies - file"}),
+			},
+		},
+		// pattern types
+		{
+			query:      "bytes buffer",
+			searchType: query.SearchTypeKeyword,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.keyword"}),
+				new:    autogold.Expect([]string{"search.latencies - keyword"}),
+			},
+		},
+		{
+			query:      "bytes",
+			searchType: query.SearchTypeKeyword,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.keyword"}),
+				new:    autogold.Expect([]string{"search.latencies - keyword"}),
+			},
+		},
+		{
+			query:      "bytes buffer",
+			searchType: query.SearchTypeStandard,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.standard"}),
+				new:    autogold.Expect([]string{"search.latencies - standard"}),
+			},
+		},
+		{
+			query:      "bytes buffer",
+			searchType: query.SearchTypeRegex,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.regex"}),
+				new:    autogold.Expect([]string{"search.latencies - regex"}),
+			},
+		},
+		{
+			query:      "if ... else ...",
+			searchType: query.SearchTypeStructural,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"search.latencies.structural"}),
+				new:    autogold.Expect([]string{"search.latencies - structural"}),
+			},
+		},
+		// other
+		{
+			query:      "file:has.owner(one@example.com)",
+			searchType: query.SearchTypeKeyword,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"FileHasOwnerSearch", "search.latencies.keyword"}),
+				new:    autogold.Expect([]string{"search.latencies - keyword", "search - file.hasOwners"}),
+			},
+		},
+		{
+			query:      "select:file.owners",
+			searchType: query.SearchTypeKeyword,
+			want: wantEvents{
+				legacy: autogold.Expect([]string{"SelectFileOwnersSearch", "search.latencies.keyword"}),
+				new:    autogold.Expect([]string{"search.latencies - keyword", "search - select.fileOwners"}),
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.query, func(t *testing.T) {
+			q, err := query.ParseSearchType(c.query, c.searchType)
+			require.NoError(t, err)
 			inputs := &search.Inputs{
 				UserSettings:        &schema.Settings{},
-				PatternType:         query.SearchTypeLiteral,
+				PatternType:         c.searchType,
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
 				Query:               q,
@@ -90,20 +178,14 @@ func TestOwnSearchEventNames(t *testing.T) {
 			ctx := actor.WithActor(context.Background(), actor.FromUser(42))
 			childJob := mockjob.NewMockJob()
 			logJob := jobutil.NewLogJob(inputs, childJob)
-			if _, err := logJob.Run(ctx, job.RuntimeClients{
+			_, err = logJob.Run(ctx, job.RuntimeClients{
 				Logger: logtest.Scoped(t),
 				DB:     db,
-			}, streaming.NewNullStream()); err != nil {
-				t.Fatalf("LogJob.Run: %s", err)
-			}
-			// legacy events
-			if diff := cmp.Diff(wantEventNames.legacy, legacyEvents.loggedEventNames()); diff != "" {
-				t.Errorf("logged legacy events, -want+got: %s", diff)
-			}
-			// new events
-			if diff := cmp.Diff(wantEventNames.new, newEvents.GetMockQueuedEvents().Summary()); diff != "" {
-				t.Errorf("logged new events, -want+got: %s", diff)
-			}
+			}, streaming.NewNullStream())
+			require.NoError(t, err)
+
+			c.want.legacy.Equal(t, legacyEvents.loggedEventNames())
+			c.want.new.Equal(t, newEvents.GetMockQueuedEvents().Summary())
 		})
 	}
 }

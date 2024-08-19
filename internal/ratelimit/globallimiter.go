@@ -379,37 +379,20 @@ type GlobalLimiterInfo struct {
 // GetGlobalLimiterState reports how all the existing rate limiters are configured,
 // keyed by bucket name.
 func GetGlobalLimiterState(ctx context.Context) (map[string]GlobalLimiterInfo, error) {
-	return GetGlobalLimiterStateFromPool(ctx, kv().Pool(), tokenBucketGlobalPrefix)
+	return GetGlobalLimiterStateFromStore(kv(), tokenBucketGlobalPrefix)
 }
 
-func GetGlobalLimiterStateFromPool(ctx context.Context, pool *redis.Pool, prefix string) (map[string]GlobalLimiterInfo, error) {
-	conn, err := pool.GetContext(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get connection")
-	}
-	defer conn.Close()
-
+func GetGlobalLimiterStateFromStore(rstore redispool.KeyValue, prefix string) (map[string]GlobalLimiterInfo, error) {
 	// First, find all known limiters in redis.
-	resp, err := conn.Do("KEYS", fmt.Sprintf("%s:*:%s", prefix, bucketAllowedBurstKeySuffix))
+	keys, err := rstore.Keys(fmt.Sprintf("%s:*:%s", prefix, bucketAllowedBurstKeySuffix))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list keys")
 	}
-	keys, ok := resp.([]interface{})
-	if !ok {
-		return nil, errors.Newf("invalid response from redis keys command, expected []interface{}, got %T", resp)
-	}
 
 	m := make(map[string]GlobalLimiterInfo, len(keys))
-	for _, k := range keys {
-		kchars, ok := k.([]uint8)
-		if !ok {
-			return nil, errors.Newf("invalid response from redis keys command, expected string, got %T", k)
-		}
-		key := string(kchars)
+	for _, key := range keys {
 		limiterName := strings.TrimSuffix(strings.TrimPrefix(key, prefix+":"), ":"+bucketAllowedBurstKeySuffix)
 		rlKeys := getRateLimiterKeys(prefix, limiterName)
-
-		rstore := redispool.RedisKeyValue(pool)
 
 		currentCapacity, err := rstore.Get(rlKeys.BucketKey).Int()
 		if err != nil && err != redis.ErrNil {
@@ -515,42 +498,26 @@ type TB interface {
 func SetupForTest(t TB) {
 	t.Helper()
 
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", "127.0.0.1:6379")
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-	kvMock = redispool.RedisKeyValue(pool)
-
-	tokenBucketGlobalPrefix = "__test__" + t.Name()
-	c := pool.Get()
-	defer c.Close()
+	testStore = redispool.NewTestKeyValue()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		_, err := c.Do("PING")
-		if err != nil {
+		if err := testStore.Ping(); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
 
-	err := redispool.DeleteAllKeysWithPrefix(c, tokenBucketGlobalPrefix)
-	if err != nil {
-		t.Fatalf("cold not clear test prefix: &v", err)
+	tokenBucketGlobalPrefix = "__test__" + t.Name()
+	if err := redispool.DeleteAllKeysWithPrefix(testStore, tokenBucketGlobalPrefix); err != nil {
+		t.Fatalf("could not clear test prefix: &v", err)
 	}
 }
 
-var kvMock redispool.KeyValue
+var testStore redispool.KeyValue
 
 func kv() redispool.KeyValue {
-	if kvMock != nil {
-		return kvMock
+	if testStore != nil {
+		return testStore
 	}
 	return redispool.Store
 }

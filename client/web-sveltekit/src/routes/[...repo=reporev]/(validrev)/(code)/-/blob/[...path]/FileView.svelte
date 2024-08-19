@@ -111,14 +111,13 @@
               })
             : null
 
-    $: codeGraphDataCommitHashes = data.user?.siteAdmin
-        ? codeGraphData?.map(datum => datum.commit.slice(0, 7))
-        : undefined
+    $: codeGraphDataCommitHashes = codeGraphData?.map(datum => datum.commit.slice(0, 7))
     $: codeGraphDataDebugOptions = codeGraphDataCommitHashes ? ['None', ...codeGraphDataCommitHashes] : undefined
     const selectedCodeGraphDataDebugOption = writable<string>('None')
     $: selectedCodeGraphDataOccurrences = codeGraphData?.find(datum =>
         datum.commit.startsWith($selectedCodeGraphDataDebugOption)
     )?.occurrences // TODO: we should probably use the nonoverlapping occurrences here
+    $: isPerforceDepot = data.isPerforceDepot
 
     function viewModeURL(viewMode: CodeViewMode) {
         switch (viewMode) {
@@ -183,7 +182,10 @@
             {#if blob}
                 <OpenInCodeHostAction data={blob} lineOrPosition={data.lineOrPosition} />
             {/if}
-            <Permalink {commitID} />
+            <Permalink
+                revID={commitID}
+                tooltip={isPerforceDepot ? 'Permalink (with full changelist ID)' : 'Permalink (with full commit SHA)'}
+            />
             {#if $isCodyAvailable}
                 <OpenCodyAction />
             {/if}

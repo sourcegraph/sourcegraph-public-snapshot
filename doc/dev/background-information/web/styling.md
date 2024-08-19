@@ -163,8 +163,6 @@ In our webapp, it is recommended to make use of [Bootstrap's margin and padding 
 
 ### Layout
 
-We use modern CSS for our layouting needs. You can find a [small playground in our Storybook](https://main--5f0f381c0e50750022dc6bf7.chromatic.com/?path=/story/branded-global-styles--layout). The dev tools of modern browsers provide a lot of useful tooling to work with CSS layouts.
-
 Layouts should always be _responsive_ to make sure Sourcegraph is usable with different screen resolutions and window sizes, e.g. when resizing the browser window and using Sourcegraph side-by-side with an editor.
 
 [CSS Flexbox](https://css-tricks.com/snippets/css/a-guide-to-flexbox/) is used for **one-dimensional** layouts (single rows or columns, with optional wrapping). In the webapp, you can use utility classes for simple flexbox layouts and responsive layouts. This is the most common layout method.

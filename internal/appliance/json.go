@@ -2,10 +2,19 @@ package appliance
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
+	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -87,17 +96,17 @@ func (a *Appliance) readJSON(w http.ResponseWriter, r *http.Request, output any)
 	return nil
 }
 
-func (a *Appliance) getStageJSONHandler() http.Handler {
+func (a *Appliance) getStatusJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data := struct {
-			Stage string `json:"stage"`
-			Data  string `json:"data,omitempty"`
+			Status string `json:"status"`
+			Data   string `json:"data,omitempty"`
 		}{
-			Stage: a.status.String(),
-			Data:  "",
+			Status: a.status.String(),
+			Data:   "",
 		}
 
-		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, nil); err != nil {
+		if err := a.writeJSON(w, http.StatusOK, responseData{"status": data}, http.Header{}); err != nil {
 			a.serverErrorResponse(w, r, err)
 		}
 	})
@@ -105,21 +114,95 @@ func (a *Appliance) getStageJSONHandler() http.Handler {
 
 func (a *Appliance) getInstallProgressJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		currentTasks, progress := calculateProgress(installTasks())
 
+		installProgress := struct {
+			Version  string `json:"version"`
+			Progress int    `json:"progress"`
+			Error    string `json:"error"`
+			Tasks    []Task `json:"tasks"`
+		}{
+			Version:  "",
+			Progress: progress,
+			Error:    "",
+			Tasks:    currentTasks,
+		}
+
+		ok, err := a.isSourcegraphFrontendReady(r.Context())
+		if err != nil {
+			a.logger.Error("failed to get sourcegraph frontend status")
+			return
+		}
+
+		if ok {
+			a.status = config.StatusWaitingForAdmin
+		}
+
+		if err := a.writeJSON(w, http.StatusOK, responseData{"progress": installProgress}, http.Header{}); err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
 	})
 }
 
-func (a *Appliance) getStatusHandler() http.Handler {
+func (a *Appliance) getMaintenanceStatusHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
+		type service struct {
+			Name    string `json:"name"`
+			Healthy bool   `json:"healthy"`
+			Message string `json:"message"`
+		}
+
+		services := []service{}
+		for _, name := range config.SourcegraphServicesToReconcile {
+			services = append(services, service{
+				Name:    name,
+				Healthy: true,
+				Message: "fake event",
+			})
+		}
+		fmt.Println(services)
+		if err := a.writeJSON(w, http.StatusOK, responseData{"services": services}, http.Header{}); err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
 	})
 }
 
-// TODO actually handles the state for install. Rename this to reflect and validate input.
-func (a *Appliance) postStageJSONHandler() http.Handler {
+func (a *Appliance) getReleasesHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var relregResp io.ReadCloser
+		if a.pinnedReleasesFile == "" {
+			// simple proxy to release releaseRegistry
+			resp, err := http.Get("https://releaseregistry.sourcegraph.com/v1/releases/sourcegraph")
+			if err != nil {
+				a.serverErrorResponse(w, r, err)
+				return
+			}
+			defer resp.Body.Close()
+			relregResp = resp.Body
+		} else {
+			// airgap fallback
+			var err error
+			relregResp, err = os.Open(a.pinnedReleasesFile)
+			if err != nil {
+				a.serverErrorResponse(w, r, err)
+				return
+			}
+			defer relregResp.Close()
+		}
+
+		if _, err := io.Copy(w, relregResp); err != nil {
+			// There's nothing else we can do, we've already sent the status
+			// code
+			a.logger.Error("error proxying release registry to appliance frontend", log.Error(err))
+		}
+	})
+}
+
+func (a *Appliance) postStatusJSONHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Stage string `json:"stage"`
+			State string `json:"state"`
 			Data  string `json:"data,omitempty"`
 		}
 
@@ -127,5 +210,36 @@ func (a *Appliance) postStageJSONHandler() http.Handler {
 			a.badRequestResponse(w, r, err)
 			return
 		}
+
+		newStatus := config.Status(input.State)
+		a.logger.Info("state transition", log.String("state", string(newStatus)))
+		// trim v if v exists
+		input.Data = strings.TrimPrefix(input.Data, "v")
+		a.sourcegraph.Spec.RequestedVersion = input.Data
+		if err := a.setStatus(r.Context(), newStatus); err != nil {
+			if kerrors.IsNotFound(err) {
+				a.logger.Info("no configmap found, will not set status")
+			} else {
+				a.serverErrorResponse(w, r, err)
+				return
+			}
+		}
+
+		if a.noResourceRestrictions {
+			a.sourcegraph.SetLocalDevMode()
+		}
+
+		cfgMap := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "sourcegraph-appliance",
+				Namespace: a.namespace,
+			},
+		}
+		err := a.reconcileConfigMap(r.Context(), cfgMap)
+		if err != nil {
+			a.serverErrorResponse(w, r, err)
+		}
+
+		a.status = newStatus
 	})
 }

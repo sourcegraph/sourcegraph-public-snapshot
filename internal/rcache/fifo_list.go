@@ -129,8 +129,16 @@ func (l *FIFOList) globalPrefixKey() string {
 }
 
 func (l *FIFOList) kv() redispool.KeyValue {
-	if kvMock != nil {
-		return kvMock
+	if testStore != nil {
+		return testStore
 	}
 	return l._kv
+}
+
+func bytes(s ...string) [][]byte {
+	t := make([][]byte, len(s))
+	for i, v := range s {
+		t[i] = []byte(v)
+	}
+	return t
 }

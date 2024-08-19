@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -21,8 +21,8 @@ type repositoryContributorsArgs struct {
 
 func (r *RepositoryResolver) Contributors(args *struct {
 	repositoryContributorsArgs
-	graphqlutil.ConnectionResolverArgs
-}) (*graphqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
+	gqlutil.ConnectionResolverArgs
+}) (*gqlutil.ConnectionResolver[*repositoryContributorResolver], error) {
 	var after time.Time
 	if args.AfterDate != nil && *args.AfterDate != "" {
 		var err error
@@ -39,10 +39,10 @@ func (r *RepositoryResolver) Contributors(args *struct {
 		repo:  r,
 	}
 	reverse := false
-	connectionOptions := graphqlutil.ConnectionResolverOptions{
+	connectionOptions := gqlutil.ConnectionResolverOptions{
 		Reverse: &reverse,
 	}
-	return graphqlutil.NewConnectionResolver[*repositoryContributorResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return gqlutil.NewConnectionResolver[*repositoryContributorResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
 type repositoryContributorConnectionStore struct {

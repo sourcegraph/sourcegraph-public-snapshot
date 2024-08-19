@@ -11,8 +11,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
@@ -30,7 +30,7 @@ type fakeTB struct{}
 func (fakeTB) Cleanup(func()) {}
 
 func TestRouter(t *testing.T) {
-	InitRouter(dbmocks.NewMockDB())
+	InitRouter(dbmocks.NewMockDB(), nil)
 	router := Router()
 	tests := []struct {
 		path      string
@@ -222,7 +222,7 @@ func TestRouter(t *testing.T) {
 }
 
 func TestRouter_RootPath(t *testing.T) {
-	InitRouter(dbmocks.NewMockDB())
+	InitRouter(dbmocks.NewMockDB(), nil)
 	router := Router()
 
 	tests := []struct {

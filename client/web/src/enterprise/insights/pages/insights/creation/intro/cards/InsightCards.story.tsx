@@ -9,12 +9,7 @@ import { CaptureGroupInsightCard, LangStatsInsightCard, SearchInsightCard } from
 const meta: Meta = {
     title: 'web/insights/InsightCards',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default meta

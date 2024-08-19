@@ -21,10 +21,6 @@ const config: Meta = {
 
     parameters: {
         component: NavMenu,
-        chromatic: {
-            enableDarkMode: true,
-            disableSnapshot: false,
-        },
     },
 }
 

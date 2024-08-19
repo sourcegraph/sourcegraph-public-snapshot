@@ -11,27 +11,25 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
-
 	"github.com/stretchr/testify/assert"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -45,7 +43,7 @@ func TestAddExternalService(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).AddExternalService(ctx, &addExternalServiceArgs{})
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).AddExternalService(ctx, &addExternalServiceArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %q", want, err)
 		}
@@ -117,7 +115,7 @@ func TestUpdateExternalService(t *testing.T) {
 			t.Cleanup(func() { mockExternalServicesService = nil })
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(db, nil, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -155,7 +153,7 @@ func TestUpdateExternalService(t *testing.T) {
 		t.Cleanup(func() { mockExternalServicesService = nil })
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -542,7 +540,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
@@ -603,7 +601,7 @@ func TestExternalServicesResolver(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			result, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -624,7 +622,7 @@ func TestExternalServicesResolver(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1021,20 +1019,20 @@ func TestExternalServices(t *testing.T) {
 }
 
 func TestExternalServices_PageInfo(t *testing.T) {
-	cmpOpts := cmp.AllowUnexported(graphqlutil.PageInfo{})
+	cmpOpts := cmp.AllowUnexported(gqlutil.PageInfo{})
 	tests := []struct {
 		name         string
 		opt          database.ExternalServicesListOptions
 		mockList     func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
 		mockCount    func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error)
-		wantPageInfo *graphqlutil.PageInfo
+		wantPageInfo *gqlutil.PageInfo
 	}{
 		{
 			name: "no limit set",
 			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
+			wantPageInfo: gqlutil.HasNextPage(false),
 		},
 		{
 			name: "less results than the limit",
@@ -1046,7 +1044,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 			mockList: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				return []*types.ExternalService{{ID: 1, Config: extsvc.NewEmptyConfig()}}, nil
 			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
+			wantPageInfo: gqlutil.HasNextPage(false),
 		},
 		{
 			name: "same number of results as the limit, and no more",
@@ -1061,7 +1059,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
 				return 1, nil
 			},
-			wantPageInfo: graphqlutil.HasNextPage(false),
+			wantPageInfo: gqlutil.HasNextPage(false),
 		},
 		{
 			name: "same number of results as the limit, and has more",
@@ -1076,7 +1074,7 @@ func TestExternalServices_PageInfo(t *testing.T) {
 			mockCount: func(ctx context.Context, opt database.ExternalServicesListOptions) (int, error) {
 				return 2, nil
 			},
-			wantPageInfo: graphqlutil.NextPageCursor(string(MarshalExternalServiceID(1))),
+			wantPageInfo: gqlutil.NextPageCursor(string(MarshalExternalServiceID(1))),
 		},
 	}
 	for _, test := range tests {

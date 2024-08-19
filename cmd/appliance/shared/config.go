@@ -16,14 +16,16 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	k8sConfig          *rest.Config
-	metrics            metricsConfig
-	grpc               grpcConfig
-	http               httpConfig
-	namespace          string
-	relregEndpoint     string
-	applianceVersion   string
-	selfDeploymentName string
+	k8sConfig              *rest.Config
+	metrics                metricsConfig
+	grpc                   grpcConfig
+	http                   httpConfig
+	namespace              string
+	relregEndpoint         string
+	pinnedReleasesFile     string // airgap fallback
+	applianceVersion       string
+	selfDeploymentName     string
+	noResourceRestrictions string
 }
 
 func (c *Config) Load() {
@@ -49,6 +51,8 @@ func (c *Config) Load() {
 	c.applianceVersion = c.Get("APPLIANCE_VERSION", version.Version(), "Version tag for the running appliance.")
 	c.selfDeploymentName = c.Get("APPLIANCE_DEPLOYMENT_NAME", "", "Own deployment name for self-update. Default is to disable self-update.")
 	c.relregEndpoint = c.Get("RELEASE_REGISTRY_ENDPOINT", releaseregistry.Endpoint, "Release registry endpoint.")
+	c.pinnedReleasesFile = c.Get("APPLIANCE_PINNED_RELEASES_FILE", "", "Pinned release versions file.")
+	c.noResourceRestrictions = c.Get("APPLIANCE_NO_RESOURCE_RESTRICTIONS", "false", "Remove all resource requests and limits from deployed resources. Only recommended for local development.")
 }
 
 func (c *Config) Validate() error {

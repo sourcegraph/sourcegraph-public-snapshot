@@ -17,16 +17,15 @@ import (
 
 func TestSyntacticIndexingEnqueuer(t *testing.T) {
 	/*
-		The purpose of this test is to verify that methods InsertIndexes and IsQueued
+		The purpose of this test is to verify that methods InsertJobs and IsQueued
 		correctly interact with each other, and that the records inserted using those methods
 		are valid from the point of view of the DB worker interface
 	*/
 	observationCtx := observation.TestContextTB(t)
-	sqlDB := dbtest.NewDB(t)
-	db := database.NewDB(observationCtx.Logger, sqlDB)
+	db := database.NewDB(observationCtx.Logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, sqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, db)
 	require.NoError(t, err, "unexpected error creating dbworker stores")
 
 	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, db)

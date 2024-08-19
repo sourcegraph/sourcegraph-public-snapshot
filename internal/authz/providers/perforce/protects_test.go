@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
@@ -231,7 +232,9 @@ func TestScanFullRepoPermissions(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/",
 		"//depot/training/",
@@ -240,7 +243,7 @@ func TestScanFullRepoPermissions(t *testing.T) {
 		"//not-depot/not-main/", // no rules exist
 	}
 	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs),
 	}
 	if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
@@ -253,46 +256,140 @@ func TestScanFullRepoPermissions(t *testing.T) {
 			"//depot/training/",
 			"//depot/test/",
 		},
-		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
+		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs{
 			"//depot/main/": {
-				Paths: []string{
-					mustGlobPattern(t, "-/..."),
-					mustGlobPattern(t, "/base/..."),
-					mustGlobPattern(t, "/*/stuff/..."),
-					mustGlobPattern(t, "/frontend/.../stuff/*"),
-					mustGlobPattern(t, "/config.yaml"),
-					mustGlobPattern(t, "/subdir/**"),
-					mustGlobPattern(t, "-/subdir/remove/"),
-					mustGlobPattern(t, "/subdir/some-dir/also-remove/..."),
-					mustGlobPattern(t, "/subdir/another-dir/also-remove/..."),
-					mustGlobPattern(t, "-/subdir/*/also-remove/..."),
-					mustGlobPattern(t, "/.../README.md"),
-					mustGlobPattern(t, "/dir.yaml"),
-					mustGlobPattern(t, "-/.../.secrets.env"),
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "-/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "/base/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "/*/stuff/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "/frontend/.../stuff/*"), IP: "*"},
+					{Path: mustGlobPattern(t, "/config.yaml"), IP: "*"},
+					{Path: mustGlobPattern(t, "/subdir/**"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/subdir/remove/"), IP: "*"},
+					{Path: mustGlobPattern(t, "/subdir/some-dir/also-remove/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "/subdir/another-dir/also-remove/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "-/subdir/*/also-remove/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "/.../README.md"), IP: "*"},
+					{Path: mustGlobPattern(t, "/dir.yaml"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/.../.secrets.env"), IP: "*"},
 				},
 			},
 			"//depot/test/": {
-				Paths: []string{
-					mustGlobPattern(t, "/..."),
-					mustGlobPattern(t, "/.../README.md"),
-					mustGlobPattern(t, "/dir.yaml"),
-					mustGlobPattern(t, "-/.../.secrets.env"),
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "/.../README.md"), IP: "*"},
+					{Path: mustGlobPattern(t, "/dir.yaml"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/.../.secrets.env"), IP: "*"},
 				},
 			},
 			"//depot/training/": {
-				Paths: []string{
-					mustGlobPattern(t, "/..."),
-					mustGlobPattern(t, "-/secrets/..."),
-					mustGlobPattern(t, "-/.env"),
-					mustGlobPattern(t, "/.../README.md"),
-					mustGlobPattern(t, "/dir.yaml"),
-					mustGlobPattern(t, "-/.../.secrets.env"),
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "-/secrets/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "-/.env"), IP: "*"},
+					{Path: mustGlobPattern(t, "/.../README.md"), IP: "*"},
+					{Path: mustGlobPattern(t, "/dir.yaml"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/.../.secrets.env"), IP: "*"},
 				},
 			},
 		},
 	}
 	if diff := cmp.Diff(want, perms); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestScanIPPermissions(t *testing.T) {
+	logger := logtest.Scoped(t)
+	f, err := os.Open("testdata/sample-protects-ip.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := io.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	rc := io.NopCloser(bytes.NewReader(data))
+
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	p.depots = []extsvc.RepoID{
+		"//depot/src/",
+		"//depot/project1/",
+		"//depot/project2/",
+		"//depot/local/",
+		"//depot/test/",
+		"//depot/rickroll/",
+		"//not-depot/not-main/", // no rules exist
+	}
+
+	perms := &authz.ExternalUserPermissions{
+		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs),
+	}
+	if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
+		t.Fatal(err)
+	}
+	want := &authz.ExternalUserPermissions{
+		Exacts: []extsvc.RepoID{
+			"//depot/src/",
+			"//depot/project1/",
+			"//depot/project2/",
+			"//depot/local/",
+			"//depot/test/",
+			"//depot/rickroll/",
+			"//not-depot/not-main/",
+		},
+		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs{
+			"//depot/src/": {
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "/..."), IP: "*"},
+					{Path: mustGlobPattern(t, "-/main/..."), IP: "192.168.10.0/24"},
+					{Path: mustGlobPattern(t, "-/main/..."), IP: "[2001:db8:16:81::]/48"},
+					{Path: mustGlobPattern(t, "/main/..."), IP: "proxy-192.168.10.0/24"},
+					{Path: mustGlobPattern(t, "/main/..."), IP: "proxy-[2001:db8:16:81::]/48"},
+					{Path: mustGlobPattern(t, "-/dev/..."), IP: "proxy-10.0.0.0/8"},
+					{Path: mustGlobPattern(t, "-/dev/..."), IP: "proxy-[2001:db8:1008::]/32"},
+					{Path: mustGlobPattern(t, "/dev/..."), IP: "10.0.0.0/8"},
+					{Path: mustGlobPattern(t, "/dev/..."), IP: "[2001:db8:1008::]/32"},
+				},
+			},
+			"//depot/rickroll/": {
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "/..."), IP: "*"},
+				},
+			},
+			"//depot/project1/": {
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "/..."), IP: "192.168.41.2"},
+				},
+			},
+
+			"//depot/project2/": {
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "/..."), IP: "[2001:db8:195:1:2::1234]"},
+				},
+			},
+			"//depot/local/": {
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "/..."), IP: "192.168.41.*"},
+				},
+			},
+			"//depot/test/": {
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "/..."), IP: "[2001:db8:1:2:*]"},
+				},
+			},
+			"//not-depot/not-main/": {Paths: []authz.PathWithIP{{Path: "/**", IP: "*"}}},
+		},
+	}
+
+	if diff := cmp.Diff(want, perms); diff != "" {
+		t.Fatalf("unexpected permissions (-want +got):\n%s", diff)
 	}
 }
 
@@ -312,12 +409,14 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/base/",
 	}
 	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs),
 	}
 	if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
@@ -327,16 +426,16 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 		Exacts: []extsvc.RepoID{
 			"//depot/main/base/",
 		},
-		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
+		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs{
 			"//depot/main/base/": {
-				Paths: []string{
-					mustGlobPattern(t, "-/**"),
-					mustGlobPattern(t, "/**"),
-					mustGlobPattern(t, "-/**"),
-					mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-/**/base/build/**/asdf.txt"),
-					mustGlobPattern(t, "-/build/**/asdf.txt"),
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "-/**"), IP: "*"},
+					{Path: mustGlobPattern(t, "/**"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/**"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/build/deleteorgs.txt"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/**/base/build/**/asdf.txt"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/build/**/asdf.txt"), IP: "*"},
 				},
 			},
 		},
@@ -349,13 +448,14 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 
 func TestFullScanMatchRules(t *testing.T) {
 	for _, tc := range []struct {
-		name          string
-		depot         string
-		protects      string
-		protectsFile  string
-		canReadAll    []string
-		cannotReadAny []string
-		noRules       bool
+		name                string
+		depot               string
+		protects            string
+		protectsFile        string
+		canReadAll          []string
+		cannotReadAny       []string
+		noRules             bool
+		ignoreRulesWithHost bool
 	}{
 		// Confirm the rules as defined in
 		// https://www.perforce.com/manuals/p4sag/Content/P4SAG/protections-implementation.html
@@ -370,7 +470,8 @@ write       group       Dev2    *    //depot/dev/...
 read        group       Dev1    *    //depot/dev/productA/...
 write       group       Dev1    *    //depot/elm_proj/...
 `,
-			canReadAll: []string{"dev/productA/readme.txt"},
+			canReadAll:          []string{"dev/productA/readme.txt"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Rules that include a host are ignored",
@@ -381,7 +482,8 @@ read        group       Dev1    *    //depot/dev/productA/...
 write       group       Dev1    *    //depot/elm_proj/...
 read		group		Dev1    192.168.10.1/24    -//depot/dev/productA/...
 `,
-			canReadAll: []string{"dev/productA/readme.txt"},
+			canReadAll:          []string{"dev/productA/readme.txt"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Exclusion overrides prior inclusion",
@@ -390,7 +492,8 @@ read		group		Dev1    192.168.10.1/24    -//depot/dev/productA/...
 write   group   Dev1   *   //depot/dev/...            ## Maria is a member of Dev1
 list    group   Dev1   *   -//depot/dev/productA/...  ## exclusionary mapping overrides the line above
 `,
-			cannotReadAny: []string{"dev/productA/readme.txt"},
+			cannotReadAny:       []string{"dev/productA/readme.txt"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Exclusionary mapping and =, - before file path",
@@ -401,7 +504,8 @@ read   group   Rome    *   //depot/dev/prodA/...   ## Rome can only read this on
 `,
 			cannotReadAny: []string{"dev/prodB/things.txt"},
 			// The include appears after the exclude so it should take preference
-			canReadAll: []string{"dev/prodA/things.txt"},
+			canReadAll:          []string{"dev/prodA/things.txt"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Exclusionary mapping and =, - before the file path and = before the access level",
@@ -410,15 +514,17 @@ read   group   Rome    *   //depot/dev/prodA/...   ## Rome can only read this on
 read  group     Rome    *  //depot/dev/...
 =read  group    Rome    *  -//depot/dev/prodA/...   ## Rome cannot read this one path
 `,
-			cannotReadAny: []string{"dev/prodA/things.txt"},
+			cannotReadAny:       []string{"dev/prodA/things.txt"},
+			ignoreRulesWithHost: true,
 		},
 		// Extra test cases not from the above perforce page. These are obfuscated tests
 		// generated from production use cases
 		{
-			name:         "File visibility on a group allowing repository level access",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-ed.txt",
-			canReadAll:   []string{"depot/foo/bar", "depot/foo/bar/activities", "depot/foo/bar/activity-platform-api/BUILD", "depot/foo/bar/aa/build/README"},
+			name:                "File visibility on a group allowing repository level access",
+			depot:               "//depot/foo/bar/",
+			protectsFile:        "testdata/sample-protects-ed.txt",
+			canReadAll:          []string{"depot/foo/bar", "depot/foo/bar/activities", "depot/foo/bar/activity-platform-api/BUILD", "depot/foo/bar/aa/build/README"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Restricted access tests with edm",
@@ -428,7 +534,8 @@ read  group     Rome    *  //depot/dev/...
 			protectsFile: "testdata/sample-protects-edm.txt",
 			// This file only includes exclude rules so our logic strips them out so that we
 			// end up with zero rules.
-			noRules: true,
+			noRules:             true,
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:         "Restricted access tests",
@@ -436,49 +543,57 @@ read  group     Rome    *  //depot/dev/...
 			protectsFile: "testdata/sample-protects-e.txt",
 			// This file only includes exclude rules so our logic strips them out so that we
 			// end up with zero rules.
-			noRules: true,
+			noRules:             true,
+			ignoreRulesWithHost: true,
 		},
 		{
-			name:         "Allow read access to a path using a rule containing a wildcard",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-edb.txt",
-			canReadAll:   []string{"db/plpgsql/seed.psql"},
+			name:                "Allow read access to a path using a rule containing a wildcard",
+			depot:               "//depot/foo/bar/",
+			protectsFile:        "testdata/sample-protects-edb.txt",
+			canReadAll:          []string{"db/plpgsql/seed.psql"},
+			ignoreRulesWithHost: true,
 		},
 		{
-			name:         "Singular group allowing read access to a particular path",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-readonly.txt",
-			canReadAll:   []string{"pom.xml"},
+			name:                "Singular group allowing read access to a particular path",
+			depot:               "//depot/foo/bar/",
+			protectsFile:        "testdata/sample-protects-readonly.txt",
+			canReadAll:          []string{"pom.xml"},
+			ignoreRulesWithHost: true,
 		},
 		{
-			name:         "Allow high, allow low",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-dcro.txt",
-			canReadAll:   []string{"depot/foo/bar"},
+			name:                "Allow high, allow low",
+			depot:               "//depot/foo/bar/",
+			protectsFile:        "testdata/sample-protects-dcro.txt",
+			canReadAll:          []string{"depot/foo/bar"},
+			ignoreRulesWithHost: true,
 		},
 		{
-			name:          "Allow high, deny low",
-			depot:         "//depot/foo/bar/",
-			protectsFile:  "testdata/sample-protects-everyone-revoke-read.txt",
-			cannotReadAny: []string{"depot/foo/bar"},
+			name:                "Allow high, deny low",
+			depot:               "//depot/foo/bar/",
+			protectsFile:        "testdata/sample-protects-everyone-revoke-read.txt",
+			cannotReadAny:       []string{"depot/foo/bar"},
+			ignoreRulesWithHost: true,
 		},
 		{
-			name:          "Deny high, deny low",
-			depot:         "//depot/foo/bar/",
-			protectsFile:  "testdata/sample-protects-everyone-revoke-read.txt",
-			cannotReadAny: []string{"depot/foo/bar"},
+			name:                "Deny high, deny low",
+			depot:               "//depot/foo/bar/",
+			protectsFile:        "testdata/sample-protects-everyone-revoke-read.txt",
+			cannotReadAny:       []string{"depot/foo/bar"},
+			ignoreRulesWithHost: true,
 		},
 		{
-			name:         "Allow path, allow path",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-ro-aw.txt",
-			canReadAll:   []string{"depot/foo/bar"},
+			name:                "Allow path, allow path",
+			depot:               "//depot/foo/bar/",
+			protectsFile:        "testdata/sample-protects-ro-aw.txt",
+			canReadAll:          []string{"depot/foo/bar"},
+			ignoreRulesWithHost: true,
 		},
 		{
-			name:         "Allow read access to a path using a rule containing a wildcard",
-			depot:        "//depot/236/freeze/cc/",
-			protectsFile: "testdata/sample-protects-edb.txt",
-			canReadAll:   []string{"db/plpgsql/seed.psql"},
+			name:                "Allow read access to a path using a rule containing a wildcard",
+			depot:               "//depot/236/freeze/cc/",
+			protectsFile:        "testdata/sample-protects-edb.txt",
+			canReadAll:          []string{"db/plpgsql/seed.psql"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Leading slash edge cases",
@@ -487,8 +602,9 @@ read  group     Rome    *  //depot/dev/...
 read   group   Rome    *   //depot/.../something.java   ## Can read all files named 'something.java'
 read   group   Rome    *   -//depot/dev/prodA/...   ## Except files in this directory
 `,
-			cannotReadAny: []string{"dev/prodA/something.java", "dev/prodA/another_dir/something.java", "/dev/prodA/something.java", "/dev/prodA/another_dir/something.java"},
-			canReadAll:    []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
+			cannotReadAny:       []string{"dev/prodA/something.java", "dev/prodA/another_dir/something.java", "/dev/prodA/something.java", "/dev/prodA/another_dir/something.java"},
+			canReadAll:          []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Deny all, grant some",
@@ -498,8 +614,9 @@ read    group   Dev1    *   -//depot/main/...
 read    group   Dev1    *   -//depot/main/.../*.java
 read    group   Dev1    *   //depot/main/.../dev/foo.java
 `,
-			canReadAll:    []string{"dev/foo.java"},
-			cannotReadAny: []string{"dev/bar.java"},
+			canReadAll:          []string{"dev/foo.java"},
+			cannotReadAny:       []string{"dev/bar.java"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Grant all, deny some",
@@ -509,8 +626,9 @@ read    group   Dev1    *   //depot/main/...
 read    group   Dev1    *   //depot/main/.../*.java
 read    group   Dev1    *   -//depot/main/.../dev/foo.java
 `,
-			canReadAll:    []string{"dev/bar.java"},
-			cannotReadAny: []string{"dev/foo.java"},
+			canReadAll:          []string{"dev/bar.java"},
+			cannotReadAny:       []string{"dev/foo.java"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Tricky minus names",
@@ -520,8 +638,9 @@ read    group   Dev1    *   //-depot/-main/...
 read    group   Dev1    *   //-depot/-main/.../*.java
 read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
 `,
-			canReadAll:    []string{"dev/bar.java", "/-minus/dev/bar.java"},
-			cannotReadAny: []string{"dev/foo.java"},
+			canReadAll:          []string{"dev/bar.java", "/-minus/dev/bar.java"},
+			cannotReadAny:       []string{"dev/foo.java"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Root matching",
@@ -529,8 +648,9 @@ read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
 			protects: `
 read    group   Dev1    *   //depot/main/.../*.java
 `,
-			canReadAll:    []string{"dev/bar.java", "foo.java", "/foo.java"},
-			cannotReadAny: []string{"dev/foo.go"},
+			canReadAll:          []string{"dev/bar.java", "foo.java", "/foo.java"},
+			cannotReadAny:       []string{"dev/foo.go"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			name:  "Root matching, multiple levels",
@@ -538,8 +658,9 @@ read    group   Dev1    *   //depot/main/.../*.java
 			protects: `
 read    group   Dev1    *   //depot/main/.../.../*.java
 `,
-			canReadAll:    []string{"/foo/dev/bar.java", "foo.java", "/foo.java"},
-			cannotReadAny: []string{"dev/foo.go"},
+			canReadAll:          []string{"/foo/dev/bar.java", "foo.java", "/foo.java"},
+			cannotReadAny:       []string{"dev/foo.go"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			// In this case, Perforce still shows the parent directory
@@ -549,8 +670,9 @@ read    group   Dev1    *   //depot/main/.../.../*.java
 read    group   Dev1    *   //depot/main/...
 read    group   Dev1    *   -//depot/main/dir/*.java
 `,
-			canReadAll:    []string{"dir/"},
-			cannotReadAny: []string{"dir/foo.java", "dir/bar.java"},
+			canReadAll:          []string{"dir/"},
+			cannotReadAny:       []string{"dir/foo.java", "dir/bar.java"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			// Directory excluded, but file inside included: Directory visible
@@ -561,7 +683,8 @@ read    group   Dev1    *   //depot/main/...
 read    group   Dev1    *   -//depot/main/dir/...
 read    group   Dev1    *   //depot/main/dir/file.java
 `,
-			canReadAll: []string{"dir/file.java", "dir/"},
+			canReadAll:          []string{"dir/file.java", "dir/"},
+			ignoreRulesWithHost: true,
 		},
 		{
 			// Should still be able to browse directories
@@ -570,7 +693,8 @@ read    group   Dev1    *   //depot/main/dir/file.java
 			protects: `
 read    group   Dev1    *   //depot/main/.../*.go
 `,
-			canReadAll: []string{"dir/file.go", "dir/"},
+			canReadAll:          []string{"dir/file.go", "dir/"},
+			ignoreRulesWithHost: true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -609,14 +733,16 @@ read    group   Dev1    *   //depot/main/.../*.go
 				}
 			})
 
-			p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+			db := dbmocks.NewMockDB()
+
+			p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 			p.depots = []extsvc.RepoID{
 				extsvc.RepoID(tc.depot),
 			}
 			perms := &authz.ExternalUserPermissions{
-				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs),
 			}
-			if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), true); err != nil {
+			if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), tc.ignoreRulesWithHost); err != nil {
 				t.Fatal(err)
 			}
 			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(tc.depot)]
@@ -670,12 +796,14 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 
 	rc := io.NopCloser(bytes.NewReader(data))
 
-	p := NewProvider(logger, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.depots = []extsvc.RepoID{
 		"//depot/654/deploy/base/",
 	}
 	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs),
 	}
 	if err := scanProtects(logger, testParseP4ProtectsRaw(t, rc), fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
 		t.Fatal(err)
@@ -685,17 +813,17 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 		Exacts: []extsvc.RepoID{
 			"//depot/654/deploy/base/",
 		},
-		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
+		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissionsWithIPs{
 			"//depot/654/deploy/base/": {
-				Paths: []string{
-					mustGlobPattern(t, "-/**"),
-					mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-/asdf/plsql/base/cCustomSchema*.sql"),
-					mustGlobPattern(t, "/db/upgrade-scripts/**"),
-					mustGlobPattern(t, "/db/my_db/upgrade-scripts/**"),
-					mustGlobPattern(t, "/asdf/config/my_schema.xml"),
-					mustGlobPattern(t, "/db/plpgsql/**"),
+				Paths: []authz.PathWithIP{
+					{Path: mustGlobPattern(t, "-/**"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/build/deleteorgs.txt"), IP: "*"},
+					{Path: mustGlobPattern(t, "-/asdf/plsql/base/cCustomSchema*.sql"), IP: "*"},
+					{Path: mustGlobPattern(t, "/db/upgrade-scripts/**"), IP: "*"},
+					{Path: mustGlobPattern(t, "/db/my_db/upgrade-scripts/**"), IP: "*"},
+					{Path: mustGlobPattern(t, "/asdf/config/my_schema.xml"), IP: "*"},
+					{Path: mustGlobPattern(t, "/db/plpgsql/**"), IP: "*"},
 				},
 			},
 		},
@@ -817,7 +945,10 @@ func TestScanAllUsers(t *testing.T) {
 	rc := io.NopCloser(bytes.NewReader(data))
 	gc := gitserver.NewStrictMockClient()
 	gc.PerforceGroupMembersFunc.SetDefaultReturn(nil, nil)
-	p := NewProvider(logger, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+
+	db := dbmocks.NewMockDB()
+
+	p := NewProvider(logger, db, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	p.cachedGroupMembers = map[string][]string{
 		"dev": {"user1", "user2"},
 	}

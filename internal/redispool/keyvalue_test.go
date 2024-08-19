@@ -14,13 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestRedisKeyValue(t *testing.T) {
-	testKeyValue(t, redisKeyValueForTest(t))
-}
-
-func testKeyValue(t *testing.T, kv redispool.KeyValue) {
-	t.Parallel()
-
+func TestKeyValue(t *testing.T) {
+	kv := redisKeyValueForTest(t)
 	errWrongType := errors.New("WRONGTYPE")
 
 	// "strings" is the name of the classic group of commands in redis (get, set, ttl, etc). We call it classic since that is less confusing.
@@ -194,7 +189,7 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Equal(kv.Get("empty-string"), "")
 		require.Equal(kv.Get("empty-bytes"), "")
 
-		// List group. Once empty we should be able to do a Get without a
+		// List group. Once empty we should be able to doSimple a Get without a
 		// wrongtype error.
 		require.Works(kv.LPush("empty-list", "here today gone tomorrow"))
 		require.Equal(kv.Get("empty-list"), errWrongType)
@@ -358,44 +353,83 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			require.Equal(kv.Get(k), "2")
 		}
 	})
+
+	t.Run("ping", func(t *testing.T) {
+		t.Parallel()
+		require := require{TB: t}
+		require.Works(kv.Ping())
+
+		brokenKv := redispool.NewKeyValue("nonexistent-redis-server:6379", &redis.Pool{
+			MaxIdle:     3,
+			IdleTimeout: 5 * time.Second,
+		})
+		if brokenKv.Ping() == nil {
+			t.Fatalf("ping: expected error, but did not receive one")
+		}
+	})
 }
 
-// Mostly copy-pasta from rache. Will clean up later as the relationship
+func TestKeyValueWithPrefix(t *testing.T) {
+	kv := redisKeyValueForTest(t)
+	rkv := kv.(interface {
+		WithPrefix(string) redispool.KeyValue
+	})
+
+	kv1 := rkv.WithPrefix("prefix1")
+	kv2 := rkv.WithPrefix("prefix2")
+
+	t.Parallel()
+
+	require := require{TB: t}
+
+	require.Works(kv1.Set("simple", "1"))
+	require.Equal(kv1.Get("simple"), "1")
+	require.Equal(kv2.Get("simple"), nil)
+
+	require.Works(kv2.Set("simple", "2"))
+	require.Equal(kv2.Get("simple"), "2")
+	require.Equal(kv1.Get("simple"), "1")
+
+	require.Works(kv1.Set("other", "a"))
+
+	mget1, err := kv1.MGet([]string{"simple", "other"}).Strings()
+	require.Works(err)
+	if !reflect.DeepEqual(mget1, []string{"1", "a"}) {
+		t.Fatalf("mget mismatch: expected [1 a], got %v", mget1)
+	}
+
+	keys1, err := kv1.Keys("*")
+	require.Works(err)
+	if len(keys1) != 2 {
+		t.Fatalf("keys mismatch: expected 2 keys, got %v", keys1)
+	}
+
+	keys2, err := kv2.Keys("s*")
+	require.Works(err)
+	if len(keys2) != 1 {
+		t.Fatalf("keys mismatch: expected 1 key, got %v", keys1)
+	}
+}
+
+// Mostly copy-pasta from rcache. Will clean up later as the relationship
 // between the two packages becomes cleaner.
 func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 	t.Helper()
 
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", "127.0.0.1:6379")
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-
+	kv := redispool.NewTestKeyValue()
 	prefix := "__test__" + t.Name()
-	c := pool.Get()
-	defer c.Close()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		_, err := c.Do("PING")
-		if err != nil {
+		if err := kv.Ping(); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
 
-	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
+	if err := redispool.DeleteAllKeysWithPrefix(kv, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 
-	kv := redispool.RedisKeyValue(pool).(interface {
-		WithPrefix(string) redispool.KeyValue
-	})
 	return kv.WithPrefix(prefix)
 }
 
@@ -464,6 +498,7 @@ func (t require) Equal(got redispool.Value, want any) {
 		t.Fatalf("unsupported want type for %q: %T", want, want)
 	}
 }
+
 func (t require) AllEqual(got redispool.Values, want any) {
 	t.Helper()
 	switch wantV := want.(type) {

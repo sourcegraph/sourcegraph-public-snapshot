@@ -1,7 +1,18 @@
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
-load("@io_bazel_rules_go//go:def.bzl", "GoArchive", "go_binary")
+"""
+Various helpers to help with server image building
+"""
+
+load("//dev:oci_defs.bzl", "pkg_tar")
 
 def get_last_segment(path):
+    """
+    returns part of a bazel path - it will return binary in //something:binary
+
+    Args:
+        path: the path from which the last segment should be extract from
+    Returns:
+        Returns the last part found after `:`. If no `:` is found then the last part after the last '/' is returned
+    """
     segments = path.split("/")
     last_segment = segments[-1]
 
@@ -12,6 +23,15 @@ def get_last_segment(path):
         return s[-1]
 
 def container_dependencies(targets):
+    """
+    creates pkg_tar rules for all given targets
+
+    for all the given targets this will create a pkg_tar rule named 'tar_<name>` where
+    the target is added as well as the path of the target output is remapped to be at /usr/local/bin
+
+    Args:
+        targets: list of targets for which pkg_tar rules should be generated for
+    """
     for target in targets:
         name = get_last_segment(target)
 
@@ -22,51 +42,17 @@ def container_dependencies(targets):
         )
 
 def dependencies_tars(targets):
+    """
+    for all the given targets it returns a list of the corresponding `:tar_<name>` targets
+
+    Args:
+        targets: list of targets
+    Returns:
+        list of ':tar_<name>' targets
+    """
     tars = []
     for target in targets:
         name = get_last_segment(target)
         tars.append(":tar_{}".format(name))
 
     return tars
-
-def go_binary_nobundle(name, **kwargs):
-    go_binary(
-        name = name + "_underlying",
-        out = kwargs.pop("out", name + "_underlying"),
-        **kwargs
-    )
-
-    go_binary_nobundle_rule(
-        name = name,
-        go_binary = ":" + name + "_underlying",
-        out = native.package_name() + "/" + name,
-        visibility = kwargs.pop("visibility", ["//visibility:public"]),
-    )
-
-def _go_binary_nobundle_rule(ctx):
-    # so that we can `bazel run` nobundle targets, we need to set `executable` in DefaultInfo.
-    # But this can't be the output of a _different_ rule, it has to be the output of this rule.
-    executable = ctx.actions.declare_file(ctx.attr.out)
-    ctx.actions.symlink(output = executable, target_file = ctx.executable.go_binary)
-    return [DefaultInfo(executable = executable, files = depset(direct = [executable]))]
-
-go_binary_nobundle_rule = rule(
-    implementation = _go_binary_nobundle_rule,
-    executable = True,
-    attrs = {
-        "go_binary": attr.label(
-            providers = [GoArchive],
-            executable = True,
-            mandatory = True,
-            cfg = transition(
-                implementation = lambda settings, attr: [{"//:integration_testing": True}],
-                inputs = [],
-                outputs = ["//:integration_testing"],
-            ),
-        ),
-        "out": attr.string(mandatory = True),
-        "_allowlist_function_transition": attr.label(
-            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
-        ),
-    },
-)

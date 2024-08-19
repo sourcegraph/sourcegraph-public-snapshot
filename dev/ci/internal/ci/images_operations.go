@@ -87,11 +87,15 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 	stepKey := "bazel-push-images"
 	candidate := ""
 	cloudEphemeral := ""
+	// Until we fix rate limiting with DockerHub, we use 4 to mitigate it.
+	jobConcurrency := 4
 
 	if isCandidate {
 		stepName = ":bazel::docker: Push candidate Images"
 		stepKey = stepKey + "-candidate"
 		candidate = "true"
+		// But when we're pushing candidate images, we're totally fine with 8.
+		jobConcurrency = 8
 	}
 	// Default registries.
 	devRegistry := images.SourcegraphDockerDevRegistry
@@ -118,8 +122,6 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 		}
 	}
 
-	_, bazelRC := aspectBazelRC()
-
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			append(opts,
@@ -131,8 +133,9 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 				bk.Env("DEV_REGISTRY", devRegistry),
 				bk.Env("PROD_REGISTRY", prodRegistry),
 				bk.Env("ADDITIONAL_PROD_REGISTRIES", additionalProdRegistry),
-				bk.Cmd(bazelStampedCmd(fmt.Sprintf(`build $$(bazel --bazelrc=%s --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc query 'kind("oci_push rule", //...)')`, bazelRC))),
-				bk.ArtifactPaths("build_event_log.bin", "execution_log.zstd"),
+				bk.Env("PUSH_CONCURRENT_JOBS", fmt.Sprintf("%d", jobConcurrency)),
+				bk.AutomaticRetry(1),
+				bk.ArtifactPaths("build_event_log.bin", "execution_log.zstd", "bazel-profile.gz"),
 				bk.AnnotatedCmd(
 					"./dev/ci/push_all.sh",
 					bk.AnnotatedCmdOpts{

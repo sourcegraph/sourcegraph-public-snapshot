@@ -13,7 +13,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -57,6 +59,8 @@ type permsSyncerImpl struct {
 	permsUpdateLock sync.Mutex
 	// The database interface for any permissions operations.
 	permsStore database.PermsStore
+	// Can be overwritten for testing purposes.
+	providerFactory func(context.Context) []authz.Provider
 }
 
 // newPermsSyncer returns a new permissions syncer.
@@ -73,6 +77,10 @@ func newPermsSyncer(
 		reposStore: reposStore,
 		permsStore: permsStore,
 		clock:      clock,
+		providerFactory: func(ctx context.Context) []authz.Provider {
+			ps, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db)
+			return ps
+		},
 	}
 }
 
@@ -96,7 +104,7 @@ func (s *permsSyncerImpl) syncRepoPerms(ctx context.Context, repoID api.RepoID, 
 	// fetch permissions for private repositories.
 	if repo.Private {
 		// Loop over repository's sources and see if matching any authz provider's URN.
-		providers := s.providersByURNs()
+		providers := s.providersByURNs(ctx)
 		for urn := range repo.Sources {
 			p, ok := providers[urn]
 			if ok {
@@ -304,8 +312,8 @@ func (s *permsSyncerImpl) syncUserPerms(ctx context.Context, userID int32, noPer
 
 	// Set sub-repository permissions.
 	srp := s.db.SubRepoPerms()
-	for spec, perm := range results.subRepoPerms {
-		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
+	for spec, u := range results.subRepoPerms {
+		if err := u.UpsertWithSpec(ctx, srp, userID, spec); err != nil {
 			return result, providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %q (id: %d)", spec, user.Username, user.ID)
 		}
 	}
@@ -339,8 +347,8 @@ func (s *permsSyncerImpl) syncUserPerms(ctx context.Context, userID int32, noPer
 
 // providersByServiceID returns a list of authz.Provider configured in the external services.
 // Keys are ServiceID, e.g. "https://github.com/".
-func (s *permsSyncerImpl) providersByServiceID() map[string]authz.Provider {
-	_, ps := authz.GetProviders()
+func (s *permsSyncerImpl) providersByServiceID(ctx context.Context) map[string]authz.Provider {
+	ps := s.providerFactory(ctx)
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
 		providers[p.ServiceID()] = p
@@ -350,8 +358,8 @@ func (s *permsSyncerImpl) providersByServiceID() map[string]authz.Provider {
 
 // providersByURNs returns a list of authz.Provider configured in the external services.
 // Keys are URN, e.g. "extsvc:github:1".
-func (s *permsSyncerImpl) providersByURNs() map[string]authz.Provider {
-	_, ps := authz.GetProviders()
+func (s *permsSyncerImpl) providersByURNs(ctx context.Context) map[string]authz.Provider {
+	ps := s.providerFactory(ctx)
 	providers := make(map[string]authz.Provider, len(ps))
 	for _, p := range ps {
 		providers[p.URN()] = p
@@ -365,10 +373,37 @@ type fetchUserPermsViaExternalAccountsResults struct {
 	repoPerms map[int32][]int32
 	// A map from external repository spec to sub-repository permissions. This stores
 	// the permissions for sub-repositories of private repositories.
-	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions
+	subRepoPerms map[api.ExternalRepoSpec]subRepoPermissionsUpserter
 
 	providerStates database.CodeHostStatusesSet
 }
+
+type subRepoPermissionsUpserter interface {
+	// UpsertWithSpec inserts or updates the sub-repository permissions with the data
+	// stored in the upserter.
+	UpsertWithSpec(ctx context.Context, store database.SubRepoPermsStore, userID int32, spec api.ExternalRepoSpec) error
+}
+
+type ipBasedPermissions struct {
+	perms *authz.SubRepoPermissionsWithIPs
+}
+
+func (u *ipBasedPermissions) UpsertWithSpec(ctx context.Context, store database.SubRepoPermsStore, userID int32, spec api.ExternalRepoSpec) error {
+	return store.UpsertWithSpecWithIPs(ctx, userID, spec, *u.perms)
+}
+
+type pathBasedPermissions struct {
+	perms *authz.SubRepoPermissions
+}
+
+func (u *pathBasedPermissions) UpsertWithSpec(ctx context.Context, store database.SubRepoPermsStore, userID int32, spec api.ExternalRepoSpec) error {
+	return store.UpsertWithSpec(ctx, userID, spec, *u.perms)
+}
+
+var (
+	_ subRepoPermissionsUpserter = &ipBasedPermissions{}
+	_ subRepoPermissionsUpserter = &pathBasedPermissions{}
+)
 
 // fetchUserPermsViaExternalAccounts uses external accounts (aka. login
 // connections) to list all accessible private repositories on code hosts for
@@ -414,22 +449,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 		serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
 	}
 
-	userEmails, err := s.db.UserEmails().ListByUser(ctx,
-		database.UserEmailsListOptions{
-			UserID:       user.ID,
-			OnlyVerified: true,
-		},
-	)
-	if err != nil {
-		return results, errors.Wrap(err, "list user verified emails")
-	}
-
-	emails := make([]string, len(userEmails))
-	for i := range userEmails {
-		emails[i] = userEmails[i].Email
-	}
-
-	byServiceID := s.providersByServiceID()
+	byServiceID := s.providersByServiceID(ctx)
 	accounts := s.db.UserExternalAccounts()
 	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts").With(log.Int32("userID", user.ID))
 
@@ -442,7 +462,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 			continue
 		}
 
-		acct, err := provider.FetchAccount(ctx, user, accts, emails)
+		acct, err := provider.FetchAccount(ctx, user)
 		if err != nil {
 			results.providerStates = append(results.providerStates, database.NewProviderStatus(provider, err, "FetchAccount"))
 			providerLogger.Error("could not fetch account from authz provider", log.Error(err))
@@ -466,7 +486,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 		accts = append(accts, acct)
 	}
 
-	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
+	results.subRepoPerms = make(map[api.ExternalRepoSpec]subRepoPermissionsUpserter)
 	results.repoPerms = make(map[int32][]int32, len(accts))
 
 	for _, acct := range accts {
@@ -481,6 +501,8 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 		}
 
 		acctLogger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
+
+		subRepoPermsMap := make(map[extsvc.RepoID]subRepoPermissionsUpserter)
 
 		// FetchUserPerms makes API requests using a client that will deal with the token
 		// expiration and try to refresh it when necessary. If the client fails to update
@@ -532,14 +554,33 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 				extPerms = new(authz.ExternalUserPermissions)
 
 				// Load last synced sub-repo perms for this user and provider.
-				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+				// First, try fetching the existing sub-repo perms with IPs.
+				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndServiceWithIPs(ctx, user.ID, provider.ServiceType(), provider.ServiceID(), false)
 				if err != nil {
-					return results, errors.Wrap(err, "fetching existing sub-repo permissions")
-				}
-				extPerms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(currentSubRepoPerms))
-				for k := range currentSubRepoPerms {
-					v := currentSubRepoPerms[k]
-					extPerms.SubRepoPermissions[extsvc.RepoID(k.ID)] = &v
+					if !errors.Is(err, database.IPsNotSyncedError) {
+						return results, errors.Wrap(err, "fetching existing sub-repo permissions with IPs")
+					}
+
+					// If we get here, this means that the current sub-repo permissions haven't
+					// updated with explicit IP addresses yet.
+					//
+					// So, instead we need to fetch the existing sub-repo perms without IPs, and wrap them in
+					// the pathBasedPermissions Upserter so that we can save them to the database (and avoid accidentally
+					// save them with "fake" IP addresses and not be able to differentiate that later)
+					unconvertedSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+					if err != nil {
+						return results, errors.Wrap(err, "fetching existing sub-repo permissions")
+					}
+
+					for spec, perm := range unconvertedSubRepoPerms {
+						subRepoPermsMap[extsvc.RepoID(spec.ID)] = &pathBasedPermissions{perms: &perm}
+					}
+
+				} else {
+					// We have existing sub-repo permissions with associated IPs, so add them to the map
+					for spec, perm := range currentSubRepoPerms {
+						subRepoPermsMap[extsvc.RepoID(spec.ID)] = &ipBasedPermissions{perms: &perm}
+					}
 				}
 
 				// Load last synced repos for this user and account from user_repo_permissions table.
@@ -559,6 +600,15 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 			}
 			acctLogger.Warn("proceedWithPartialResults", log.Error(err))
 		} else {
+			// Happy path: we were able to fetch the permissions
+			if extPerms != nil {
+				for k, v := range extPerms.SubRepoPermissions {
+					subRepoPermsMap[k] = &ipBasedPermissions{
+						perms: v,
+					}
+				}
+			}
+
 			err = accounts.TouchLastValid(ctx, acct.ID)
 			if err != nil {
 				return results, errors.Wrapf(err, "set last valid for external account %d", acct.ID)
@@ -586,7 +636,7 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 		}
 
 		// Record any sub-repository permissions.
-		for repoID := range extPerms.SubRepoPermissions {
+		for repoID := range subRepoPermsMap {
 			spec := api.ExternalRepoSpec{
 				// This is safe since repoID is an extsvc.RepoID which represents the external id
 				// of the repo.
@@ -594,7 +644,8 @@ func (s *permsSyncerImpl) fetchUserPermsViaExternalAccounts(ctx context.Context,
 				ServiceType: provider.ServiceType(),
 				ServiceID:   provider.ServiceID(),
 			}
-			results.subRepoPerms[spec] = extPerms.SubRepoPermissions[repoID]
+
+			results.subRepoPerms[spec] = subRepoPermsMap[repoID]
 		}
 
 		for _, includePrefix := range extPerms.IncludeContains {

@@ -5,6 +5,7 @@ import (
 )
 
 var (
+	//go:embed otel/*
 	//go:embed postgres/*
 	//go:embed prometheus/default.yml.gotmpl
 	//go:embed grafana/default.yml.gotmpl
@@ -15,6 +16,8 @@ var (
 	GrafanaDefaultConfigTemplate    []byte
 	CodeIntelConfig                 []byte
 	CodeInsightsConfig              []byte
+	OtelAgentConfig                 []byte
+	OtelCollectorConfigTemplate     []byte
 )
 
 func init() {
@@ -23,6 +26,8 @@ func init() {
 	PgsqlConfig = mustReadFile("postgres/pgsql.conf")
 	PrometheusDefaultConfigTemplate = mustReadFile("prometheus/default.yml.gotmpl")
 	GrafanaDefaultConfigTemplate = mustReadFile("grafana/default.yml.gotmpl")
+	OtelAgentConfig = mustReadFile("otel/agent.yaml")
+	OtelCollectorConfigTemplate = mustReadFile("otel/collector.yaml.gotmpl")
 }
 
 func mustReadFile(name string) []byte {

@@ -37,6 +37,7 @@ func TestPeriodicGoroutine(t *testing.T) {
 		withClock(clock),
 	)
 	go goroutine.Start()
+	<-called
 	clock.BlockingAdvance(time.Second)
 	<-called
 	clock.BlockingAdvance(time.Second)

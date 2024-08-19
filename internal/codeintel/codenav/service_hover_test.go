@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	lsifstoremocks "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore/mocks"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -15,26 +16,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 func TestHover(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	fakeRepoStore := AllPresentFakeRepoStore{}
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
-	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+	svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, hunkCache)
+	mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
+	mockRequestState.GitTreeTranslator = noopTranslator()
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
@@ -78,20 +77,19 @@ func TestHover(t *testing.T) {
 
 func TestHoverRemote(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
-	mockLsifStore := NewMockLsifStore()
+	fakeRepoStore := AllPresentFakeRepoStore{}
+	mockLsifStore := lsifstoremocks.NewMockLsifStore()
 	mockUploadSvc := NewMockUploadService()
 	mockGitserverClient := gitserver.NewMockClient()
 	mockSearchClient := client.NewMockSearchClient()
-	hunkCache, _ := NewHunkCache(50)
 
 	// Init service
-	svc := newService(observation.TestContextTB(t), mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
+	svc := newService(observation.TestContextTB(t), fakeRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient, mockSearchClient, log.NoOp())
 
 	// Set up request state
 	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{ID: 42}, mockCommit, hunkCache)
+	mockRequestState.SetLocalCommitCache(fakeRepoStore, mockGitserverClient)
+	mockRequestState.GitTreeTranslator = noopTranslator()
 	uploads := []uploadsshared.CompletedUpload{
 		{ID: 50, Commit: "deadbeef"},
 	}
@@ -134,15 +132,15 @@ func TestHoverRemote(t *testing.T) {
 	mockLsifStore.GetPackageInformationFunc.PushReturn(packageInformation2, true, nil)
 
 	uploadRelPath := core.NewUploadRelPathUnchecked
-	locations := []shared.Location{
+	usages := []shared.Usage{
 		{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange1},
 		{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange2},
 		{UploadID: 151, Path: uploadRelPath("a.go"), Range: testRange3},
 		{UploadID: 151, Path: uploadRelPath("b.go"), Range: testRange4},
 		{UploadID: 151, Path: uploadRelPath("c.go"), Range: testRange5},
 	}
-	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, 0, nil)
-	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
+	mockLsifStore.GetSymbolUsagesFunc.PushReturn(usages, 0, nil)
+	mockLsifStore.GetSymbolUsagesFunc.PushReturn(usages, len(usages), nil)
 
 	mockGitserverClient.GetCommitFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, ci api.CommitID) (*gitdomain.Commit, error) {
 		return &gitdomain.Commit{ID: "sha"}, nil

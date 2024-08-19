@@ -44,10 +44,9 @@ func convertSourcegraphModelConfig(v *schema.SourcegraphModelConfig) *types.Sour
 		return nil
 	}
 	return &types.SourcegraphModelConfig{
-		Endpoint:        v.Endpoint,
-		AccessToken:     v.AccessToken,
-		PollingInterval: v.PollingInterval,
-		ModelFilters:    convertModelFilters(v.ModelFilters),
+		Endpoint:     v.Endpoint,
+		AccessToken:  v.AccessToken,
+		ModelFilters: convertModelFilters(v.ModelFilters),
 	}
 }
 
@@ -86,7 +85,74 @@ func convertModelOverrides(modelConfig *schema.SiteModelConfiguration) []types.M
 			converted = append(converted, recommended)
 		}
 	}
+	for _, selfHostedModel := range modelConfig.SelfHostedModels {
+		if _, ok := selfHostedModelDefaults[selfHostedModel.Model]; ok {
+			converted = append(converted, convertSelfHostedModel(selfHostedModel))
+		}
+	}
 	return converted
+}
+
+func convertSelfHostedModel(v *schema.SelfHostedModel) types.ModelOverride {
+	apiVersion := "v1"
+	if v.ApiVersion != "" {
+		apiVersion = v.ApiVersion
+	}
+
+	m := selfHostedModelDefaults[v.Model]
+	m.ModelRef = types.ModelRef(fmt.Sprintf("%s::%s::%s", v.Provider, apiVersion, m.ModelName))
+	if v.Override.DisplayName != "" {
+		m.DisplayName = v.Override.DisplayName
+	}
+	if contextWindow := v.Override.ContextWindow; contextWindow != nil {
+		updateIfNonZero(&m.ContextWindow.MaxInputTokens, contextWindow.MaxInputTokens)
+		updateIfNonZero(&m.ContextWindow.MaxOutputTokens, contextWindow.MaxOutputTokens)
+	}
+	if cfg := v.Override.ClientSideConfig; cfg != nil {
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.AutoCompleteMultilineMaxTokens, uint(cfg.AutoCompleteMultilineMaxTokens))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.AutoCompleteSinglelineMaxTokens, uint(cfg.AutoCompleteSinglelineMaxTokens))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.AutoCompleteTemperature, float32(cfg.AutoCompleteTemperature))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.AutoCompleteTopK, float32(cfg.AutoCompleteTopK))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.AutoCompleteTopP, float32(cfg.AutoCompleteTopP))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.AutocompleteMultilineTimeout, uint(cfg.AutocompleteMultilineTimeout))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.AutocompleteSinglelineTimeout, uint(cfg.AutocompleteSinglelineTimeout))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.ChatMaxTokens, uint(cfg.ChatMaxTokens))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.ChatPreInstruction, cfg.ChatPreInstruction)
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.ChatTemperature, float32(cfg.ChatTemperature))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.ChatTopK, float32(cfg.ChatTopK))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.ChatTopP, float32(cfg.ChatTopP))
+		if cfg.ContextSizeHintPrefixCharacters != nil {
+			m.ClientSideConfig.OpenAICompatible.ContextSizeHintPrefixCharacters = intPtrToUintPtr(cfg.ContextSizeHintPrefixCharacters)
+		}
+		if cfg.ContextSizeHintSuffixCharacters != nil {
+			m.ClientSideConfig.OpenAICompatible.ContextSizeHintSuffixCharacters = intPtrToUintPtr(cfg.ContextSizeHintSuffixCharacters)
+		}
+		if cfg.ContextSizeHintTotalCharacters != nil {
+			m.ClientSideConfig.OpenAICompatible.ContextSizeHintTotalCharacters = intPtrToUintPtr(cfg.ContextSizeHintTotalCharacters)
+		}
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.EditMaxTokens, uint(cfg.EditMaxTokens))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.EditPostInstruction, cfg.EditPostInstruction)
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.EditTemperature, float32(cfg.EditTemperature))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.EditTopK, float32(cfg.EditTopK))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.EditTopP, float32(cfg.EditTopP))
+		updateIfNonZero(&m.ClientSideConfig.OpenAICompatible.EndOfText, cfg.EndOfText)
+		if len(cfg.StopSequences) > 0 {
+			m.ClientSideConfig.OpenAICompatible.StopSequences = cfg.StopSequences
+		}
+	}
+	if cfg := v.Override.ServerSideConfig; cfg != nil {
+		updateIfNonZero(&m.ServerSideConfig.OpenAICompatible.APIModel, cfg.ApiModel)
+	}
+	return m
+}
+
+// updateIfNonZero replaces the value pointed to by `out` if the supplied value is
+// different from the zero-state for type T.
+func updateIfNonZero[T comparable](out *T, value T) {
+	var zero T
+	if value != zero {
+		*out = value
+	}
 }
 
 func convertDefaultModels(v *schema.DefaultModels) *types.DefaultModels {
@@ -173,13 +239,18 @@ func convertServerSideProviderConfig(cfg *schema.ServerSideProviderConfig) *type
 				Endpoint:    v.Endpoint,
 			},
 		}
-	} else if v := cfg.Openaicompatible; v != nil {
-		// TODO(slimsag): self-hosted-models: map this to OpenAICompatibleProviderConfig in the future
+	} else if v := cfg.HuggingfaceTgi; v != nil {
 		return &types.ServerSideProviderConfig{
-			GenericProvider: &types.GenericProviderConfig{
-				ServiceName: types.GenericServiceProviderOpenAI,
-				AccessToken: v.AccessToken,
-				Endpoint:    v.Endpoint,
+			OpenAICompatible: &types.OpenAICompatibleProviderConfig{
+				Endpoints:         convertOpenAICompatibleEndpoints(v.Endpoints),
+				EnableVerboseLogs: v.EnableVerboseLogs,
+			},
+		}
+	} else if v := cfg.Openaicompatible; v != nil {
+		return &types.ServerSideProviderConfig{
+			OpenAICompatible: &types.OpenAICompatibleProviderConfig{
+				Endpoints:         convertOpenAICompatibleEndpoints(v.Endpoints),
+				EnableVerboseLogs: v.EnableVerboseLogs,
 			},
 		}
 	} else if v := cfg.Sourcegraph; v != nil {
@@ -194,13 +265,57 @@ func convertServerSideProviderConfig(cfg *schema.ServerSideProviderConfig) *type
 	}
 }
 
+func convertOpenAICompatibleEndpoints(configEndpoints []*schema.OpenAICompatibleEndpoint) []types.OpenAICompatibleEndpoint {
+	var endpoints []types.OpenAICompatibleEndpoint
+	for _, e := range configEndpoints {
+		endpoints = append(endpoints, types.OpenAICompatibleEndpoint{
+			URL:         e.Url,
+			AccessToken: e.AccessToken,
+		})
+	}
+	return endpoints
+}
+
 func convertClientSideModelConfig(v *schema.ClientSideModelConfig) *types.ClientSideModelConfig {
 	if v == nil {
 		return nil
 	}
-	return &types.ClientSideModelConfig{
-		// We currently do not have any known client-side model configuration.
+	cfg := &types.ClientSideModelConfig{}
+	if o := v.Openaicompatible; o != nil {
+		cfg.OpenAICompatible = &types.ClientSideModelConfigOpenAICompatible{
+			StopSequences:                   o.StopSequences,
+			EndOfText:                       o.EndOfText,
+			ContextSizeHintTotalCharacters:  intPtrToUintPtr(o.ContextSizeHintTotalCharacters),
+			ContextSizeHintPrefixCharacters: intPtrToUintPtr(o.ContextSizeHintPrefixCharacters),
+			ContextSizeHintSuffixCharacters: intPtrToUintPtr(o.ContextSizeHintSuffixCharacters),
+			ChatPreInstruction:              o.ChatPreInstruction,
+			EditPostInstruction:             o.EditPostInstruction,
+			AutocompleteSinglelineTimeout:   uint(o.AutocompleteSinglelineTimeout),
+			AutocompleteMultilineTimeout:    uint(o.AutocompleteMultilineTimeout),
+			ChatTopK:                        float32(o.ChatTopK),
+			ChatTopP:                        float32(o.ChatTopP),
+			ChatTemperature:                 float32(o.ChatTemperature),
+			ChatMaxTokens:                   uint(o.ChatMaxTokens),
+			AutoCompleteTopK:                float32(o.AutoCompleteTopK),
+			AutoCompleteTopP:                float32(o.AutoCompleteTopP),
+			AutoCompleteTemperature:         float32(o.AutoCompleteTemperature),
+			AutoCompleteSinglelineMaxTokens: uint(o.AutoCompleteSinglelineMaxTokens),
+			AutoCompleteMultilineMaxTokens:  uint(o.AutoCompleteMultilineMaxTokens),
+			EditTopK:                        float32(o.EditTopK),
+			EditTopP:                        float32(o.EditTopP),
+			EditTemperature:                 float32(o.EditTemperature),
+			EditMaxTokens:                   uint(o.EditMaxTokens),
+		}
 	}
+	return cfg
+}
+
+func intPtrToUintPtr(v *int) *uint {
+	if v == nil {
+		return nil
+	}
+	ptr := uint(*v)
+	return &ptr
 }
 
 func convertServerSideModelConfig(cfg *schema.ServerSideModelConfig) *types.ServerSideModelConfig {
@@ -211,6 +326,12 @@ func convertServerSideModelConfig(cfg *schema.ServerSideModelConfig) *types.Serv
 		return &types.ServerSideModelConfig{
 			AWSBedrockProvisionedThroughput: &types.AWSBedrockProvisionedThroughput{
 				ARN: v.Arn,
+			},
+		}
+	} else if v := cfg.Openaicompatible; v != nil {
+		return &types.ServerSideModelConfig{
+			OpenAICompatible: &types.ServerSideModelConfigOpenAICompatible{
+				APIModel: v.ApiModel,
 			},
 		}
 	} else {
@@ -249,32 +370,32 @@ func convertModelCapabilities(capabilities []string) []types.ModelCapability {
 }
 
 // These are the default values where if someone writes in their site config that they want to
-// use blessed Self-Hosted Model configurations, e.g.:
+// use blessed Self-Hosted Model configurations.
 //
-// ```
-// "modelOverridesRecommendedSettings": [
-//
-//	"bigcode::v1::starcoder2-7b",
-//	"mistral::v1::mixtral-8x7b-instruct"
-//
-// ],
-// ```
-//
-// It would specify these equivalent options for them under `modelOverrides`:
+// The key is in format "ModelName@Version", where Version is the version of the
+// **default values**, i.e. adding a new model stop sequence may not be a breaking change and
+// so would not require a new version, while increasing the context window size would require
+// anyone hosting that model to increase their hosted model limits to accommodate that, and
+// hence would be a breaking change requiring a new version.
+var selfHostedModelDefaults = map[string]types.ModelOverride{
+	"starcoder2-7b@v1":          recommendedSettingsStarcoder2("bigcode::v1::starcoder2-7b", "Starcoder2 7B", "starcoder2-7b"),
+	"starcoder2-15b@v1":         recommendedSettingsStarcoder2("bigcode::v1::starcoder2-15b", "Starcoder2 15B", "starcoder2-15b"),
+	"mistral-7b-instruct@v1":    recommendedSettingsMistral("mistral::v1::mistral-7b-instruct", "Mistral 7B Instruct", "mistral-7b-instruct"),
+	"mixtral-8x7b-instruct@v1":  recommendedSettingsMistral("mistral::v1::mixtral-8x7b-instruct", "Mixtral 8x7B Instruct", "mixtral-8x7b-instruct"),
+	"mixtral-8x22b-instruct@v1": recommendedSettingsMistral("mistral::v1::mixtral-8x22b", "Mixtral 8x22B", "mixtral-8x22b-instruct"),
+}
+
+// TODO(slimsag): self-hosted-models: Remove support for this in Sep 2024 Sourcegraph release
+// (was deprecated in Aug 7th release, only shared with select customers in EAP)
 var recommendedSettings = map[types.ModelRef]types.ModelOverride{
-	"bigcode::v1::starcoder2-3b":          recommendedSettingsStarcoder2("bigcode::v1::starcoder2-3b", "Starcoder2 3B", "starcoder2-3b"),
 	"bigcode::v1::starcoder2-7b":          recommendedSettingsStarcoder2("bigcode::v1::starcoder2-7b", "Starcoder2 7B", "starcoder2-7b"),
 	"bigcode::v1::starcoder2-15b":         recommendedSettingsStarcoder2("bigcode::v1::starcoder2-15b", "Starcoder2 15B", "starcoder2-15b"),
-	"mistral::v1::mistral-7b":             recommendedSettingsMistral("mistral::v1::mistral-7b", "Mistral 7B", "mistral-7b"),
 	"mistral::v1::mistral-7b-instruct":    recommendedSettingsMistral("mistral::v1::mistral-7b-instruct", "Mistral 7B Instruct", "mistral-7b-instruct"),
-	"mistral::v1::mixtral-8x7b":           recommendedSettingsMistral("mistral::v1::mixtral-8x7b", "Mixtral 8x7B", "mixtral-8x7b"),
-	"mistral::v1::mixtral-8x22b":          recommendedSettingsMistral("mistral::v1::mixtral-8x22b", "Mixtral 8x22B", "mixtral-8x22b"),
 	"mistral::v1::mixtral-8x7b-instruct":  recommendedSettingsMistral("mistral::v1::mixtral-8x7b-instruct", "Mixtral 8x7B Instruct", "mixtral-8x7b-instruct"),
 	"mistral::v1::mixtral-8x22b-instruct": recommendedSettingsMistral("mistral::v1::mixtral-8x22b", "Mixtral 8x22B", "mixtral-8x22b-instruct"),
 }
 
 func recommendedSettingsStarcoder2(modelRef, displayName, modelName string) types.ModelOverride {
-	// TODO(slimsag): self-hosted-models: tune these further based on testing
 	return types.ModelOverride{
 		ModelRef:     types.ModelRef(modelRef),
 		DisplayName:  displayName,
@@ -285,15 +406,21 @@ func recommendedSettingsStarcoder2(modelRef, displayName, modelName string) type
 		Tier:         types.ModelTierEnterprise,
 		ContextWindow: types.ContextWindow{
 			MaxInputTokens:  8192,
-			MaxOutputTokens: 4000,
+			MaxOutputTokens: 4096,
 		},
-		ClientSideConfig: nil,
-		ServerSideConfig: nil,
+		ClientSideConfig: &types.ClientSideModelConfig{
+			OpenAICompatible: &types.ClientSideModelConfigOpenAICompatible{
+				StopSequences: []string{"<|endoftext|>", "<file_sep>"},
+				EndOfText:     "<|endoftext|>",
+			},
+		},
+		ServerSideConfig: &types.ServerSideModelConfig{
+			OpenAICompatible: &types.ServerSideModelConfigOpenAICompatible{},
+		},
 	}
 }
 
 func recommendedSettingsMistral(modelRef, displayName, modelName string) types.ModelOverride {
-	// TODO(slimsag): self-hosted-models: tune these further based on testing
 	return types.ModelOverride{
 		ModelRef:     types.ModelRef(modelRef),
 		DisplayName:  displayName,
@@ -304,9 +431,13 @@ func recommendedSettingsMistral(modelRef, displayName, modelName string) types.M
 		Tier:         types.ModelTierEnterprise,
 		ContextWindow: types.ContextWindow{
 			MaxInputTokens:  8192,
-			MaxOutputTokens: 4000,
+			MaxOutputTokens: 4096,
 		},
-		ClientSideConfig: nil,
-		ServerSideConfig: nil,
+		ClientSideConfig: &types.ClientSideModelConfig{
+			OpenAICompatible: &types.ClientSideModelConfigOpenAICompatible{},
+		},
+		ServerSideConfig: &types.ServerSideModelConfig{
+			OpenAICompatible: &types.ServerSideModelConfigOpenAICompatible{},
+		},
 	}
 }

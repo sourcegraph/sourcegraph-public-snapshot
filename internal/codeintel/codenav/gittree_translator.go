@@ -1,196 +1,155 @@
 package codenav
 
 import (
+	"cmp"
 	"context"
 	"io"
-	"strconv"
-	"strings"
+	"slices"
+	"sync"
 
-	"github.com/dgraph-io/ristretto"
+	genslices "github.com/life4/genesis/slices"
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-// GitTreeTranslator translates a position within a git tree at a source commit into the
-// equivalent position in a target commit. The git tree translator instance carries
-// along with it the source commit.
-//
-// NOTE(id: codenav-file-rename-detection) At the moment, this code cannot handle positions/ranges
-// going from one file to another (notice that the return values don't contain any updated
-// path), because there is no way in gitserver to get rename detection without requesting
-// a diff of the full repo (which may be quite large).
-//
-// Additionally, it's not clear if reusing the Document at path P1 in an older commit,
-// at a different path P2 in a newer commit is even reliably useful, since symbol names
-// may change based on the file name or directory name depending on the language.
-//
-// TODO(id: GitTreeTranslator-cleanup): Instead of storing the TranslationBase, we should
-// take that as an argument. Specifically, use a struct with two fields, AncestorCommit
-// and DescendantCommit, and avoid Source/Target terminology (which becomes confusing to
-// understand with the reverse parameter). Instead, we can use an enum MappingDirection
-// FromDescendantToAncestor | FromAncestorToDescendant if really needed (to avoid
-// inconsistency when modifying the APIs below, as they take different values for 'reverse'
-// in production).
+// GitTreeTranslator translates positions within a git tree between commits.
 type GitTreeTranslator interface {
-	// GetTargetCommitPositionFromSourcePosition translates the given position from the source commit into the given
-	// target commit. The target commit's position is returned, along with a boolean flag
-	// indicating that the translation was successful. If reverse is true, then the source and
-	// target commits are swapped.
-	//
-	// TODO(id: GitTreeTranslator-cleanup): The reverse parameter is always false in production,
-	// let's remove the extra parameter.
-	GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, path string, px shared.Position, reverse bool) (shared.Position, bool, error)
+	// TranslatePosition returns None if the given position is on a line that was removed or modified
+	// between from and to
+	TranslatePosition(
+		ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath, position scip.Position,
+	) (core.Option[scip.Position], error)
 
-	// GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target
-	// commit. The target commit's range is returned, along with a boolean flag indicating
-	// that the translation was successful. If reverse is true, then the source and target commits
-	// are swapped.
-	//
-	// TODO(id: GitTreeTranslator-cleanup): The reverse parameter is always true in production,
-	// let's remove the extra parameter.
-	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit string, path string, rx shared.Range, reverse bool) (shared.Range, bool, error)
+	// TranslateRange returns None if its start or end positions are on a line that was removed or modified
+	// between from and to
+	TranslateRange(
+		ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath, range_ scip.Range,
+	) (core.Option[scip.Range], error)
 
-	GetSourceCommit() api.CommitID
-
-	// TODO(id: add-bulk-translation-api) Add an API which can map a bunch of ranges all at once
-	// so as to avoid iterating over the hunks repeatedly. So long as there is no error getting
-	// the hunks, the API should try to convert as many ranges as possible instead of fail-fast
-	// behavior. It is OK to expect the input set of ranges to be sorted.
-	// Might be useful to add a simple benchmark too.
+	// Prefetch populates the cache with hunks for the given paths. It does not block
+	Prefetch(ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath)
 }
 
-type gitTreeTranslator struct {
-	client    gitserver.Client
-	base      *TranslationBase
-	hunkCache HunkCache
-}
-
-// TODO(id: GitTreeTranslator-cleanup): Strictly speaking, calling this TranslationBase is not
-// quite correct as things can flip around based on the reverse parameter. So get rid
-// of the commit field and pass that as a parameter for increased clarity at call-sites.
-type TranslationBase struct {
-	Repo   *sgtypes.Repo
-	Commit api.CommitID
-}
-
-func (r *TranslationBase) GetRepoID() int {
-	return int(r.Repo.ID)
-}
-
-// HunkCache is a concurrency-safe LRU cache that holds git diff hunks.
-//
-// WARNING: It is NOT safe to modify the return value of Get or to
-// modify key or value passed to Set. Not 100% sure about this, filed:
-// https://github.com/dgraph-io/ristretto/issues/381
-type HunkCache interface {
-	// Get returns the value (if any) and a boolean representing whether the value was
-	// found or not.
-	Get(key any) (any, bool)
-
-	// Set attempts to add the key-value item to the cache with the given cost. If it
-	// returns false, then the value as dropped and the item isn't added to the cache.
-	Set(key, value any, cost int64) bool
-}
-
-// NewHunkCache creates a data cache instance with the given maximum capacity.
-func NewHunkCache(size int) (HunkCache, error) {
-	return ristretto.NewCache(&ristretto.Config{
-		NumCounters: int64(size) * 10,
-		MaxCost:     int64(size),
-		BufferItems: 64,
-	})
-}
-
-// NewGitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
-func NewGitTreeTranslator(client gitserver.Client, base *TranslationBase, hunkCache HunkCache) GitTreeTranslator {
-	return &gitTreeTranslator{
+func NewGitTreeTranslator(client minimalGitserver, repo sgtypes.Repo) GitTreeTranslator {
+	return &newTranslator{
 		client:    client,
-		hunkCache: hunkCache,
-		base:      base,
+		repo:      repo,
+		hunkCache: make(map[hunkCacheKey]func() ([]compactHunk, error)),
 	}
 }
 
-// GetTargetCommitPositionFromSourcePosition translates the given position from the source commit into the given
-// target commit. The target commit position is returned, along with a boolean flag
-// indicating that the translation was successful. If reverse is true, then the source and
-// target commits are swapped.
-func (g *gitTreeTranslator) GetTargetCommitPositionFromSourcePosition(ctx context.Context, commit string, path string, px shared.Position, reverse bool) (shared.Position, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.base.Repo, string(g.base.Commit), commit, path, reverse)
+type hunkCacheKey struct {
+	from api.CommitID
+	to   api.CommitID
+	path core.RepoRelPath
+}
+
+type newTranslator struct {
+	client    minimalGitserver
+	repo      sgtypes.Repo
+	cacheLock sync.RWMutex
+	hunkCache map[hunkCacheKey]func() ([]compactHunk, error)
+}
+
+func (t *newTranslator) TranslatePosition(
+	ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath, pos scip.Position,
+) (core.Option[scip.Position], error) {
+	if from == to {
+		return core.Some(pos), nil
+	}
+	hunks, err := t.readCachedHunks(ctx, from, to, path)
 	if err != nil {
-		return shared.Position{}, false, err
+		return core.None[scip.Position](), err
 	}
-
-	commitPosition, ok := translatePosition(hunks, px)
-	return commitPosition, ok, nil
+	return translatePosition(hunks, pos), nil
 }
 
-// GetTargetCommitRangeFromSourceRange translates the given range from the source commit into the given target
-// commit. The target commit range is returned, along with a boolean flag indicating
-// that the translation was successful. If reverse is true, then the source and target commits
-// are swapped.
-func (g *gitTreeTranslator) GetTargetCommitRangeFromSourceRange(ctx context.Context, commit string, path string, rx shared.Range, reverse bool) (shared.Range, bool, error) {
-	hunks, err := g.readCachedHunks(ctx, g.base.Repo, string(g.base.Commit), commit, path, reverse)
+func (t *newTranslator) TranslateRange(
+	ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath, range_ scip.Range,
+) (core.Option[scip.Range], error) {
+	if from == to {
+		return core.Some(range_), nil
+	}
+	hunks, err := t.readCachedHunks(ctx, from, to, path)
 	if err != nil {
-		return shared.Range{}, false, err
+		return core.None[scip.Range](), err
 	}
-
-	commitRange, ok := translateRange(hunks, rx)
-	return commitRange, ok, nil
+	return translateRange(hunks, range_), nil
 }
 
-func (g *gitTreeTranslator) GetSourceCommit() api.CommitID {
-	return g.base.Commit
+func (t *newTranslator) readCachedHunks(
+	ctx context.Context, from api.CommitID, to api.CommitID, path core.RepoRelPath,
+) (_ []compactHunk, err error) {
+	_ = t.fetchHunksLazy(ctx, from, to, path)
+	t.cacheLock.RLock()
+	hunkFunc, ok := t.hunkCache[hunkCacheKey{from, to, path}]
+	t.cacheLock.RUnlock()
+	if !ok {
+		// This should not happen
+		return nil, errors.New("no cached hunks for this path")
+	}
+	return hunkFunc()
 }
 
-// readCachedHunks returns a position-ordered slice of changes (additions or deletions) of
-// the given path between the given source and target commits. If reverse is true, then the
-// source and target commits are swapped. If the git tree translator has a hunk cache, it
-// will read from it before attempting to contact a remote server, and populate the cache
-// with new results
-func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string, reverse bool) ([]*diff.Hunk, error) {
-	if sourceCommit == targetCommit {
-		return nil, nil
-	}
-	if reverse {
-		sourceCommit, targetCommit = targetCommit, sourceCommit
-	}
-
-	if g.hunkCache == nil {
-		return g.readHunks(ctx, repo, sourceCommit, targetCommit, path)
-	}
-
-	key := makeKey(strconv.FormatInt(int64(repo.ID), 10), sourceCommit, targetCommit, path)
-	if hunks, ok := g.hunkCache.Get(key); ok {
-		if hunks == nil {
-			return nil, nil
-		}
-
-		return hunks.([]*diff.Hunk), nil
-	}
-
-	hunks, err := g.readHunks(ctx, repo, sourceCommit, targetCommit, path)
-	if err != nil {
-		return nil, err
-	}
-
-	g.hunkCache.Set(key, hunks, int64(len(hunks)))
-
-	return hunks, nil
+func (t *newTranslator) Prefetch(ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath) {
+	// Kick off the actual diff command in the background
+	go t.fetchHunksLazy(ctx, from, to, paths...)()
 }
 
-// readHunks returns a position-ordered slice of changes (additions or deletions) of
-// the given path between the given source and target commits.
-func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) (_ []*diff.Hunk, err error) {
-	r, err := g.client.Diff(ctx, repo.Name, gitserver.DiffOptions{
-		Base:      sourceCommit,
-		Head:      targetCommit,
-		Paths:     []string{path},
-		RangeType: "..",
+// fetchHunksLazy fetches the hunks for the given paths from the given commit range as a batch from gitserver and
+// populates the cache with its results.
+// It returns a function that can be called to kick off the actual diff command, otherwise the diff command
+// will be kicked off when the first path from paths is requested.
+func (t *newTranslator) fetchHunksLazy(ctx context.Context, from api.CommitID, to api.CommitID, paths ...core.RepoRelPath) func() {
+	t.cacheLock.Lock()
+	defer t.cacheLock.Unlock()
+	// Don't fetch diffs for paths we've already cached
+	paths = genslices.Filter(paths, func(path core.RepoRelPath) bool {
+		_, ok := t.hunkCache[hunkCacheKey{from, to, path}]
+		return !ok
+	})
+	if len(paths) == 0 {
+		return func() {}
+	}
+	onceHunksMap := sync.OnceValues(func() (map[core.RepoRelPath][]compactHunk, error) {
+		return t.runDiff(ctx, from, to, paths)
+	})
+	for _, path := range paths {
+		key := hunkCacheKey{from, to, path}
+		t.hunkCache[key] = sync.OnceValues(func() ([]compactHunk, error) {
+			hunksMap, err := onceHunksMap()
+			if err != nil {
+				return []compactHunk{}, err
+			}
+			hunks, ok := hunksMap[path]
+			if !ok {
+				return []compactHunk{}, nil
+			}
+			return hunks, nil
+		})
+	}
+	return func() {
+		_, _ = onceHunksMap()
+	}
+}
+
+func (t *newTranslator) runDiff(
+	ctx context.Context, from api.CommitID, to api.CommitID, paths []core.RepoRelPath,
+) (map[core.RepoRelPath][]compactHunk, error) {
+	r, err := t.client.Diff(ctx, t.repo.Name, gitserver.DiffOptions{
+		Base:             string(from),
+		Head:             string(to),
+		Paths:            genslices.Map(paths, func(p core.RepoRelPath) string { return p.RawValue() }),
+		RangeType:        "..",
+		InterHunkContext: pointers.Ptr(0),
+		ContextLines:     pointers.Ptr(0),
 	})
 	if err != nil {
 		return nil, err
@@ -201,132 +160,154 @@ func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, s
 			err = closeErr
 		}
 	}()
-
-	fd, err := r.Next()
-	if err != nil {
-		if errors.Is(err, io.EOF) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return fd.Hunks, nil
-}
-
-// findHunk returns the last thunk that does not begin after the given line.
-func findHunk(hunks []*diff.Hunk, line int) *diff.Hunk {
-	i := 0
-	for i < len(hunks) && int(hunks[i].OrigStartLine) <= line {
-		i++
-	}
-
-	if i == 0 {
-		return nil
-	}
-	return hunks[i-1]
-}
-
-// translateRange translates the given range by calling translatePosition on both of the range's
-// endpoints. This function returns a boolean flag indicating that the translation was
-// successful (which occurs when both endpoints of the range can be translated).
-func translateRange(hunks []*diff.Hunk, r shared.Range) (shared.Range, bool) {
-	start, ok := translatePosition(hunks, r.Start)
-	if !ok {
-		return shared.Range{}, false
-	}
-
-	end, ok := translatePosition(hunks, r.End)
-	if !ok {
-		return shared.Range{}, false
-	}
-
-	return shared.Range{Start: start, End: end}, true
-}
-
-// translatePosition translates the given position by setting the line number based on the
-// number of additions and deletions that occur before that line. This function returns a
-// boolean flag indicating that the translation is successful. A translation fails when the
-// line indicated by the position has been edited.
-func translatePosition(hunks []*diff.Hunk, pos shared.Position) (shared.Position, bool) {
-	line, ok := translateLineNumbers(hunks, pos.Line)
-	if !ok {
-		return shared.Position{}, false
-	}
-
-	return shared.Position{Line: line, Character: pos.Character}, true
-}
-
-// translateLineNumbers translates the given line number based on the number of additions and deletions
-// that occur before that line. This function returns a boolean flag indicating that the
-// translation is successful. A translation fails when the given line has been edited.
-func translateLineNumbers(hunks []*diff.Hunk, line int) (int, bool) {
-	// Translate from bundle/lsp zero-index to git diff one-index
-	line = line + 1
-
-	hunk := findHunk(hunks, line)
-	if hunk == nil {
-		// Trivial case, no changes before this line
-		return line - 1, true
-	}
-
-	// If the hunk ends before this line, we can simply set the line offset by the
-	// relative difference between the line offsets in each file after this hunk.
-	if line >= int(hunk.OrigStartLine+hunk.OrigLines) {
-		endOfSourceHunk := int(hunk.OrigStartLine + hunk.OrigLines)
-		endOfTargetHunk := int(hunk.NewStartLine + hunk.NewLines)
-		targetCommitLineNumber := line + (endOfTargetHunk - endOfSourceHunk)
-
-		// Translate from git diff one-index to bundle/lsp zero-index
-		return targetCommitLineNumber - 1, true
-	}
-
-	// These offsets start at the beginning of the hunk's delta. The following loop will
-	// process the delta line-by-line. For each line that exists the source (orig) or
-	// target (new) file, the corresponding offset will be bumped. The values of these
-	// offsets once we hit our target line will determine the relative offset between
-	// the two files.
-	sourceOffset := int(hunk.OrigStartLine)
-	targetOffset := int(hunk.NewStartLine)
-
-	for _, deltaLine := range strings.Split(string(hunk.Body), "\n") {
-		isAdded := strings.HasPrefix(deltaLine, "+")
-		isRemoved := strings.HasPrefix(deltaLine, "-")
-
-		// A line exists in the source file if it wasn't added in the delta. We set
-		// this before the next condition so that our comparison with our target line
-		// is correct.
-		if !isAdded {
-			sourceOffset++
-		}
-
-		// Hit our target line
-		if sourceOffset-1 == line {
-			// This particular line was (1) edited; (2) removed, or (3) added.
-			// If it was removed, there is nothing to point to in the target file.
-			// If it was added, then we don't have any index information for it in
-			// our source file. In any case, we won't have a precise translation.
-			if isAdded || isRemoved {
-				return 0, false
+	fileDiffs := make(map[core.RepoRelPath][]compactHunk)
+	for {
+		fileDiff, err := r.Next()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return fileDiffs, nil
+			} else {
+				return nil, err
 			}
-
-			// Translate from git diff one-index to bundle/lsp zero-index
-			return targetOffset - 1, true
 		}
-
-		// A line exists in the target file if it wasn't deleted in the delta. We set
-		// this after the previous condition so we don't have to re-set the target offset
-		// within the exit conditions (this adjustment is only necessary for future iterations).
-		if !isRemoved {
-			targetOffset++
+		if fileDiff.OrigName != fileDiff.NewName {
+			// We do not handle file renames
+			continue
 		}
+		fileDiffs[core.NewRepoRelPathUnchecked(fileDiff.OrigName)] = genslices.Map(fileDiff.Hunks, newCompactHunk)
 	}
-
-	// This should never happen unless the git diff content is malformed. We know
-	// the target line occurs within the hunk, but iteration of the hunk's body did
-	// not contain enough lines attributed to the original file.
-	panic("Malformed hunk body")
 }
 
-func makeKey(parts ...string) string {
-	return strings.Join(parts, ":")
+func precedingHunk(hunks []compactHunk, line int32) core.Option[compactHunk] {
+	line += 1 // diff hunks are 1-based, compared to our 0-based scip ranges
+	precedingHunkIx, found := slices.BinarySearchFunc(hunks, line, func(h compactHunk, l int32) int {
+		return cmp.Compare(h.origStartLine, l)
+	})
+	if precedingHunkIx == 0 && !found {
+		// No preceding hunk means the position was not affected by any hunks
+		return core.None[compactHunk]()
+	}
+	if !found {
+		precedingHunkIx -= 1
+	}
+	return core.Some(hunks[precedingHunkIx])
+}
+
+func translateLine(hunks []compactHunk, line int32) core.Option[int32] {
+	hunk, ok := precedingHunk(hunks, line).Get()
+	if !ok {
+		return core.Some(line)
+	}
+	return hunk.shiftLine(line)
+}
+
+func translatePosition(hunks []compactHunk, pos scip.Position) core.Option[scip.Position] {
+	hunk, ok := precedingHunk(hunks, pos.Line).Get()
+	if !ok {
+		return core.Some(pos)
+	}
+	return hunk.shiftPosition(pos)
+}
+
+func translateRange(hunks []compactHunk, range_ scip.Range) core.Option[scip.Range] {
+	// Fast path for single-line ranges
+	if range_.Start.Line == range_.End.Line {
+		newLine, ok := translateLine(hunks, range_.Start.Line).Get()
+		if !ok {
+			return core.None[scip.Range]()
+		}
+		return core.Some(scip.Range{
+			Start: scip.Position{Line: newLine, Character: range_.Start.Character},
+			End:   scip.Position{Line: newLine, Character: range_.End.Character},
+		})
+	}
+
+	if start, ok := translatePosition(hunks, range_.Start).Get(); ok {
+		if end, ok := translatePosition(hunks, range_.End).Get(); ok {
+			return core.Some(scip.Range{Start: start, End: end})
+		}
+	}
+	return core.None[scip.Range]()
+}
+
+type compactHunk struct {
+	// starting line number in original file
+	origStartLine int32
+	// number of lines the hunk applies to in the original file
+	origLines int32
+	// starting line number in new file
+	newStartLine int32
+	// number of lines the hunk applies to in the new file
+	newLines int32
+}
+
+func newCompactHunk(h *diff.Hunk) compactHunk {
+	// If either origLines or newLines are 0, their corresponding line is shifted by an additional -1
+	// in the `git diff` output, to make it clear to the user that the line is not included in the
+	// displayed hunk.
+	// For our purposes we need the actual start line of the hunk though
+	//
+	// Examples:
+	//
+	// $ echo "line1\nline2\nline3\n" > test.txt && echo "line1\nline3\n" > test1.txt && git diff --no-index --no-prefix -U0 test.txt test1.txt
+	// diff --git test.txt test1.txt
+	// index be4bc321656..cc8972178a0 100644
+	// --- test.txt
+	// +++ test1.txt
+	// @@ -2 +1,0 @@ line1
+	// -line2
+	//
+	// origStartLine: 2, origLines: 1, newStartLine: 1, newLines: 0
+	// Would lead to `(1 + 0) - (2 + 1) = -2` even though the hunk only removes one line
+	//
+	// $ echo "line1\nline2\nline3\n" > test.txt && echo "line1\nline2\nlineNew\nline3\n" > test1.txt && git diff --no-index --no-prefix -U0 test.txt test1.txt
+	// diff --git test.txt test1.txt
+	// index be4bc321656..8298ca98d51 100644
+	// --- test.txt
+	// +++ test1.txt
+	// @@ -2,0 +3 @@ line2
+	// +lineNew
+	//
+	// origStartLine: 2, origLines: 0, newStartLine: 3, newLines: 1
+	// Would lead to `(3 + 1) - (2 + 0) = 2` even though the hunk only adds one line
+	origStartLine := h.OrigStartLine
+	if h.OrigLines == 0 {
+		origStartLine += 1
+	}
+	newStartLine := h.NewStartLine
+	if h.NewLines == 0 {
+		newStartLine += 1
+	}
+	return compactHunk{
+		origStartLine: origStartLine,
+		origLines:     h.OrigLines,
+		newStartLine:  newStartLine,
+		newLines:      h.NewLines,
+	}
+}
+
+func (h *compactHunk) overlapsLine(line int32) bool {
+	// git diff hunks are 1-based, vs our 0-based scip ranges
+	return h.origStartLine <= line+1 && line+1 < h.origStartLine+h.origLines
+}
+
+func (h *compactHunk) shiftLine(line int32) core.Option[int32] {
+	if h.overlapsLine(line) {
+		return core.None[int32]()
+	}
+	originalSpan := h.origStartLine + h.origLines
+	newSpan := h.newStartLine + h.newLines
+	if newLine := line + newSpan - originalSpan; newLine >= 0 {
+		return core.Some(newLine)
+	} else {
+		return core.None[int32]()
+	}
+}
+
+func (h *compactHunk) shiftPosition(position scip.Position) core.Option[scip.Position] {
+	newLine, ok := h.shiftLine(position.Line).Get()
+	if !ok {
+		return core.None[scip.Position]()
+	}
+	return core.Some(scip.Position{Line: newLine, Character: position.Character})
 }

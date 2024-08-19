@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit/tags"
+	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -53,8 +54,9 @@ func (r *svelteKitRoute) matches(url *url.URL) bool {
 }
 
 // RegisterSvelteKit registers a middleware that determines which routes are enabled for SvelteKit.
-// It also extends the request context with inormation that is sent to the client apps via JSContext.
+// It also extends the request context with information that is sent to the client apps via JSContext.
 func RegisterSvelteKit(r *mux.Router, repoRootRoute *mux.Route) {
+	isDotComMode := dotcom.SourcegraphDotComMode()
 	var knownRoutes []string
 
 	r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
@@ -84,16 +86,21 @@ func RegisterSvelteKit(r *mux.Router, repoRootRoute *mux.Route) {
 			enabledRoutes := make([]int, 0, len(svelteKitRoutes))
 			enabled := false
 
-			availabilityMask := tags.EnableAlways
+			inclusionMask := tags.EnableAlways
 			if ff.GetBoolOr("web-next", false) {
-				availabilityMask |= tags.EnableOptIn
+				inclusionMask |= tags.EnableOptIn
 			}
 			if ff.GetBoolOr("web-next-rollout", false) {
-				availabilityMask |= tags.EnableRollout
+				inclusionMask |= tags.EnableRollout
+			}
+
+			var exclusionMask tags.Tag
+			if !isDotComMode {
+				exclusionMask |= tags.Dotcom
 			}
 
 			for i, skr := range svelteKitRoutes {
-				if skr.Tag&availabilityMask != 0 {
+				if skr.Tag&inclusionMask != 0 && skr.Tag&exclusionMask == 0 {
 					enabledRoutes = append(enabledRoutes, i)
 
 					if !enabled {
@@ -107,7 +114,11 @@ func RegisterSvelteKit(r *mux.Router, repoRootRoute *mux.Route) {
 			}
 
 			value := &contextValue{enabledRoutes: enabledRoutes, knownRoutes: knownRoutes, enabled: enabled}
-			next.ServeHTTP(w, req.WithContext(context.WithValue(req.Context(), contextKey{}, value)))
+			existingValue := fromContext(ctx)
+			if existingValue != nil {
+				value.knownRoutes = append(existingValue.knownRoutes, knownRoutes...)
+			}
+			next.ServeHTTP(w, req.WithContext(context.WithValue(ctx, contextKey{}, value)))
 		})
 	})
 }
@@ -141,7 +152,7 @@ func GetJSContext(ctx context.Context) JSContext {
 	ff := featureflag.FromContext(ctx)
 
 	return JSContext{
-		ShowToggle:    ff.GetBoolOr("web-next-toggle", false),
+		ShowToggle:    ff.GetBoolOr("web-next-toggle", true),
 		KnownRoutes:   skctx.knownRoutes,
 		EnabledRoutes: skctx.enabledRoutes,
 	}

@@ -4,17 +4,17 @@ import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type symbolsArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	Query           *string
 	IncludePatterns *[]string
 }
@@ -111,8 +111,8 @@ func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]symbolResolver,
 	return symbols, nil
 }
 
-func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(len(r.symbols) > limitOrDefault(r.first)), nil
+func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
+	return gqlutil.HasNextPage(len(r.symbols) > limitOrDefault(r.first)), nil
 }
 
 type symbolResolver struct {

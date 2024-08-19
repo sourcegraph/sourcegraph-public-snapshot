@@ -887,6 +887,8 @@ func rawDiffRequestToLogFields(req *proto.RawDiffRequest) []log.Field {
 		log.String("headRevSpec", string(req.GetHeadRevSpec())),
 		log.String("comparisonType", req.GetComparisonType().String()),
 		log.Strings("paths", byteSlicesToStrings(req.GetPaths())),
+		log.Int("interHunkContext", int(req.GetInterHunkContext())),
+		log.Int("contextLines", int(req.GetContextLines())),
 	}
 }
 
@@ -1091,6 +1093,33 @@ func commitLogRequestToLogFields(req *proto.CommitLogRequest) []log.Field {
 		log.String("authorQuery", string(req.GetAuthorQuery())),
 		log.Bool("followPathRenames", req.GetFollowPathRenames()),
 		log.String("path", string(req.GetPath())),
+	}
+}
+
+func (l *loggingGRPCServer) MergeBaseOctopus(ctx context.Context, request *proto.MergeBaseOctopusRequest) (response *proto.MergeBaseOctopusResponse, err error) {
+	start := time.Now()
+
+	defer func() {
+		elapsed := time.Since(start)
+
+		doLog(
+			l.logger,
+			proto.GitserverService_MergeBaseOctopus_FullMethodName,
+			status.Code(err),
+			trace.Context(ctx).TraceID,
+			elapsed,
+
+			mergeBaseOctopusRequestToLogFields(request)...,
+		)
+	}()
+
+	return l.base.MergeBaseOctopus(ctx, request)
+}
+
+func mergeBaseOctopusRequestToLogFields(req *proto.MergeBaseOctopusRequest) []log.Field {
+	return []log.Field{
+		log.String("repoName", req.GetRepoName()),
+		log.Strings("revspecs", byteSlicesToStrings(req.GetRevspecs())),
 	}
 }
 

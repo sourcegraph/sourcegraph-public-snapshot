@@ -38,6 +38,7 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/api",
+        "//internal/authz",
         "//internal/authz/subrepoperms",
         "//internal/conf",
         "//internal/search/result",

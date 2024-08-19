@@ -22,9 +22,9 @@ import (
 	"github.com/crewjam/saml/samlidp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -194,8 +194,7 @@ func TestMiddleware(t *testing.T) {
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
 	defer func() { providers.MockProviders = nil }()
 
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 
 	providerID := providerConfigID(&mockGetProviderValue.config, true)
 
@@ -295,7 +294,7 @@ func TestMiddleware(t *testing.T) {
 		}
 	})
 	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg login", func(t *testing.T) {
-		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
+		cookie := &http.Cookie{Name: session.SignOutCookie, Value: "true"}
 
 		resp := doRequest("GET", "http://example.com/", "", []*http.Cookie{cookie}, false, nil)
 		if want := http.StatusOK; resp.StatusCode != want {

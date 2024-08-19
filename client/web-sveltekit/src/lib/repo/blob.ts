@@ -3,7 +3,7 @@ import { get } from 'svelte/store'
 
 import { goto as svelteGoto } from '$app/navigation'
 import { page } from '$app/stores'
-import { toPrettyBlobURL } from '$lib/shared'
+import { Occurrence, toPrettyBlobURL } from '$lib/shared'
 import {
     positionToOffset,
     type Definition,
@@ -26,6 +26,12 @@ import {
  */
 const MINIMUM_GO_TO_DEF_LATENCY_MILLIS = 20
 
+/**
+ * This will either:
+ * - Show a tooltip indicating that no definition was found or that the user is already at the definition.
+ * - Go to the definition if it is a single definition.
+ * - Show a tooltip indicating that multiple definitions were found (but do nothing else).
+ */
 export async function goToDefinition(
     documentInfo: DocumentInfo,
     view: EditorView,
@@ -82,18 +88,14 @@ export async function goToDefinition(
         case 'multiple': {
             void goto(locationToURL(documentInfo, definition.destination, 'def'))
             if (offset) {
-                showTemporaryTooltip(view, 'Not supported yet: Multiple definitions', offset, 2000)
+                showTemporaryTooltip(view, 'Multiple definitions found', offset, 2000)
             }
             break
         }
     }
 }
 
-export function openReferences(
-    view: EditorView,
-    documentInfo: DocumentInfo,
-    occurrence: Definition['occurrence']
-): void {
+export function openReferences(view: EditorView, documentInfo: DocumentInfo, occurrence: Occurrence): void {
     const url = toPrettyBlobURL({
         repoName: documentInfo.repoName,
         revision: documentInfo.revision,
@@ -103,15 +105,4 @@ export function openReferences(
         viewState: 'references',
     })
     svelteGoto(url)
-}
-
-export function openImplementations(
-    view: EditorView,
-    _documentInfo: DocumentInfo,
-    occurrence: Definition['occurrence']
-): void {
-    const offset = positionToOffset(view.state.doc, occurrence.range.start)
-    if (offset) {
-        showTemporaryTooltip(view, 'Not supported yet: Find implementations', offset, 2000)
-    }
 }

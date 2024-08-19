@@ -14,7 +14,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 
 import { observeStorageKey, storage } from '../../browser-extension/web-extension-api/storage'
-import type { ViewerConfigurationResult } from '../../graphql-operations'
+import type { ViewerSettingsResult } from '../../graphql-operations'
 import { isInPage } from '../context'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'
@@ -35,7 +35,8 @@ function observeLocalStorageKey(key: string, defaultValue: string): Observable<s
 }
 
 const createStorageSettingsCascade: () => Observable<SettingsCascade> = () => {
-    /** Observable of the JSONC string of the settings.
+    /**
+     * Observable of the JSONC string of the settings.
      *
      * NOTE: We can't use LocalStorageSubject here because the JSONC string is stored raw in localStorage and LocalStorageSubject also does parsing.
      * This could be changed, but users already have settings stored, so it would need a migration for little benefit.
@@ -95,9 +96,8 @@ export function mergeCascades(
     }
 }
 
-// This is a fragment on the DEPRECATED GraphQL API type ConfigurationCascade (not SettingsCascade) for backcompat.
-const configurationCascadeFragment = gql`
-    fragment ConfigurationCascadeFields on ConfigurationCascade {
+const settingsCascadeFragment = gql`
+    fragment SettingsCascadeFields on SettingsCascade {
         subjects {
             __typename
             ...OrgSettingFields
@@ -167,42 +167,40 @@ const configurationCascadeFragment = gql`
 
 /**
  * Fetches the settings cascade for the viewer.
- *
- * TODO(sqs): This uses the DEPRECATED GraphQL Query.viewerConfiguration and ConfigurationCascade for backcompat.
  */
 export function fetchViewerSettings(requestGraphQL: PlatformContext['requestGraphQL']): Observable<{
     final: string
     subjects: SettingsSubject[]
 }> {
     return from(
-        requestGraphQL<ViewerConfigurationResult>({
+        requestGraphQL<ViewerSettingsResult>({
             request: gql`
-                query ViewerConfiguration {
-                    viewerConfiguration {
-                        ...ConfigurationCascadeFields
+                query ViewerSettings {
+                    viewerSettings {
+                        ...SettingsCascadeFields
                     }
                 }
-                ${configurationCascadeFragment}
+                ${settingsCascadeFragment}
             `,
             variables: {},
             mightContainPrivateInfo: false,
         })
     ).pipe(
         map(dataOrThrowErrors),
-        map(({ viewerConfiguration }) => {
-            if (!viewerConfiguration) {
-                throw new Error('fetchViewerSettings: empty viewerConfiguration')
+        map(({ viewerSettings }) => {
+            if (!viewerSettings) {
+                throw new Error('fetchViewerSettings: empty viewerSettings')
             }
 
-            for (const subject of viewerConfiguration.subjects) {
+            for (const subject of viewerSettings.subjects) {
                 // User/org/global settings cannot be edited from the
                 // browser extension (only client settings can).
                 subject.viewerCanAdminister = false
             }
 
             return {
-                subjects: viewerConfiguration.subjects,
-                final: viewerConfiguration.merged.contents,
+                subjects: viewerSettings.subjects,
+                final: viewerSettings.merged.contents,
             }
         })
     )

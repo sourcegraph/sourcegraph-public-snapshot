@@ -1,5 +1,5 @@
-import { ExternalServiceKind } from '../../../../../../../testing/graphql-type-mocks'
-import { expect, test } from '../../../../../../../testing/integration'
+import { ExternalServiceKind } from '$testing/graphql-type-mocks'
+import { expect, test } from '$testing/integration'
 
 const repoName = 'github.com/sourcegraph/sourcegraph'
 const url = `/${repoName}/-/blob/src/index.js`
@@ -152,7 +152,7 @@ test.describe('file header', () => {
             }),
         })
 
-        sg.signIn({ username: 'test' })
+        await sg.signIn({ username: 'test' })
         await page.goto(url)
         const link = page.getByLabel('Open in IntelliJ IDEA')
         await expect(link, 'links to correct editor').toHaveAttribute(

@@ -226,6 +226,7 @@ const (
 	GitserverService_Stat_FullMethodName                        = "/gitserver.v1.GitserverService/Stat"
 	GitserverService_ReadDir_FullMethodName                     = "/gitserver.v1.GitserverService/ReadDir"
 	GitserverService_CommitLog_FullMethodName                   = "/gitserver.v1.GitserverService/CommitLog"
+	GitserverService_MergeBaseOctopus_FullMethodName            = "/gitserver.v1.GitserverService/MergeBaseOctopus"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -439,6 +440,27 @@ type GitserverServiceClient interface {
 	// If one of the given ranges doesn't exist, an error with a ReversionNotFoundPayload
 	// is returned.
 	CommitLog(ctx context.Context, in *CommitLogRequest, opts ...grpc.CallOption) (GitserverService_CommitLogClient, error)
+	// MergeBaseOctopus returns the octopus merge base commit sha for the specified
+	// revspecs.
+	// If no common merge base exists, an empty string is returned.
+	// See the following diagrams from git-merge-base docs on what octopus merge bases
+	// are:
+	// Given three commits A, B, and C, MergeBaseOctopus(A, B, C) will compute the
+	// best common ancestor of all commits.
+	// For example, with this topology:
+	//
+	//	       o---o---o---o---C
+	//	      /
+	//	     /   o---o---o---B
+	//	    /   /
+	//	---2---1---o---o---o---A
+	//
+	// The result of MergeBaseOctopus(A, B, C) is 2, because 2 is the
+	// best common ancestor of all commits.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	MergeBaseOctopus(ctx context.Context, in *MergeBaseOctopusRequest, opts ...grpc.CallOption) (*MergeBaseOctopusResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -969,6 +991,15 @@ func (x *gitserverServiceCommitLogClient) Recv() (*CommitLogResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) MergeBaseOctopus(ctx context.Context, in *MergeBaseOctopusRequest, opts ...grpc.CallOption) (*MergeBaseOctopusResponse, error) {
+	out := new(MergeBaseOctopusResponse)
+	err := c.cc.Invoke(ctx, GitserverService_MergeBaseOctopus_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -1180,6 +1211,27 @@ type GitserverServiceServer interface {
 	// If one of the given ranges doesn't exist, an error with a ReversionNotFoundPayload
 	// is returned.
 	CommitLog(*CommitLogRequest, GitserverService_CommitLogServer) error
+	// MergeBaseOctopus returns the octopus merge base commit sha for the specified
+	// revspecs.
+	// If no common merge base exists, an empty string is returned.
+	// See the following diagrams from git-merge-base docs on what octopus merge bases
+	// are:
+	// Given three commits A, B, and C, MergeBaseOctopus(A, B, C) will compute the
+	// best common ancestor of all commits.
+	// For example, with this topology:
+	//
+	//	       o---o---o---o---C
+	//	      /
+	//	     /   o---o---o---B
+	//	    /   /
+	//	---2---1---o---o---o---A
+	//
+	// The result of MergeBaseOctopus(A, B, C) is 2, because 2 is the
+	// best common ancestor of all commits.
+	//
+	// If the given repo is not cloned, it will be enqueued for cloning and a
+	// NotFound error will be returned, with a RepoNotFoundPayload in the details.
+	MergeBaseOctopus(context.Context, *MergeBaseOctopusRequest) (*MergeBaseOctopusResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -1282,6 +1334,9 @@ func (UnimplementedGitserverServiceServer) ReadDir(*ReadDirRequest, GitserverSer
 }
 func (UnimplementedGitserverServiceServer) CommitLog(*CommitLogRequest, GitserverService_CommitLogServer) error {
 	return status.Errorf(codes.Unimplemented, "method CommitLog not implemented")
+}
+func (UnimplementedGitserverServiceServer) MergeBaseOctopus(context.Context, *MergeBaseOctopusRequest) (*MergeBaseOctopusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MergeBaseOctopus not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -1907,6 +1962,24 @@ func (x *gitserverServiceCommitLogServer) Send(m *CommitLogResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_MergeBaseOctopus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MergeBaseOctopusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).MergeBaseOctopus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_MergeBaseOctopus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).MergeBaseOctopus(ctx, req.(*MergeBaseOctopusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -2001,6 +2074,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Stat",
 			Handler:    _GitserverService_Stat_Handler,
+		},
+		{
+			MethodName: "MergeBaseOctopus",
+			Handler:    _GitserverService_MergeBaseOctopus_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
@@ -62,7 +63,11 @@ func createOrUpdateObject[R client.Object](
 	ctx context.Context, r *Reconciler, updateIfChanged any,
 	owner client.Object, obj, objKind R,
 ) error {
-	logger := log.FromContext(ctx).WithValues("kind", obj.GetObjectKind().GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
+	gvk, err := apiutil.GVKForObject(obj, r.Scheme)
+	if err != nil {
+		return errors.Wrap(err, "getting GVK for object")
+	}
+	logger := log.FromContext(ctx).WithValues("kind", gvk.String(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 	namespacedName := types.NamespacedName{Namespace: obj.GetNamespace(), Name: obj.GetName()}
 
 	cfgHash, err := configHash(updateIfChanged)
@@ -81,7 +86,7 @@ func createOrUpdateObject[R client.Object](
 	// error: "cluster-scoped resource must not have a namespace-scoped owner".
 	// non-namespaced resources will therefore not be garbage-collected when the
 	// ConfigMap is deleted.
-	if !isNamespaced(obj) {
+	if isNamespaced(obj) {
 		if err := ctrl.SetControllerReference(owner, obj, r.Scheme); err != nil {
 			return errors.Newf("setting controller reference: %w", err)
 		}
@@ -102,7 +107,7 @@ func createOrUpdateObject[R client.Object](
 		return err
 	}
 
-	if !isControlledBy(owner, existingRes) {
+	if !isControlledBy(owner, existingRes) && isNamespaced(obj) && !config.ShouldAdopt(obj) {
 		logger.Info("refusing to update non-owned resource")
 		return nil
 	}
@@ -122,12 +127,12 @@ func createOrUpdateObject[R client.Object](
 
 func isNamespaced(obj client.Object) bool {
 	if _, ok := obj.(*rbacv1.ClusterRole); ok {
-		return true
+		return false
 	}
 	if _, ok := obj.(*rbacv1.ClusterRoleBinding); ok {
-		return true
+		return false
 	}
-	return false
+	return true
 }
 
 func ensureObjectDeleted[T client.Object](ctx context.Context, r *Reconciler, owner client.Object, obj T) error {
@@ -140,10 +145,14 @@ func ensureObjectDeleted[T client.Object](ctx context.Context, r *Reconciler, ow
 			return nil
 		}
 	}
+	gvk, err := apiutil.GVKForObject(obj, r.Scheme)
+	if err != nil {
+		return errors.Wrap(err, "getting GVK for object")
+	}
 
-	logger := log.FromContext(ctx).WithValues("kind", obj.GetObjectKind().GroupVersionKind(), "namespace", obj.GetNamespace(), "name", obj.GetName())
+	logger := log.FromContext(ctx).WithValues("kind", gvk.String(), "namespace", obj.GetNamespace(), "name", obj.GetName())
 
-	if !isControlledBy(owner, obj) {
+	if !isControlledBy(owner, obj) && isNamespaced(obj) {
 		logger.Info("refusing to delete non-owned resource")
 		return nil
 	}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import { AppBar, Typography, useTheme } from '@mui/material'
 import { Outlet } from 'react-router-dom'
@@ -7,12 +7,11 @@ import logo from '../assets/sourcegraph.png'
 
 import { adminPassword, call } from './api'
 import { Login } from './Login'
-import { OperatorDebugBar } from './OperatorDebugBar'
 import { OperatorStatus } from './OperatorStatus'
 import { Info } from './Theme'
 
-const FetchStateTimerMs = 1 * 1000
-const WaitToLoginAfterConnectMs = 1 * 1000
+const FetchStateTimerMs = 1000
+const WaitToLoginAfterConnectMs = 1000
 
 export type stage = 'unknown' | 'install' | 'installing' | 'wait-for-admin' | 'upgrading' | 'maintenance' | 'refresh'
 
@@ -29,7 +28,7 @@ export interface OutletContext {
 
 const fetchStatus = async (lastContext: OutletContext): Promise<OutletContext> =>
     new Promise<OutletContext>(resolve => {
-        call('/api/operator/v1beta1/stage')
+        call('/api/v1/appliance/status')
             .then(result => {
                 if (!result.ok) {
                     if (result.status === 401) {
@@ -39,7 +38,7 @@ const fetchStatus = async (lastContext: OutletContext): Promise<OutletContext> =
                             onlineDate: lastContext.onlineDate ?? Date.now(),
                         })
                     } else {
-                        resolve({ online: false, onlineDate: undefined })
+                        resolve({ online: false, onlineDate: undefined, stage: 'refresh' })
                     }
                     return
                 }
@@ -49,12 +48,12 @@ const fetchStatus = async (lastContext: OutletContext): Promise<OutletContext> =
             .then(result => {
                 resolve({
                     online: true,
-                    stage: result.stage,
+                    stage: result.status.status,
                     onlineDate: lastContext.onlineDate ?? Date.now(),
                 })
             })
             .catch(() => {
-                resolve({ online: false, onlineDate: undefined })
+                resolve({ online: false, onlineDate: undefined, stage: 'refresh' })
             })
     })
 
@@ -102,9 +101,9 @@ export const Frame: React.FC = () => {
         <div id="frame">
             <AppBar color="secondary">
                 <div className="product">
-                    <img id="logo" src={logo} />
+                    <img id="logo" src={logo} alt={'Sourcegraph logo'} />
                     <Typography className={`title-${theme.palette.mode}`} variant="h6">
-                        Appliance
+                        Sourcegraph Appliance
                     </Typography>
                 </div>
                 <div className="spacer" />
@@ -119,7 +118,6 @@ export const Frame: React.FC = () => {
                     <Outlet context={context} />
                 )}
             </div>
-            <OperatorDebugBar context={context} />
         </div>
     )
 }

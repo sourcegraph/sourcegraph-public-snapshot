@@ -11,11 +11,7 @@ const decorator: Decorator = story => <div style={{ width: '192px' }}>{story()}<
 const config: Meta = {
     title: 'web/site-admin/AdminSidebar',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config
@@ -38,6 +34,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
+                    applianceUpdateTarget=""
                     endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
@@ -48,6 +45,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={true}
+                    applianceUpdateTarget=""
                     endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
@@ -58,6 +56,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={false}
                     batchChangesWebhookLogsEnabled={false}
                     codeInsightsEnabled={true}
+                    applianceUpdateTarget=""
                     endUserOnboardingEnabled={false}
                 />
                 <SiteAdminSidebar
@@ -68,6 +67,7 @@ export const AdminSidebarItems: StoryFn = () => (
                     batchChangesExecutionEnabled={true}
                     batchChangesWebhookLogsEnabled={true}
                     codeInsightsEnabled={false}
+                    applianceUpdateTarget=""
                     endUserOnboardingEnabled={false}
                 />
             </Grid>

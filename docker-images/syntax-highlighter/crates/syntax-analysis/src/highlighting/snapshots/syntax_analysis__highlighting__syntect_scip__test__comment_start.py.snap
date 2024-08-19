@@ -1,0 +1,17 @@
+---
+source: crates/syntax-analysis/src/highlighting/syntect_scip.rs
+expression: "snapshot_sciptect_documents(&document, &contents)"
+---
+  """This is my amazing module"""
+//^^^ Comment punctuation.definition.comment.begin.python
+//   ^^^^^^^^^^^^^^^^^^^^^^^^^ Comment punctuation.definition.comment.end.python
+//                            ^^^ Comment punctuation.definition.comment.end.python
+  
+  def foo():
+//^^^ Keyword keyword.declaration.function.python
+//    ^^^ IdentifierFunction entity.name.function.python
+//       ^ PunctuationBracket punctuation.section.parameters.begin.python
+//        ^ PunctuationBracket punctuation.section.parameters.end.python
+//         ^ PunctuationBracket punctuation.section.function.begin.python
+    pass
+//  ^^^^ Keyword keyword.control.flow.pass.python

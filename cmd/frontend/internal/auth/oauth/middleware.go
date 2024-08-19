@@ -17,15 +17,15 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
@@ -60,8 +60,10 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		// instance, it's an app request, the sign-out cookie is not present, and access requests are disabled, redirect to sign-in immediately.
 		//
 		// For sign-out requests (sign-out cookie is  present), the user will be redirected to the SG login page.
-		pc := getExactlyOneOAuthProvider()
-		if pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !auth.HasSignOutCookie(r) && isHuman(r) && !conf.IsAccessRequestEnabled() {
+		// Note: For instances that are conf.AuthPublic(), we don't redirect to sign-in automatically, as that would
+		// lock out unauthenticated access.
+		pc := getExactlyOneOAuthProvider(!r.URL.Query().Has("sourcegraph-operator"))
+		if !conf.AuthPublic() && pc != nil && !isAPIHandler && pc.AuthPrefix == authPrefix && !session.HasSignOutCookie(r) && isHuman(r) && !conf.IsAccessRequestEnabled() {
 			span.AddEvent("redirect to signin")
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
@@ -210,8 +212,8 @@ func (l *loggingRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	}
 }
 
-func getExactlyOneOAuthProvider() *Provider {
-	ps := providers.SignInProviders()
+func getExactlyOneOAuthProvider(skipSoap bool) *Provider {
+	ps := providers.SignInProviders(skipSoap)
 	if len(ps) != 1 {
 		return nil
 	}
@@ -219,25 +221,10 @@ func getExactlyOneOAuthProvider() *Provider {
 	if !ok {
 		return nil
 	}
-	if !isOAuth(p.Config()) {
+	if ps[0].Type() != providers.ProviderTypeOAuth {
 		return nil
 	}
 	return p
-}
-
-var isOAuths []func(p schema.AuthProviders) bool
-
-func AddIsOAuth(f func(p schema.AuthProviders) bool) {
-	isOAuths = append(isOAuths, f)
-}
-
-func isOAuth(p schema.AuthProviders) bool {
-	for _, f := range isOAuths {
-		if f(p) {
-			return true
-		}
-	}
-	return false
 }
 
 // isHuman returns true if the request probably came from a human, rather than a bot. Used to

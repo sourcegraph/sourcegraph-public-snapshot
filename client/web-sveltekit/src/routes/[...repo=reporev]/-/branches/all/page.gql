@@ -16,7 +16,7 @@ query AllBranchesPage_BranchesQuery(
 fragment GitBranchesConnection on GitRefConnection {
     nodes {
         id
-        ...GitReference_Ref
+        ...GitReferencesTable_Ref
     }
     pageInfo {
         hasNextPage

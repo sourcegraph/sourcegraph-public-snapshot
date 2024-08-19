@@ -93,6 +93,29 @@ func TestPropagator(t *testing.T) {
 				ForwardedFor: "192.168.1.2",
 			},
 		},
+		{
+			name: "client with user-agent sets forwarded-for-user-agent",
+
+			requestClient: &Client{
+				UserAgent: "Sourcegraph-Bot",
+			},
+
+			wantClient: &Client{
+				ForwardedForUserAgent: "Sourcegraph-Bot",
+			},
+		},
+		{
+			name: "client with forwarded-for-user-agent drops the current user-agent",
+
+			requestClient: &Client{
+				UserAgent:             "Not-Sourcegraph-Bot",
+				ForwardedForUserAgent: "Sourcegraph-Bot",
+			},
+
+			wantClient: &Client{
+				ForwardedForUserAgent: "Sourcegraph-Bot",
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -109,7 +132,8 @@ func TestPropagator(t *testing.T) {
 			propagator := &Propagator{}
 			md := propagator.FromContext(requestCtx)
 
-			resultCtx := propagator.InjectContext(requestCtx, md)
+			resultCtx, err := propagator.InjectContext(requestCtx, md)
+			require.NoError(t, err)
 
 			// Explicitly compare exported fields because cmp.Diff doesn't work
 			// when there are unexported fields
@@ -118,6 +142,7 @@ func TestPropagator(t *testing.T) {
 			assert.Equal(t, test.wantClient.IP, rc.IP)
 			assert.Equal(t, test.wantClient.ForwardedFor, rc.ForwardedFor)
 			assert.Equal(t, test.wantClient.UserAgent, rc.UserAgent)
+			assert.Equal(t, test.wantClient.ForwardedForUserAgent, rc.ForwardedForUserAgent)
 		})
 	}
 }

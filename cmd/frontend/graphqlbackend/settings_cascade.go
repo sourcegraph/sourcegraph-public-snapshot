@@ -25,6 +25,9 @@ type settingsCascade struct {
 }
 
 func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubjectResolver, error) {
+	// 🚨 SECURITY: Ensure that we've already checked the viewer's access to the subject's settings.
+	r.subject.assertCheckedAccess()
+
 	subjects, err := settings.RelevantSubjects(ctx, r.db, r.subject.toSubject())
 	if err != nil {
 		return nil, err
@@ -34,6 +37,9 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubjectResol
 }
 
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
+	// 🚨 SECURITY: Ensure that we've already checked the viewer's access to the subject's settings.
+	r.subject.assertCheckedAccess()
+
 	settingsTyped, err := settings.Final(ctx, r.db, r.subject.toSubject())
 	if err != nil {
 		return "", err
@@ -48,6 +54,9 @@ func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver,
 	tr, ctx := trace.New(ctx, "SettingsCascade.Merged")
 	defer tr.EndWithErr(&err)
 
+	// 🚨 SECURITY: Ensure that we've already checked the viewer's access to the subject's settings.
+	r.subject.assertCheckedAccess()
+
 	var messages []string
 	s, err := r.Final(ctx)
 	if err != nil {
@@ -61,13 +70,22 @@ func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, 
 	if err != nil {
 		return nil, err
 	}
-	if user == nil {
-		return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings"), r.db)}}, nil
+
+	var viewerNode Node
+	if user != nil {
+		viewerNode = user
+	} else {
+		viewerNode = NewSiteResolver(log.Scoped("settings"), r.db)
 	}
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: user}}, nil
+
+	settingsSubject, err := settingsSubjectForNodeAndCheckAccess(ctx, viewerNode)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsCascade{db: r.db, subject: settingsSubject}, nil
 }
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return newSchemaResolver(r.db, r.gitserverClient).ViewerSettings(ctx)
+	return newSchemaResolver(r.db, r.gitserverClient, r.configurationServer).ViewerSettings(ctx)
 }

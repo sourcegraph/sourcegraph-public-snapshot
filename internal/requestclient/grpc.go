@@ -23,16 +23,20 @@ func (Propagator) FromContext(ctx context.Context) metadata.MD {
 		return metadata.New(nil)
 	}
 
+	forwardedForUserAgent := client.ForwardedForUserAgent
+	if forwardedForUserAgent == "" {
+		forwardedForUserAgent = client.UserAgent
+	}
+
 	return metadata.Pairs(
 		headerKeyClientIP, client.IP,
 		headerKeyForwardedFor, client.ForwardedFor,
-		headerKeyUserAgent, client.UserAgent,
+		headerKeyForwardedForUserAgent, forwardedForUserAgent,
 	)
 }
 
-func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
-	var ip string
-	var forwardedFor string
+func (Propagator) InjectContext(ctx context.Context, md metadata.MD) (context.Context, error) {
+	var ip, forwardedFor, forwardedForUserAgent, currentUserAgent string
 
 	if vals := md.Get(headerKeyClientIP); len(vals) > 0 {
 		ip = vals[0]
@@ -40,6 +44,16 @@ func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Con
 
 	if vals := md.Get(headerKeyForwardedFor); len(vals) > 0 {
 		forwardedFor = vals[0]
+	}
+
+	if vals := md.Get(headerKeyUserAgent); len(vals) > 0 {
+		currentUserAgent = vals[0]
+	}
+
+	if vals := md.Get(headerKeyForwardedForUserAgent); len(vals) > 0 {
+		forwardedForUserAgent = vals[0]
+	} else {
+		forwardedForUserAgent = currentUserAgent
 	}
 
 	if ip == "" {
@@ -50,10 +64,12 @@ func (Propagator) InjectContext(ctx context.Context, md metadata.MD) context.Con
 	}
 
 	c := Client{
-		IP:           ip,
-		ForwardedFor: forwardedFor,
+		IP:                    ip,
+		ForwardedFor:          forwardedFor,
+		UserAgent:             currentUserAgent,
+		ForwardedForUserAgent: forwardedForUserAgent,
 	}
-	return WithClient(ctx, &c)
+	return WithClient(ctx, &c), nil
 }
 
 var _ internalgrpc.Propagator = Propagator{}

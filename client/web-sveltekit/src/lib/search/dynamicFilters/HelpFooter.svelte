@@ -17,6 +17,10 @@
     footer {
         line-height: 1;
 
+        small {
+            font-size: var(--font-size-xs);
+        }
+
         &::before {
             content: '';
             height: 1px;

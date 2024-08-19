@@ -20,7 +20,7 @@ import (
 	dsig "github.com/russellhaering/goxmldsig"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,6 +28,8 @@ import (
 )
 
 const providerType = "saml"
+
+var _ providers.Provider = (*provider)(nil)
 
 type provider struct {
 	config     schema.SAMLAuthProvider
@@ -52,7 +54,10 @@ func (p *provider) Config() schema.AuthProviders {
 	return schema.AuthProviders{Saml: &p.config}
 }
 
-// Refresh implements providers.Provider.
+func (p *provider) Type() providers.ProviderType {
+	return providers.ProviderTypeSAML
+}
+
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()

@@ -17,14 +17,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	repogitserver "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/purge"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -34,7 +31,6 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -116,15 +112,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Scheduler: updateScheduler,
 	}
 
-	// No Batch Changes on dotcom, so we don't need to spawn the
-	// background jobs for this feature.
-	if !dotcom.SourcegraphDotComMode() {
+	if batches.IsEnabled() {
 		syncRegistry := batches.InitBackgroundJobs(ctx, db, keyring.Default().BatchChangesCredentialKey, cf)
 		server.ChangesetSyncRegistry = syncRegistry
 	}
 
-	go globals.WatchExternalURL()
-	go watchAuthzProviders(ctx, db)
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 
 	routines := []goroutine.BackgroundRoutine{
@@ -350,22 +342,6 @@ func newUnclonedReposManager(ctx context.Context, logger log.Logger, sched *sche
 		goroutine.WithDescription("periodically lists uncloned repos and schedules them as high priority in the repo updater update queue"),
 		goroutine.WithInterval(30*time.Second),
 	)
-}
-
-// TODO: This might clash with what osscmd.Main does.
-// watchAuthzProviders updates authz providers if config changes.
-func watchAuthzProviders(ctx context.Context, db database.DB) {
-	go func() {
-		t := time.NewTicker(providers.RefreshInterval(conf.Get()))
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(
-				ctx,
-				conf.Get(),
-				db,
-			)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
-		}
-	}()
 }
 
 func mustRegisterMetrics(logger log.Logger, db dbutil.DB) {

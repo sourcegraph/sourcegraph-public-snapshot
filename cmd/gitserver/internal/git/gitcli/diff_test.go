@@ -18,6 +18,10 @@ import (
 )
 
 func TestGitCLIBackend_RawDiff(t *testing.T) {
+	defaultOpts := git.RawDiffOpts{
+		InterHunkContext: 3,
+		ContextLines:     3,
+	}
 	var f1Diff = []byte(`diff --git f f
 index a29bdeb434d874c9b1d8969c40c42161b03fafdc..c0d0fb45c382919737f8d0c20aaf57cf89b74af8 100644
 --- f
@@ -48,7 +52,7 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 	)
 
 	t.Run("streams diff", func(t *testing.T) {
-		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead)
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, defaultOpts)
 		require.NoError(t, err)
 		diff, err := io.ReadAll(r)
 		require.NoError(t, err)
@@ -56,7 +60,7 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 		require.Equal(t, string(f1Diff), string(diff))
 	})
 	t.Run("streams diff intersection", func(t *testing.T) {
-		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeIntersection)
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeIntersection, defaultOpts)
 		require.NoError(t, err)
 		diff, err := io.ReadAll(r)
 		require.NoError(t, err)
@@ -75,13 +79,48 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 			"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
 		)
 
-		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, "f2")
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, defaultOpts, "f2")
 		require.NoError(t, err)
 		diff, err := io.ReadAll(r)
 		require.NoError(t, err)
 		require.NoError(t, r.Close())
 		// We expect only a diff for f2, not for f.
 		require.Equal(t, string(f2Diff), string(diff))
+	})
+	t.Run("custom context", func(t *testing.T) {
+		// Prepare repo state:
+		backend := BackendWithRepoCommands(t,
+			"echo 'line1\nline2\nline3\nlin4\nline5\nline6\nline7\nline8\n' > f",
+			"git add f",
+			"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
+			"git tag testbase",
+			"echo 'line1.1\nline2\nline3\nlin4\nline5.5\nline6\nline7\nline8\n' > f",
+			"git add f",
+			"git commit -m foo --author='Foo Author <foo@sourcegraph.com>'",
+		)
+
+		var expectedDiff = []byte(`diff --git f f
+index 0ef51c52043997fdd257a0b77d761e9ca58bcc1f..58692a00a73d1f78df00014edf4ef39ef4ba0019 100644
+--- f
++++ f
+@@ -1 +1 @@
+-line1
++line1.1
+@@ -5 +5 @@ lin4
+-line5
++line5.5
+`)
+
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, git.RawDiffOpts{
+			InterHunkContext: 0,
+			ContextLines:     0,
+		})
+		require.NoError(t, err)
+		diff, err := io.ReadAll(r)
+		require.NoError(t, err)
+		require.NoError(t, r.Close())
+		t.Log(string(diff))
+		require.Equal(t, string(expectedDiff), string(diff))
 	})
 	t.Run("not found revspec", func(t *testing.T) {
 		// Prepare repo state:
@@ -92,19 +131,23 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 			"git tag test",
 		)
 
-		_, err := backend.RawDiff(ctx, "unknown", "test", git.GitDiffComparisonTypeOnlyInHead)
-		require.Error(t, err)
-		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+		// Test with both an unknown ref that needs resolving and something
+		// that looks like a sha256 (hits different code paths inside of git)
+		for _, missing := range []string{"404aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "unknown"} {
+			_, err := backend.RawDiff(ctx, missing, "test", git.GitDiffComparisonTypeOnlyInHead, defaultOpts)
+			require.Error(t, err)
+			require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
 
-		_, err = backend.RawDiff(ctx, "test", "unknown", git.GitDiffComparisonTypeOnlyInHead)
-		require.Error(t, err)
-		require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+			_, err = backend.RawDiff(ctx, "test", missing, git.GitDiffComparisonTypeOnlyInHead, defaultOpts)
+			require.Error(t, err)
+			require.True(t, errors.HasType[*gitdomain.RevisionNotFoundError](err))
+		}
 	})
 	t.Run("files outside repository", func(t *testing.T) {
 		// We use git-diff-tree, but with git-diff you can diff any files on disk
 		// which is dangerous. So we have this safeguard test here in place to
 		// make sure we don't regress on that.
-		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, "/dev/null", "/etc/hosts")
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, defaultOpts, "/dev/null", "/etc/hosts")
 		require.NoError(t, err)
 		_, err = io.ReadAll(r)
 		require.Error(t, err)
@@ -115,7 +158,7 @@ index 0000000000000000000000000000000000000000..8a6a2d098ecaf90105f1cf2fa90fc460
 		ctx, cancel := context.WithCancel(ctx)
 		t.Cleanup(cancel)
 
-		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead)
+		r, err := backend.RawDiff(ctx, "testbase", "HEAD", git.GitDiffComparisonTypeOnlyInHead, defaultOpts)
 		require.NoError(t, err)
 
 		cancel()

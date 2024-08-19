@@ -46,7 +46,6 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
 
 interface Props extends TelemetryProps, TelemetryV2Props, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
 }
 
 /**
@@ -54,9 +53,9 @@ interface Props extends TelemetryProps, TelemetryV2Props, SettingsCascadeProps {
  */
 export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
-    isSourcegraphDotCom,
     ...props
 }) => {
+    const isSourcegraphDotCom = Boolean(window.context?.sourcegraphDotComMode)
     const canCreate: true | string = useMemo(() => {
         if (isSourcegraphDotCom) {
             return NO_ACCESS_SOURCEGRAPH_COM
@@ -77,7 +76,6 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                             headingElement="h1"
                             canCreate={canCreate}
                             authenticatedUser={authenticatedUser}
-                            isSourcegraphDotCom={isSourcegraphDotCom}
                             {...props}
                         />
                     }

@@ -1,17 +1,24 @@
 <script lang="ts">
     import type { ComponentProps } from 'svelte'
 
+    import { goto } from '$app/navigation'
     import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Popover from '$lib/Popover.svelte'
     import ResultsIndicator from '$lib/search/resultsIndicator/ResultsIndicator.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
     import type { Progress, Skipped } from '$lib/shared'
-    import { Button } from '$lib/wildcard'
+    import { TELEMETRY_RECORDER } from '$lib/telemetry'
+    import { Alert, Button } from '$lib/wildcard'
+    import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
+
+    import type { SearchJob } from './searchJob'
 
     export let progress: Progress
     export let state: 'complete' | 'error' | 'loading'
+    export let searchJob: SearchJob | undefined
 
     const icons: Record<string, ComponentProps<Icon>['icon']> = {
         info: ILucideInfo,
@@ -29,122 +36,191 @@
 
     $: hasSkippedItems = progress.skipped.length > 0
     $: sortedItems = sortBySeverity(progress.skipped)
-    $: openItems = sortedItems.map((_, index) => index === 0)
     $: suggestedItems = sortedItems.filter((skipped): skipped is Required<Skipped> => !!skipped.suggested)
     $: hasSuggestedItems = suggestedItems.length > 0
     $: severity = progress.skipped.some(skipped => skipped.severity === 'warn' || skipped.severity === 'error')
         ? 'error'
         : 'info'
     $: isError = severity === 'error' || state === 'error'
+
+    $: if (searchJob && !$searchJob?.validating) {
+        TELEMETRY_RECORDER.recordEvent('search.exhaustiveJobs', 'view', {
+            metadata: { validState: $searchJob?.validationError ? 0 : 1 },
+        })
+    }
 </script>
 
-<Popover let:registerTrigger let:toggle placement="bottom-start">
+<Popover let:registerTrigger let:toggle placement="bottom-start" flip={false}>
     <Button variant={isError ? 'danger' : 'secondary'} size="sm" outline>
         <svelte:fragment slot="custom" let:buttonClass>
-            <button use:registerTrigger class="{buttonClass} progress-button" on:click={() => toggle()}>
+            <button
+                use:registerTrigger
+                class="{buttonClass} progress-button"
+                on:click={() => toggle()}
+                data-testid="page.search-results.progress-button"
+            >
                 <ResultsIndicator {state} {suggestedItems} {progress} {severity} />
             </button>
         </svelte:fragment>
     </Button>
-    <div slot="content" class="streaming-popover">
-        <p>
+    <div slot="content" class="streaming-popover" data-testid="page.search-results.progress-popover">
+        <div class="section">
             Found {limitHit(progress) ? 'more than ' : ''}
             {progress.matchCount}
             {pluralize('result', progress.matchCount)}
             {#if progress.repositoriesCount !== undefined}
                 from {progress.repositoriesCount} {pluralize('repository', progress.repositoriesCount, 'repositories')}.
             {/if}
-        </p>
-        {#if hasSkippedItems}
-            <h3>Some results skipped</h3>
-            {#each sortedItems as item, index (item.reason)}
-                {@const open = openItems[index]}
-                <button type="button" class="toggle" aria-expanded={open} on:click={() => (openItems[index] = !open)}>
-                    <h4>
-                        <Icon
-                            icon={icons[item.severity]}
-                            aria-label={item.severity}
-                            inline
-                            --icon-color="var(--primary)"
-                        />
-                        <span class="title">{item.title}</span>
-                        {#if item.message}
-                            <Icon icon={open ? ILucideChevronDown : ILucideChevronLeft} inline aria-hidden />
-                        {/if}
-                    </h4>
-                </button>
-                {#if item.message && open}
-                    <div class="message">
-                        {@html renderMarkdown(item.message)}
-                    </div>
-                {/if}
-            {/each}
-        {/if}
+            {#if hasSkippedItems}
+                <details open={sortedItems.length === 0}>
+                    <summary>
+                        <Icon icon={ILucideInfo} aria-hidden inline --icon-color="var(--primary)" />
+                        Why was the limit reached?
+                    </summary>
+
+                    <ul class="skipped-items">
+                        {#each sortedItems as item (item.reason)}
+                            <li>
+                                {#if item.message}
+                                    <details open={sortedItems.length === 0}>
+                                        <summary>
+                                            <Icon
+                                                icon={icons[item.severity]}
+                                                aria-label={item.severity}
+                                                inline
+                                                --icon-color="var(--primary)"
+                                            />
+                                            <span class="title">{item.title}</span>
+                                        </summary>
+                                        <div class="message">
+                                            {@html renderMarkdown(item.message)}
+                                        </div>
+                                    </details>
+                                {:else}
+                                    <Icon
+                                        icon={icons[item.severity]}
+                                        aria-label={item.severity}
+                                        inline
+                                        --icon-color="var(--primary)"
+                                    />
+                                    <span class="title">{item.title}</span>
+                                {/if}
+                            </li>
+                        {/each}
+                    </ul></details
+                >
+            {/if}
+        </div>
         {#if hasSuggestedItems}
-            <p>Search again:</p>
-            <form on:submit|preventDefault>
-                {#each suggestedItems as item (item.suggested.queryExpression)}
-                    <label>
-                        <input
-                            type="checkbox"
-                            name="query"
-                            value={item.suggested.queryExpression}
-                            on:click={updateButton}
-                        />
-                        {item.suggested.title} (
-                        <SyntaxHighlightedQuery query={item.suggested.queryExpression} />
-                        )
-                    </label>
-                {/each}
-                <Button variant="primary">
-                    <svelte:fragment slot="custom" let:buttonClass>
-                        <button class="{buttonClass} search" disabled={searchAgainDisabled}>
-                            <Icon icon={ILucideSearch} aria-hidden="true" inline />
-                            <span>Search again</span>
-                        </button>
-                    </svelte:fragment>
-                </Button>
-            </form>
+            <div class="section">
+                <h4>Search again:</h4>
+                <form on:submit|preventDefault>
+                    {#each suggestedItems as item (item.suggested.queryExpression)}
+                        <label>
+                            <input
+                                type="checkbox"
+                                name="query"
+                                value={item.suggested.queryExpression}
+                                on:click={updateButton}
+                            />
+                            {item.suggested.title} (
+                            <SyntaxHighlightedQuery query={item.suggested.queryExpression} />
+                            )
+                        </label>
+                    {/each}
+                    <Button variant="primary" size="sm">
+                        <svelte:fragment slot="custom" let:buttonClass>
+                            <button class="{buttonClass} search" disabled={searchAgainDisabled}>
+                                <Icon icon={ILucideSearch} aria-hidden="true" inline />
+                                Modify and rerun
+                            </button>
+                        </svelte:fragment>
+                    </Button>
+                </form>
+            </div>
         {/if}
-        <!--
-        TODO: @jasonhawkharris - When we implement search jobs,
-        we can change the link so that it points to where a user
-        can actually create a search job
-        -->
-        {#if severity === 'error' || state === 'loading'}
-            <div class="search-job-link">
-                <small>
-                    Search taking too long or timing out? Use <a
-                        href="/help/code-search/types/search-jobs"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Search Job</a
-                    > for background search.
-                </small>
+        {#if searchJob}
+            <div class="section">
+                <h4>Create a search job: <ProductStatusBadge status="beta" /></h4>
+                {#if $searchJob?.validationError}
+                    <Alert variant="info">
+                        {$searchJob.validationError.message}
+                    </Alert>
+                {/if}
+                <p
+                    >Search jobs exhaustively return all matches of a query. Results can be downloaded in JSON Lines
+                    format.</p
+                >
+                {#if $searchJob?.creationError}
+                    <Alert variant="danger">
+                        {$searchJob.creationError.message}
+                    </Alert>
+                {/if}
+                <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={!!$searchJob?.validationError || $searchJob?.validating || $searchJob?.creating}
+                    on:click={() =>
+                        searchJob?.create().then(
+                            () => {
+                                TELEMETRY_RECORDER.recordEvent('search.exhaustiveJobs.create', 'click')
+                                goto('/search-jobs')
+                            },
+                            () => {
+                                /* do nothing */
+                            }
+                        )}
+                >
+                    {#if $searchJob?.creating}
+                        <LoadingSpinner inline />
+                        <span class="loading">Starting search job</span>
+                    {:else}
+                        <Icon icon={ILucideSearch} aria-hidden="true" inline />
+                        Create a search job
+                    {/if}
+                </Button>
             </div>
         {/if}
     </div>
 </Popover>
 
 <style lang="scss">
-    .chevron > :global(svg) {
-        fill: currentColor !important;
+    .streaming-popover {
+        max-width: 24rem;
+
+        > .section > details {
+            margin-top: 0.5rem;
+        }
     }
 
-    .search-job-link {
-        margin: 0rem 1rem 1rem 1rem;
-        font-style: italic;
+    .section {
+        padding: 1rem;
+        border-top: 1px solid var(--border-color-2);
+
+        &:first-child {
+            border-top: none;
+        }
     }
 
     label {
         display: block;
+        // Resets global style
+        font-weight: normal;
+        margin-left: 1rem;
+    }
+
+    h4 {
+        font-weight: normal;
     }
 
     .message {
         border-left: 2px solid var(--primary);
-        padding-left: 0.5rem;
-        margin: 0 1rem 1rem 1rem;
+        padding-left: 1rem;
+        margin: 0.5rem 0 0 1.125rem;
+    }
+
+    .title {
+        padding-left: 0.25rem;
     }
 
     .progress-button {
@@ -153,38 +229,30 @@
         padding: 0;
     }
 
-    .streaming-popover {
-        max-width: 24rem;
-
-        p,
-        h3,
-        form {
-            margin: 1rem;
-        }
+    button.search {
+        margin-top: 1rem;
     }
 
-    button.toggle {
-        all: unset;
+    ul.skipped-items {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 1rem;
 
-        cursor: pointer;
-        display: block;
-        box-sizing: border-box;
-        padding: 0.5rem;
-        width: 100%;
+        li {
+            margin-top: 0.25rem;
+            padding: 0.25rem 0;
 
-        h4 {
-            display: flex;
-            margin-bottom: 0;
-            align-items: center;
-            gap: 0.25rem;
-
-            .title {
-                flex: 1;
+            & + li {
+                border-top: 1px solid var(--border-color-2);
             }
         }
     }
 
-    button.search {
-        margin-top: 1rem;
+    summary {
+        cursor: pointer;
+    }
+
+    span.loading {
+        vertical-align: middle;
     }
 </style>

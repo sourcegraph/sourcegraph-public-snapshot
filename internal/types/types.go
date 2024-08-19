@@ -6,11 +6,13 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"regexp/syntax"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/google/uuid"
 
@@ -2181,4 +2183,19 @@ func (rm ReposModified) ReposModified(modified RepoModifiedFields) Repos {
 	}
 
 	return repos
+}
+
+// RegexpPattern is a string that carries the additional intent that it is a
+// valid regex pattern, as validated by non-error return of
+// `syntax.Parse(pattern, syntax.Perl)`. Compilation of this string should not
+// fail, but still prefer checking an error to panicking because some
+// compilation errors (e.g. complexity checks) are not errors during parsing.
+type RegexpPattern string
+
+func NewRegexpPattern(pattern string) (RegexpPattern, error) {
+	_, err := syntax.Parse(pattern, syntax.Perl)
+	if err != nil {
+		return "", errors.Wrap(err, "invalid regexp pattern")
+	}
+	return RegexpPattern(pattern), nil
 }

@@ -243,52 +243,36 @@ const testAddr = "127.0.0.1:6379"
 func SetupForTest(t testing.TB) redispool.KeyValue {
 	t.Helper()
 
-	pool := &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", testAddr)
-		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			_, err := c.Do("PING")
-			return err
-		},
-	}
-	kvMock = redispool.RedisKeyValue(pool)
+	testStore = redispool.NewTestKeyValue()
 	t.Cleanup(func() {
-		pool.Close()
-		kvMock = nil
+		testStore.Pool().Close()
+		testStore = nil
 	})
-
-	globalPrefix = "__test__" + t.Name()
-	c := pool.Get()
-	defer c.Close()
 
 	// If we are not on CI, skip the test if our redis connection fails.
 	if os.Getenv("CI") == "" {
-		_, err := c.Do("PING")
-		if err != nil {
+		if err := testStore.Ping(); err != nil {
 			t.Skip("could not connect to redis", err)
 		}
 	}
 
-	err := redispool.DeleteAllKeysWithPrefix(c, globalPrefix)
-	if err != nil {
+	globalPrefix = "__test__" + t.Name()
+	if err := redispool.DeleteAllKeysWithPrefix(testStore, globalPrefix); err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
 
-	return kvMock
+	return testStore
 }
 
-var kvMock redispool.KeyValue
+var testStore redispool.KeyValue
 
 func (r *Cache) kv() redispool.KeyValue {
 	// TODO: We should refactor the SetupForTest method to return a KV, not mock
 	// a global thing.
 	// That can only work when all tests pass the redis connection directly to the
 	// tested methods though.
-	if kvMock != nil {
-		return kvMock
+	if testStore != nil {
+		return testStore
 	}
 	return r._kv
 }

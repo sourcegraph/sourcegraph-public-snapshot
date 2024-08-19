@@ -15,15 +15,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -361,7 +361,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 }
 
 type ExternalServicesArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	After     *string
 	Namespace *graphql.ID
 	Repo      *graphql.ID
@@ -434,7 +434,7 @@ func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int
 	return int32(count), err
 }
 
-func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	externalServices, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -442,12 +442,12 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 
 	// We would have had all results when no limit set
 	if r.opt.LimitOffset == nil {
-		return graphqlutil.HasNextPage(false), nil
+		return gqlutil.HasNextPage(false), nil
 	}
 
 	// We got less results than limit, means we've had all results
 	if len(externalServices) < r.opt.Limit {
-		return graphqlutil.HasNextPage(false), nil
+		return gqlutil.HasNextPage(false), nil
 	}
 
 	// In case the number of results happens to be the same as the limit,
@@ -460,18 +460,18 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 
 	if count > len(externalServices) {
 		endCursorID := externalServices[len(externalServices)-1].ID
-		return graphqlutil.NextPageCursor(string(MarshalExternalServiceID(endCursorID))), nil
+		return gqlutil.NextPageCursor(string(MarshalExternalServiceID(endCursorID))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 type ComputedExternalServiceConnectionResolver struct {
-	args             graphqlutil.ConnectionArgs
+	args             gqlutil.ConnectionArgs
 	externalServices []*types.ExternalService
 	db               database.DB
 }
 
-func NewComputedExternalServiceConnectionResolver(db database.DB, externalServices []*types.ExternalService, args graphqlutil.ConnectionArgs) *ComputedExternalServiceConnectionResolver {
+func NewComputedExternalServiceConnectionResolver(db database.DB, externalServices []*types.ExternalService, args gqlutil.ConnectionArgs) *ComputedExternalServiceConnectionResolver {
 	return &ComputedExternalServiceConnectionResolver{
 		db:               db,
 		externalServices: externalServices,
@@ -495,8 +495,8 @@ func (r *ComputedExternalServiceConnectionResolver) TotalCount(_ context.Context
 	return int32(len(r.externalServices))
 }
 
-func (r *ComputedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
+func (r *ComputedExternalServiceConnectionResolver) PageInfo(_ context.Context) *gqlutil.PageInfo {
+	return gqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
 
 type ExternalServiceMutationType int

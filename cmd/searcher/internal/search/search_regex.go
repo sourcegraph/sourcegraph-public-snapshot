@@ -98,11 +98,10 @@ func regexSearch(
 
 	contextCanceled := atomic.NewBool(false)
 	done := make(chan struct{})
-	go func() {
-		<-ctx.Done()
+	context.AfterFunc(ctx, func() {
 		contextCanceled.Store(true)
 		close(done)
-	}()
+	})
 	defer func() { cancel(); <-done }()
 
 	// Start workers. They read from files and write to matches.

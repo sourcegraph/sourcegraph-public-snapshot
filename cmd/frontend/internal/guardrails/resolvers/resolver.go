@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/attribution"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/guardrails"
 )
 
@@ -71,8 +71,8 @@ func (c snippetAttributionConnectionResolver) LimitHit() bool {
 	}
 	return c.result.LimitHit
 }
-func (c snippetAttributionConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+func (c snippetAttributionConnectionResolver) PageInfo() *gqlutil.PageInfo {
+	return gqlutil.HasNextPage(false)
 }
 func (c snippetAttributionConnectionResolver) SnippetThreshold() graphqlbackend.AttributionSnippetThresholdResolver {
 	return &attributionSnippetThresholdResolver{

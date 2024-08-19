@@ -49,7 +49,6 @@ func (j *autoindexingScheduler) Routines(_ context.Context, observationCtx *obse
 
 	return autoindexing.NewIndexSchedulers(
 		observationCtx,
-		services.UploadsService,
 		services.PoliciesService,
 		matcher,
 		services.PreciseRepoSchedulingService,

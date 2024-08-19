@@ -19,10 +19,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
@@ -126,16 +127,18 @@ func handleOpenIDConnectAuth(logger log.Logger, db database.DB, w http.ResponseW
 	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
 	//
 	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
-	ps := providers.SignInProviders()
+	// Note: For instances that are conf.AuthPublic(), we don't redirect to sign-in automatically, as that would
+	// lock out unauthenticated access.
+	ps := providers.SignInProviders(!r.URL.Query().Has("sourcegraph-operator"))
 	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
-	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
-		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
+	if !conf.AuthPublic() && openIDConnectEnabled && !session.HasSignOutCookie(r) && !isAPIRequest {
+		p, oidcClient, safeErrMsg, err := GetProviderAndClient(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
 			log15.Error("Failed to get provider", "error", err)
 			http.Error(w, safeErrMsg, http.StatusInternalServerError)
 			return
 		}
-		RedirectToAuthRequest(w, r, p, auth.SafeRedirectURL(r.URL.String()))
+		RedirectToAuthRequest(w, r, p, oidcClient, auth.SafeRedirectURL(r.URL.String()))
 		return
 	}
 
@@ -165,7 +168,7 @@ func authHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter, 
 				redirect = r.URL.Query().Get("returnTo")
 			}
 
-			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
+			p, oidcClient, safeErrMsg, err := GetProviderAndClient(r.Context(), r.URL.Query().Get("pc"), GetProvider)
 			if errors.Is(err, errNoSuchProvider) {
 				log15.Warn("Failed to get provider.", "error", err)
 				http.Redirect(w, r, "/sign-in?returnTo="+redirect, http.StatusFound)
@@ -175,7 +178,7 @@ func authHandler(logger log.Logger, db database.DB) func(w http.ResponseWriter, 
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
 				return
 			}
-			RedirectToAuthRequest(w, r, p, redirect)
+			RedirectToAuthRequest(w, r, p, oidcClient, redirect)
 			return
 
 		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
@@ -288,7 +291,7 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 			errors.Wrap(err, "state parameter was malformed")
 	}
 
-	p, safeErrMsg, err := GetProviderAndRefresh(ctx, state.ProviderID, getProvider)
+	p, oidcClient, safeErrMsg, err := GetProviderAndClient(ctx, state.ProviderID, getProvider)
 	if err != nil {
 		return nil,
 			safeErrMsg,
@@ -297,7 +300,7 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 	}
 
 	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(ctx, oauth2.HTTPClient, p.httpClient), r.URL.Query().Get("code"))
+	oauth2Token, err := p.oauth2Config(oidcClient).Exchange(context.WithValue(ctx, oauth2.HTTPClient, p.httpClient), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
 			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
@@ -319,7 +322,11 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 	if MockVerifyIDToken != nil {
 		idToken = MockVerifyIDToken(rawIDToken)
 	} else {
-		idToken, err = p.oidcVerifier().Verify(ctx, rawIDToken)
+		idToken, err = oidcClient.Verifier(
+			&oidc.Config{
+				ClientID: p.config.ClientID,
+			},
+		).Verify(ctx, rawIDToken)
 		if err != nil {
 			return nil,
 				"Authentication failed. Try signing in again. The error was: OpenID Connect ID token could not be verified.",
@@ -338,7 +345,7 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 			errors.New("nonce is incorrect (possible replay attach)")
 	}
 
-	userInfo, err := p.oidcUserInfo(oidc.ClientContext(ctx, p.httpClient), oauth2.StaticTokenSource(oauth2Token))
+	userInfo, err := oidcClient.UserInfo(oidc.ClientContext(ctx, p.httpClient), oauth2.StaticTokenSource(oauth2Token))
 	if err != nil {
 		return nil,
 			"Failed to get userinfo: " + err.Error(),
@@ -385,7 +392,7 @@ func AuthCallback(logger log.Logger, db database.DB, r *http.Request, usernamePr
 		}
 	}
 
-	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(ctx, logger, db, p, oauth2Token, idToken, userInfo, &claims, usernamePrefix, userCreateEventProperties, &hubspot.ContactProperties{
+	newUserCreated, actor, safeErrMsg, err := getOrCreateUser(ctx, logger, db, p.config, oauth2Token, idToken, userInfo, &claims, usernamePrefix, userCreateEventProperties, &hubspot.ContactProperties{
 		AnonymousUserID:            anonymousId,
 		FirstSourceURL:             getCookie("first_page_seen_url"),
 		LastSourceURL:              getCookie("last_page_seen_url"),
@@ -477,7 +484,7 @@ func (s *AuthnState) Decode(encoded string) error {
 
 // RedirectToAuthRequest redirects the user to the authentication endpoint on the
 // external authentication provider.
-func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, returnToURL string) {
+func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, oidcClient *oidcProvider, returnToURL string) {
 	// NOTE: We do not have a valid screen at the root path (always gets redirected
 	// to "/search"), and it is a marketing page on Sourcegraph.com, so redirecting to
 	// "/search" is a safe default.
@@ -512,7 +519,7 @@ func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, 
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	authURL := p.oauth2Config().AuthCodeURL(oidcState, oidc.Nonce(oidcState))
+	authURL := p.oauth2Config(oidcClient).AuthCodeURL(oidcState, oidc.Nonce(oidcState))
 	// Pass along the prompt_auth to OP for the specific type of authentication to
 	// use, e.g. "github", "gitlab", "google".
 	promptAuth := r.URL.Query().Get("prompt_auth")

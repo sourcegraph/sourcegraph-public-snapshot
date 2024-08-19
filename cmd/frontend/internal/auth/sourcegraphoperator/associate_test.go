@@ -11,9 +11,9 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -43,7 +43,7 @@ func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
+	err := AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
 	assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 }
 
@@ -243,7 +243,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			require.NoError(t, err)
 
 			ctx := actor.WithActor(context.Background(), actor.FromMockUser(uid))
-			err = addSourcegraphOperatorExternalAccount(ctx, db, uid, serviceID, string(details))
+			err = AddSourcegraphOperatorExternalAccount(ctx, db, uid, serviceID, string(details))
 			if err != nil {
 				tc.expectErr.Equal(t, err.Error())
 			} else {

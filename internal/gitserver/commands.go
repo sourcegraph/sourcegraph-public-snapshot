@@ -45,6 +45,14 @@ func (c *clientImplementor) Diff(ctx context.Context, repo api.RepoName, opts Di
 		Paths:       stringsToByteSlices(opts.Paths),
 	}
 
+	if opts.InterHunkContext != nil {
+		req.InterHunkContext = pointers.Ptr(uint32(*opts.InterHunkContext))
+	}
+
+	if opts.ContextLines != nil {
+		req.ContextLines = pointers.Ptr(uint32(*opts.ContextLines))
+	}
+
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
@@ -698,6 +706,31 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, ba
 		RepoName: string(repo),
 		Base:     []byte(base),
 		Head:     []byte(head),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return api.CommitID(res.GetMergeBaseCommitSha()), nil
+}
+
+func (c *clientImplementor) MergeBaseOctopus(ctx context.Context, repo api.RepoName, revspecs ...string) (_ api.CommitID, err error) {
+	ctx, _, endObservation := c.operations.mergeBaseOctopus.With(ctx, &err, observation.Args{
+		MetricLabelValues: []string{c.scope},
+		Attrs: []attribute.KeyValue{
+			attribute.StringSlice("revspecs", revspecs),
+		},
+	})
+	defer endObservation(1, observation.Args{})
+
+	client, err := c.clientSource.ClientForRepo(ctx, repo)
+	if err != nil {
+		return "", err
+	}
+
+	res, err := client.MergeBaseOctopus(ctx, &proto.MergeBaseOctopusRequest{
+		RepoName: string(repo),
+		Revspecs: stringsToByteSlices(revspecs),
 	})
 	if err != nil {
 		return "", err

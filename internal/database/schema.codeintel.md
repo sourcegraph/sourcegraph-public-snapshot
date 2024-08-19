@@ -4,9 +4,12 @@
 -------------------+--------------------------+-----------+----------+---------
  dump_id           | integer                  |           | not null | 
  last_reconcile_at | timestamp with time zone |           | not null | 
+ tenant_id         | integer                  |           |          | 
 Indexes:
     "codeintel_last_reconcile_dump_id_key" UNIQUE CONSTRAINT, btree (dump_id)
     "codeintel_last_reconcile_last_reconcile_at_dump_id" btree (last_reconcile_at, dump_id)
+Foreign-key constraints:
+    "codeintel_last_reconcile_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -20,12 +23,14 @@ Stores the last time processed LSIF data was reconciled with the other database.
  upload_id     | integer |           | not null | 
  document_path | text    |           | not null | 
  document_id   | bigint  |           | not null | 
+ tenant_id     | integer |           |          | 
 Indexes:
     "codeintel_scip_document_lookup_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_document_lookup_upload_id_document_path_key" UNIQUE CONSTRAINT, btree (upload_id, document_path)
     "codeintel_scip_document_lookup_document_id" hash (document_id)
 Foreign-key constraints:
     "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
+    "codeintel_scip_document_lookup_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "codeintel_scip_symbols" CONSTRAINT "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
 Triggers:
@@ -51,8 +56,11 @@ A mapping from file paths to document references within a particular SCIP index.
  upload_id          | integer |           | not null | 
  min_schema_version | integer |           |          | 
  max_schema_version | integer |           |          | 
+ tenant_id          | integer |           |          | 
 Indexes:
     "codeintel_scip_document_lookup_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
+Foreign-key constraints:
+    "codeintel_scip_document_lookup_schema_versions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -72,9 +80,12 @@ Tracks the range of `schema_versions` values associated with each SCIP index in 
  payload_hash     | bytea   |           | not null | 
  schema_version   | integer |           | not null | 
  raw_scip_payload | bytea   |           | not null | 
+ tenant_id        | integer |           |          | 
 Indexes:
     "codeintel_scip_documents_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_documents_payload_hash_key" UNIQUE CONSTRAINT, btree (payload_hash)
+Foreign-key constraints:
+    "codeintel_scip_documents_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Referenced by:
     TABLE "codeintel_scip_document_lookup" CONSTRAINT "codeintel_scip_document_lookup_document_id_fk" FOREIGN KEY (document_id) REFERENCES codeintel_scip_documents(id)
 
@@ -97,9 +108,12 @@ A lookup of SCIP [Document](https://sourcegraph.com/search?q=context:%40sourcegr
  id                | bigint                   |           | not null | nextval('codeintel_scip_documents_dereference_logs_id_seq'::regclass)
  document_id       | bigint                   |           | not null | 
  last_removal_time | timestamp with time zone |           | not null | now()
+ tenant_id         | integer                  |           |          | 
 Indexes:
     "codeintel_scip_documents_dereference_logs_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_documents_dereference_logs_last_removal_time_des" btree (last_removal_time DESC, document_id)
+Foreign-key constraints:
+    "codeintel_scip_documents_dereference_logs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -120,9 +134,12 @@ A list of document rows that were recently dereferenced by the deletion of an in
  tool_arguments         | text[]  |           | not null | 
  text_document_encoding | text    |           | not null | 
  protocol_version       | integer |           | not null | 
+ tenant_id              | integer |           |          | 
 Indexes:
     "codeintel_scip_metadata_pkey" PRIMARY KEY, btree (id)
     "codeintel_scip_metadata_upload_id" btree (upload_id)
+Foreign-key constraints:
+    "codeintel_scip_metadata_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -150,10 +167,13 @@ Global metadatadata about a single processed upload.
  upload_id    | integer |           | not null | 
  name_segment | text    |           | not null | 
  prefix_id    | integer |           |          | 
+ tenant_id    | integer |           |          | 
 Indexes:
     "codeintel_scip_symbol_names_pkey" PRIMARY KEY, btree (upload_id, id)
     "codeintel_scip_symbol_names_upload_id_roots" btree (upload_id) WHERE prefix_id IS NULL
     "codeisdntel_scip_symbol_names_upload_id_children" btree (upload_id, prefix_id) WHERE prefix_id IS NOT NULL
+Foreign-key constraints:
+    "codeintel_scip_symbol_names_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -179,11 +199,13 @@ Stores a prefix tree of symbol names within a particular upload.
  implementation_ranges  | bytea   |           |          | 
  type_definition_ranges | bytea   |           |          | 
  symbol_id              | integer |           | not null | 
+ tenant_id              | integer |           |          | 
 Indexes:
     "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_id, document_lookup_id)
     "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
 Foreign-key constraints:
     "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
+    "codeintel_scip_symbols_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 Triggers:
     codeintel_scip_symbols_schema_versions_insert AFTER INSERT ON codeintel_scip_symbols REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_codeintel_scip_symbols_schema_versions_insert()
 
@@ -214,8 +236,11 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
  upload_id          | integer |           | not null | 
  min_schema_version | integer |           |          | 
  max_schema_version | integer |           |          | 
+ tenant_id          | integer |           |          | 
 Indexes:
     "codeintel_scip_symbols_schema_versions_pkey" PRIMARY KEY, btree (upload_id)
+Foreign-key constraints:
+    "codeintel_scip_symbols_schema_versions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -255,10 +280,13 @@ Indexes:
  commit_id | character varying(40) |           | not null | 
  height    | integer               |           | not null | 
  ancestor  | integer               |           | not null | 
+ tenant_id | integer               |           |          | 
 Indexes:
     "rockskip_ancestry_pkey" PRIMARY KEY, btree (id)
     "rockskip_ancestry_repo_id_commit_id_key" UNIQUE CONSTRAINT, btree (repo_id, commit_id)
     "rockskip_ancestry_repo_commit_id" btree (repo_id, commit_id)
+Foreign-key constraints:
+    "rockskip_ancestry_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
@@ -269,27 +297,69 @@ Indexes:
  id               | integer                  |           | not null | nextval('rockskip_repos_id_seq'::regclass)
  repo             | text                     |           | not null | 
  last_accessed_at | timestamp with time zone |           | not null | 
+ tenant_id        | integer                  |           |          | 
 Indexes:
     "rockskip_repos_pkey" PRIMARY KEY, btree (id)
     "rockskip_repos_repo_key" UNIQUE CONSTRAINT, btree (repo)
     "rockskip_repos_last_accessed_at" btree (last_accessed_at)
     "rockskip_repos_repo" btree (repo)
+Foreign-key constraints:
+    "rockskip_repos_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
 
 # Table "public.rockskip_symbols"
 ```
- Column  |   Type    | Collation | Nullable |                   Default                    
----------+-----------+-----------+----------+----------------------------------------------
- id      | integer   |           | not null | nextval('rockskip_symbols_id_seq'::regclass)
- added   | integer[] |           | not null | 
- deleted | integer[] |           | not null | 
- repo_id | integer   |           | not null | 
- path    | text      |           | not null | 
- name    | text      |           | not null | 
+  Column   |   Type    | Collation | Nullable |                   Default                    
+-----------+-----------+-----------+----------+----------------------------------------------
+ id        | integer   |           | not null | nextval('rockskip_symbols_id_seq'::regclass)
+ added     | integer[] |           | not null | 
+ deleted   | integer[] |           | not null | 
+ repo_id   | integer   |           | not null | 
+ path      | text      |           | not null | 
+ name      | text      |           | not null | 
+ tenant_id | integer   |           |          | 
 Indexes:
     "rockskip_symbols_pkey" PRIMARY KEY, btree (id)
     "rockskip_symbols_gin" gin (singleton_integer(repo_id) gin__int_ops, added gin__int_ops, deleted gin__int_ops, name gin_trgm_ops, singleton(name), singleton(lower(name)), path gin_trgm_ops, singleton(path), path_prefixes(path), singleton(lower(path)), path_prefixes(lower(path)), singleton(get_file_extension(path)), singleton(get_file_extension(lower(path))))
     "rockskip_symbols_repo_id_path_name" btree (repo_id, path, name)
+Foreign-key constraints:
+    "rockskip_symbols_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 ```
+
+# Table "public.tenants"
+```
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ id         | bigint                   |           | not null | 
+ name       | text                     |           | not null | 
+ created_at | timestamp with time zone |           | not null | now()
+ updated_at | timestamp with time zone |           | not null | now()
+Indexes:
+    "tenants_pkey" PRIMARY KEY, btree (id)
+    "tenants_name_key" UNIQUE CONSTRAINT, btree (name)
+Check constraints:
+    "tenant_name_length" CHECK (char_length(name) <= 32 AND char_length(name) >= 3)
+    "tenant_name_valid_chars" CHECK (name ~ '^[a-z](?:[a-z0-9\_-])*[a-z0-9]$'::text)
+Referenced by:
+    TABLE "codeintel_last_reconcile" CONSTRAINT "codeintel_last_reconcile_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "codeintel_scip_document_lookup_schema_versions" CONSTRAINT "codeintel_scip_document_lookup_schema_versions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "codeintel_scip_document_lookup" CONSTRAINT "codeintel_scip_document_lookup_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "codeintel_scip_documents_dereference_logs" CONSTRAINT "codeintel_scip_documents_dereference_logs_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "codeintel_scip_documents" CONSTRAINT "codeintel_scip_documents_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "codeintel_scip_metadata" CONSTRAINT "codeintel_scip_metadata_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "codeintel_scip_symbol_names" CONSTRAINT "codeintel_scip_symbol_names_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "codeintel_scip_symbols_schema_versions" CONSTRAINT "codeintel_scip_symbols_schema_versions_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "codeintel_scip_symbols" CONSTRAINT "codeintel_scip_symbols_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "rockskip_ancestry" CONSTRAINT "rockskip_ancestry_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "rockskip_repos" CONSTRAINT "rockskip_repos_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+    TABLE "rockskip_symbols" CONSTRAINT "rockskip_symbols_tenant_id_fkey" FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+```
+
+The table that holds all tenants known to the instance. In enterprise instances, this table will only contain the &#34;default&#34; tenant.
+
+**id**: The ID of the tenant. To keep tenants globally addressable, and be able to move them aronud instances more easily, the ID is NOT a serial and has to be specified explicitly. The creator of the tenant is responsible for choosing a unique ID, if it cares.
+
+**name**: The name of the tenant. This may be displayed to the user and must be unique.

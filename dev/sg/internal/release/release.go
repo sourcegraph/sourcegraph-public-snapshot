@@ -199,7 +199,7 @@ var Command = &cli.Command{
 		},
 		{
 			Name:      "cut",
-			Usage:     "Cut a release",
+			Usage:     "Cut a minor release branch",
 			Category:  category.Util,
 			UsageText: "sg release cut",
 			Action:    cutReleaseBranch,

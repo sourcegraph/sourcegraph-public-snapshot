@@ -19,7 +19,7 @@ func NewMetricReporter[T workerutil.Record](observationCtx *observation.Context,
 	return initExternalMetricReporters(queueName, store, metricsConfig)
 }
 
-func initExternalMetricReporters[T workerutil.Record](queueName string, store store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
+func initExternalMetricReporters[T workerutil.Record](queueName string, store_ store.Store[T], metricsConfig *Config) (goroutine.BackgroundRoutine, error) {
 	reporters, err := configureReporters(metricsConfig)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func initExternalMetricReporters[T workerutil.Record](queueName string, store st
 		ctx,
 		&externalEmitter[T]{
 			queueName:  queueName,
-			countFuncs: []func(ctx context.Context, includeProcessing bool) (int, error){store.QueuedCount},
+			countFuncs: []func(context.Context, store.RecordState) (int, error){store_.CountByState},
 			reporters:  reporters,
 			allocation: metricsConfig.Allocations[queueName],
 		},
@@ -43,7 +43,7 @@ func initExternalMetricReporters[T workerutil.Record](queueName string, store st
 // NewMultiqueueMetricReporter returns a periodic background routine that reports the sum of the lengths all configured queues.
 // This does not reinitialise Prometheus metrics as is done in NewMetricReporter, as this only needs to be done once and is
 // already done for the single queue metrics.
-func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, countFuncs ...func(ctx context.Context, includeProcessing bool) (int, error)) (goroutine.BackgroundRoutine, error) {
+func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, countFuncs ...func(_ context.Context, bitset store.RecordState) (int, error)) (goroutine.BackgroundRoutine, error) {
 	reporters, err := configureReporters(metricsConfig)
 	if err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func NewMultiqueueMetricReporter(queueNames []string, metricsConfig *Config, cou
 		},
 		goroutine.WithName("multiqueue-executors.autoscaler-metrics"),
 		goroutine.WithDescription("emits multiqueue metrics to GCP/AWS for auto-scaling"),
-		goroutine.WithInterval(5*time.Second),
+		goroutine.WithInterval(30*time.Second),
 	), nil
 }
 

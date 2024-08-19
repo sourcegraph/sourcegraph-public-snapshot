@@ -48,6 +48,7 @@ go_library(
         "//internal/requestclient",
         "//internal/requestinteraction",
         "//internal/service",
+        "//internal/tenant",
         "//internal/trace",
         "//internal/vcs",
         "//internal/wrexec",

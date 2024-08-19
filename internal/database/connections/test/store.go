@@ -17,6 +17,7 @@ import (
 // not passed to any underlying persistence layer.
 type memoryStore struct {
 	db              *sql.DB
+	tx              *sql.Tx
 	appliedVersions []int
 	pendingVersions []int
 	failedVersions  []int
@@ -28,11 +29,25 @@ func newMemoryStore(db *sql.DB) runner.Store {
 	}
 }
 
-func (s *memoryStore) Transact(ctx context.Context) (runner.Store, error) {
-	return s, nil
+func (s *memoryStore) Transact(ctx context.Context) (_ runner.Store, err error) {
+	if s.tx != nil {
+		return nil, errors.New("cannot start transaction when another transaction is in progress, call Done before")
+	}
+	s.tx, err = s.db.BeginTx(ctx, &sql.TxOptions{})
+	return s, err
 }
 
 func (s *memoryStore) Done(err error) error {
+	defer func() {
+		s.tx = nil
+	}()
+
+	if s.tx != nil {
+		if err != nil {
+			return errors.Append(err, s.tx.Rollback())
+		}
+		return s.tx.Commit()
+	}
 	return err
 }
 
@@ -68,8 +83,16 @@ func (s *memoryStore) IndexStatus(_ context.Context, _, _ string) (shared.IndexS
 	return shared.IndexStatus{}, false, nil
 }
 
+type execContexter interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
 func (s *memoryStore) exec(ctx context.Context, migration definition.Definition, query *sqlf.Query) error {
-	_, err := s.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	var db execContexter = s.db
+	if s.tx != nil {
+		db = s.tx
+	}
+	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
 		s.failedVersions = append(s.failedVersions, migration.ID)
 		return err

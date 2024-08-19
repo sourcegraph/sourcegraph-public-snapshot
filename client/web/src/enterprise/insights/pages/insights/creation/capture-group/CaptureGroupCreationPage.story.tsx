@@ -12,12 +12,7 @@ import { CaptureGroupCreationPage as CaptureGroupCreationPageComponent } from '.
 const meta: Meta = {
     title: 'web/insights/creation-ui/capture-group/CaptureGroupCreationPage',
     decorators: [story => <WebStory>{() => <div className="p-3 container web-content">{story()}</div>}</WebStory>],
-    parameters: {
-        chromatic: {
-            viewports: [576, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default meta

@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/dotcom"
@@ -16,7 +15,7 @@ import (
 )
 
 type usersArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	After         *string
 	Query         *string
 	ActivePeriod  *string
@@ -24,9 +23,11 @@ type usersArgs struct {
 }
 
 func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConnectionResolver, error) {
-	// 🚨 SECURITY: Verify listing users is allowed.
-	if err := checkMembersAccess(ctx, r.db); err != nil {
-		return nil, err
+	// 🚨 SECURITY: Only site admins can list all users on sourcegraph.com.
+	if dotcom.SourcegraphDotComMode() {
+		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			return nil, err
+		}
 	}
 
 	opt := database.UsersListOptions{
@@ -53,7 +54,7 @@ func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConne
 type UserConnectionResolver interface {
 	Nodes(ctx context.Context) ([]*UserResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 var _ UserConnectionResolver = &userConnectionResolver{}
@@ -118,7 +119,7 @@ func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) 
 	return int32(count), err
 }
 
-func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *userConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	users, totalCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -126,28 +127,18 @@ func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.Pag
 
 	// We would have had all results when no limit set
 	if r.opt.LimitOffset == nil {
-		return graphqlutil.HasNextPage(false), nil
+		return gqlutil.HasNextPage(false), nil
 	}
 
 	after := r.opt.LimitOffset.Offset + len(users)
 
 	// We got less results than limit, means we've had all results
 	if after < r.opt.Limit {
-		return graphqlutil.HasNextPage(false), nil
+		return gqlutil.HasNextPage(false), nil
 	}
 
 	if totalCount > after {
-		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
+		return gqlutil.NextPageCursor(strconv.Itoa(after)), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
-}
-
-func checkMembersAccess(ctx context.Context, db database.DB) error {
-	// 🚨 SECURITY: Only site admins can list users on sourcegraph.com.
-	if dotcom.SourcegraphDotComMode() {
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
-			return err
-		}
-	}
-	return nil
+	return gqlutil.HasNextPage(false), nil
 }

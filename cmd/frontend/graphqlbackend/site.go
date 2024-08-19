@@ -15,10 +15,8 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -39,6 +37,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -46,8 +45,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
 
 const singletonSiteGQLID = "site"
@@ -144,26 +141,35 @@ func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (r *siteResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{Site: true}
-}
-
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
+	settings, err := r.db.Settings().GetLatest(ctx, subject.toSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{site: r}, settings, nil}, nil
+	return &settingsResolver{db: r.db, subject: subject, settings: settings}, nil
 }
 
-func (r *siteResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: r}}
+func (r *siteResolver) SettingsCascade(ctx context.Context) (*settingsCascade, error) {
+	// 🚨 SECURITY: Check that the viewer can access these settings.
+	subject, err := settingsSubjectForNodeAndCheckAccess(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &settingsCascade{db: r.db, subject: subject}, nil
 }
 
-func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
+func (r *siteResolver) ConfigurationCascade(ctx context.Context) (*settingsCascade, error) {
+	return r.SettingsCascade(ctx)
+}
 
 func (r *siteResolver) SettingsURL() *string { return strptr("/site-admin/global-settings") }
 
@@ -182,7 +188,7 @@ func (r *siteResolver) HasCodeIntelligence() bool {
 }
 
 func (r *siteResolver) ProductSubscription() *productSubscriptionStatus {
-	return &productSubscriptionStatus{}
+	return &productSubscriptionStatus{kv: redispool.Store}
 }
 
 func (r *siteResolver) AllowSiteSettingsEdits() bool {
@@ -269,7 +275,7 @@ func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]s
 	return conf.ValidateSite(string(contents))
 }
 
-func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlutil.ConnectionResolverArgs) (*graphqlutil.ConnectionResolver[*SiteConfigurationChangeResolver], error) {
+func (r *siteConfigurationResolver) History(ctx context.Context, args *gqlutil.ConnectionResolverArgs) (*gqlutil.ConnectionResolver[*SiteConfigurationChangeResolver], error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view the history.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -278,7 +284,7 @@ func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlut
 
 	connectionStore := SiteConfigurationChangeConnectionStore{db: r.db}
 
-	return graphqlutil.NewConnectionResolver[*SiteConfigurationChangeResolver](
+	return gqlutil.NewConnectionResolver[*SiteConfigurationChangeResolver](
 		&connectionStore,
 		args,
 		nil,
@@ -329,8 +335,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 
 	prev.Site = unredacted
 
-	server := globals.ConfigurationServerFrontendOnly
-	if err := server.Write(ctx, prev, args.LastID, actor.FromContext(ctx).UID); err != nil {
+	if err := r.configurationServer.Write(ctx, prev, args.LastID, actor.FromContext(ctx).UID); err != nil {
 		return false, err
 	}
 
@@ -341,7 +346,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 			r.logger.Warn("Error logging security event", log.Error(err))
 		}
 	}
-	return server.NeedServerRestart(), nil
+	return r.configurationServer.NeedServerRestart(), nil
 }
 
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))

@@ -8,8 +8,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -25,13 +23,13 @@ type RepositoryCommit struct {
 }
 
 type commitCache struct {
-	repoStore       database.RepoStore
-	gitserverClient gitserver.Client
+	repoStore       minimalRepoStore
+	gitserverClient minimalGitserver
 	mutex           sync.RWMutex
 	cache           map[api.RepoID]map[api.CommitID]bool
 }
 
-func NewCommitCache(repoStore database.RepoStore, client gitserver.Client) CommitCache {
+func NewCommitCache(repoStore minimalRepoStore, client minimalGitserver) CommitCache {
 	return &commitCache{
 		repoStore:       repoStore,
 		gitserverClient: client,

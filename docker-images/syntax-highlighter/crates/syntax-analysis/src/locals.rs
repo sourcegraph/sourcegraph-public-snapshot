@@ -13,24 +13,24 @@ use itertools::Itertools;
 use protobuf::Enum;
 use scip::{
     symbol::format_symbol,
-    types::{Occurrence, Symbol},
+    types::{descriptor, Occurrence, Symbol},
 };
 use string_interner::{symbol::SymbolU32, StringInterner};
 use tree_sitter::Node;
 
+use crate::tree_sitter_ext::NodeExt;
 /// This module contains logic to understand the binding structure of
 /// a given source file. We emit information about references and
-/// definitions of _local_ bindings. A local binding is a binding that
-/// cannot be accessed from another file. It is important to never
-/// mark a non-local as local, because that would mean we'd prevent
-/// search-based lookup from finding references to that binding.
+/// definitions of _local_ bindings as well as references to non-locals.
+/// A local binding is a binding that cannot be accessed from another file.
+/// It is important to never mark a non-local as local, because that would mean
+/// we'd prevent search-based lookup from finding references to that binding.
 ///
 /// We implement this in a language-agnostic way by relying on
 /// tree-sitter and a DSL built on top of its [query syntax].
 ///
 /// [query syntax]: https://tree-sitter.github.io/tree-sitter/using-parsers#query-syntax
-use crate::languages::LocalConfiguration;
-use crate::tree_sitter_ext::NodeExt;
+use crate::{languages::LocalConfiguration, SCIP_SYNTAX_SCHEME};
 
 // Missing features at this point
 // a) Namespacing
@@ -42,16 +42,44 @@ use crate::tree_sitter_ext::NodeExt;
 // namespace matches definitions in any namespace and
 // `@definition` matches any `@reference.namespace`
 
-/// The maximum number of parent scopes we traverse before giving up to
-/// prevent infinite loops
-const MAX_SCOPE_DEPTH: i32 = 10000;
+#[derive(Clone, Debug, Copy, PartialEq)]
+enum ReferenceDescriptor {
+    Method,
+    Type,
+    Term,
+    Namespace,
+}
+
+impl ReferenceDescriptor {
+    fn from_str(str: &str) -> Option<ReferenceDescriptor> {
+        match str {
+            "method" => Some(ReferenceDescriptor::Method),
+            "type" => Some(ReferenceDescriptor::Type),
+            "term" => Some(ReferenceDescriptor::Term),
+            "namespace" => Some(ReferenceDescriptor::Namespace),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Copy, PartialEq)]
+enum Visibility {
+    /// Local references are resolved to a definition within the locals scope tree
+    /// and if none is found a global reference is emitted
+    Local,
+
+    /// Global references bypass the local scope resolution, and always emit a
+    /// a global reference, with the symbol being the node's text content.
+    Global,
+}
 
 pub fn find_locals(
     config: &LocalConfiguration,
     tree: &tree_sitter::Tree,
     source: &str,
+    options: LocalResolutionOptions,
 ) -> Result<Vec<Occurrence>> {
-    let resolver = LocalResolver::new(source);
+    let resolver = LocalResolver::new(source, tree.root_node(), options);
     resolver.process(config, tree, None)
 }
 
@@ -66,6 +94,8 @@ struct Definition<'a> {
 struct Reference<'a> {
     node: Node<'a>,
     name: Name,
+    visibility: Visibility,
+    descriptor: Option<ReferenceDescriptor>,
     /// When dealing with def_refs there are references that we've
     /// already resolved to their definitions. Because we don't want
     /// to duplicate that work we store the definition's id here.
@@ -92,7 +122,7 @@ impl DefId {
 struct Scope<'a> {
     /// For a query that captures a "@scope.function" this will
     /// contain the string "function"
-    kind: String,
+    kind: Name,
     node: Node<'a>,
     // TODO: (perf) we could also remember how many definitions
     // precede us in the parent, for efficient slicing when searching
@@ -111,7 +141,7 @@ struct Scope<'a> {
 }
 
 impl<'a> Scope<'a> {
-    fn new(kind: String, node: Node<'a>, parent: Option<ScopeId<'a>>) -> Self {
+    fn new(kind: Name, node: Node<'a>, parent: Option<ScopeId<'a>>) -> Self {
         Scope {
             kind,
             node,
@@ -128,20 +158,16 @@ impl<'a> Scope<'a> {
         if let Some(def) = self.hoisted_definitions.get(&name) {
             return Some(def);
         };
-
-        for definition in self.definitions.iter() {
-            // For non-hoisted definitions we're only looking for
-            // definitions that lexically precede the reference
-            if definition.node.start_byte() > start_byte {
-                break;
-            }
-
-            if definition.name == name {
-                return Some(definition);
-            }
-        }
-
-        None
+        // For non-hoisted definitions we're only looking for definitions that lexically
+        // precede the reference
+        let mut preceding_defs = match self
+            .definitions
+            .binary_search_by_key(&start_byte, |def| def.node.start_byte())
+        {
+            Ok(ix) => self.definitions[..=ix].iter(),
+            Err(ix) => self.definitions[..ix].iter(),
+        };
+        preceding_defs.find(|definition| definition.name == name)
     }
 }
 
@@ -179,7 +205,7 @@ struct ScopeCapture<'a> {
 
 #[derive(Debug)]
 struct DefCapture<'a> {
-    hoist: Option<String>,
+    hoist: Option<Name>,
     is_def_ref: bool,
     node: Node<'a>,
 }
@@ -187,26 +213,39 @@ struct DefCapture<'a> {
 #[derive(Debug)]
 struct RefCapture<'a> {
     node: Node<'a>,
+    visibility: Visibility,
+    descriptor: Option<ReferenceDescriptor>,
 }
 
+/// The maximum number of parent scopes we traverse before giving up to
+/// prevent infinite loops
+const MAX_SCOPE_DEPTH: i32 = 10000;
+
 /// Created by LocalResolver::ancestors()
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 struct Ancestors<'arena, 'a> {
+    fuel: i32,
     /// A reference to LocalResolver's arena, which holds all scopes
     /// for the entire tree
     arena: &'arena Arena<Scope<'a>>,
-    current_scope: ScopeId<'a>,
+    next_scope: Option<ScopeId<'a>>,
 }
 
 impl<'arena, 'a> Iterator for Ancestors<'arena, 'a> {
     type Item = ScopeId<'a>;
     fn next(&mut self) -> Option<ScopeId<'a>> {
-        let scope = self.arena.get(self.current_scope).unwrap();
-        match scope.parent {
+        match self.next_scope {
             None => None,
-            Some(parent) => {
-                self.current_scope = parent;
-                Some(parent)
+            Some(current_scope) => {
+                self.fuel -= 1;
+                if self.fuel < 0 {
+                    eprintln!(
+                        "Detected a likely infinite loop in syntax_analysis::locals::LocalResolver"
+                    );
+                    return None;
+                }
+                self.next_scope = self.arena.get(current_scope).unwrap().parent;
+                Some(current_scope)
             }
         }
     }
@@ -218,20 +257,28 @@ enum DefRef {
     NewDefinition(DefId),
 }
 
+#[derive(Debug, Clone, Copy)]
+pub struct LocalResolutionOptions {
+    pub emit_global_references: bool,
+}
+
+impl Default for LocalResolutionOptions {
+    fn default() -> Self {
+        LocalResolutionOptions {
+            emit_global_references: true,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct LocalResolver<'a> {
+    options: LocalResolutionOptions,
     arena: Arena<Scope<'a>>,
     interner: StringInterner,
 
     source_bytes: &'a [u8],
     definition_id_supply: u32,
-    // This is a hack to not record references that overlap with
-    // definitions.
-    skip_references_at_offsets: HashSet<usize>,
-    // When marking captures as @occurrence.skip we record them here,
-    // to not record any subsequent matches. This is used to filter
-    // out non-local definitions and references.
-    skip_occurrences_at_offsets: HashSet<usize>,
+    top_scope: ScopeId<'a>,
     occurrences: Vec<Occurrence>,
 }
 
@@ -250,14 +297,22 @@ impl<'a> IndexMut<ScopeId<'a>> for LocalResolver<'a> {
 }
 
 impl<'a> LocalResolver<'a> {
-    fn new(source: &'a str) -> Self {
+    fn new(source: &'a str, root: Node<'a>, options: LocalResolutionOptions) -> Self {
+        let mut arena = Arena::new();
+        let mut interner = StringInterner::default();
+        let top_scope = arena.alloc(Scope::new(
+            interner.get_or_intern_static("global"),
+            root,
+            None,
+        ));
+
         LocalResolver {
-            arena: Arena::new(),
-            interner: StringInterner::default(),
+            options,
+            arena,
+            interner,
             source_bytes: source.as_bytes(),
             definition_id_supply: 0,
-            skip_references_at_offsets: HashSet::new(),
-            skip_occurrences_at_offsets: HashSet::new(),
+            top_scope,
             occurrences: vec![],
         }
     }
@@ -279,11 +334,9 @@ impl<'a> LocalResolver<'a> {
         scope_id: ScopeId<'a>,
         name: Name,
         node: Node<'a>,
-        hoist: &Option<String>,
+        hoist: Option<Name>,
         is_def_ref: bool,
     ) {
-        self.skip_references_at_offsets.insert(node.start_byte());
-
         // We delay creation of this definition behind a closure, so
         // that we don't generate fresh definition_id's for def_ref's
         // that turn out to be references rather than definitions
@@ -300,16 +353,12 @@ impl<'a> LocalResolver<'a> {
 
         let is_new_definition = match hoist {
             Some(hoist_scope) => {
-                let mut target_scope = scope_id;
                 // If we don't find any matching scope we hoist all
                 // the way to the top_scope
-                for ancestor in self.ancestors(scope_id) {
-                    target_scope = ancestor;
-                    if self[ancestor].kind == *hoist_scope {
-                        break;
-                    }
-                }
-
+                let target_scope = self
+                    .ancestors(scope_id)
+                    .find(|scope| self[*scope].kind == hoist_scope)
+                    .unwrap_or(self.top_scope);
                 // Remove me once let-chains are stabilized
                 // (https://github.com/rust-lang/rust/issues/53667)
                 if_chain! {
@@ -355,6 +404,8 @@ impl<'a> LocalResolver<'a> {
                     name,
                     node,
                     resolves_to: Some(definition_id),
+                    visibility: Visibility::Local,
+                    descriptor: None,
                 })
             }
         };
@@ -362,8 +413,17 @@ impl<'a> LocalResolver<'a> {
 
     fn ancestors(&self, scope_id: ScopeId<'a>) -> Ancestors<'_, 'a> {
         Ancestors {
+            fuel: MAX_SCOPE_DEPTH,
             arena: &self.arena,
-            current_scope: scope_id,
+            next_scope: self[scope_id].parent,
+        }
+    }
+
+    fn ancestors_with_self(&self, scope_id: ScopeId<'a>) -> Ancestors<'_, 'a> {
+        Ancestors {
+            fuel: MAX_SCOPE_DEPTH,
+            arena: &self.arena,
+            next_scope: Some(scope_id),
         }
     }
 
@@ -373,7 +433,7 @@ impl<'a> LocalResolver<'a> {
             w,
             "{}scope {} {}-{}",
             str::repeat(" ", depth),
-            scope.kind,
+            self.interner.resolve(scope.kind).unwrap(),
             scope.node.start_position(),
             scope.node.end_position()
         )
@@ -471,6 +531,8 @@ impl<'a> LocalResolver<'a> {
                 node: ref_capture.node,
                 name,
                 resolves_to: None,
+                visibility: ref_capture.visibility,
+                descriptor: ref_capture.descriptor,
             };
             self.add_reference(scope, reference)
         }
@@ -498,7 +560,7 @@ impl<'a> LocalResolver<'a> {
                 scope,
                 name,
                 def_capture.node,
-                &def_capture.hoist,
+                def_capture.hoist,
                 def_capture.is_def_ref,
             )
         }
@@ -518,9 +580,16 @@ impl<'a> LocalResolver<'a> {
         let mut definitions: Vec<DefCapture> = vec![];
         let mut references: Vec<RefCapture<'a>> = vec![];
 
+        let mut skip_occurrences_at_offsets: HashSet<usize> = HashSet::new();
+
         for match_ in cursor.matches(&config.query, tree.root_node(), source_bytes) {
             let properties = config.query.property_settings(match_.pattern_index);
             for capture in match_.captures {
+                let offset = capture.node.start_byte();
+                if skip_occurrences_at_offsets.contains(&offset) {
+                    continue;
+                }
+
                 let Some(capture_name) = capture_names.get(capture.index as usize) else {
                     continue;
                 };
@@ -531,15 +600,11 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("definition") {
-                    let offset = capture.node.start_byte();
-                    if self.skip_occurrences_at_offsets.contains(&offset) {
-                        continue;
-                    }
                     let is_def_ref = properties.iter().any(|p| p.key.as_ref() == "def_ref");
                     let mut hoist = None;
                     if let Some(prop) = properties.iter().find(|p| p.key.as_ref() == "hoist") {
                         if let Some(hoist_target) = prop.value.as_ref() {
-                            hoist = Some(hoist_target.to_string());
+                            hoist = Some(self.interner.get_or_intern(hoist_target));
                         } else {
                             debug_assert!(false, "hoist _must_ be targeting a scope level");
                         }
@@ -550,14 +615,46 @@ impl<'a> LocalResolver<'a> {
                         node: capture.node,
                     })
                 } else if capture_name.starts_with("reference") {
-                    let offset = capture.node.start_byte();
-                    if self.skip_occurrences_at_offsets.contains(&offset) {
-                        continue;
+                    // Skip duplicate matches for the same reference
+                    if let Some(last) = references.last() {
+                        if last.node.start_byte() == offset {
+                            continue;
+                        }
                     }
-                    references.push(RefCapture { node: capture.node })
+                    // Skip references at locations we've already recorded a definition
+                    if let Some(last) = definitions.last() {
+                        if last.node.start_byte() == offset {
+                            continue;
+                        }
+                    }
+
+                    let kind_property = properties
+                        .iter()
+                        .find(|p| p.key.as_ref() == "kind")
+                        .and_then(|p| p.value.as_deref());
+
+                    let (visibility, descriptor) = match kind_property {
+                        None => (Visibility::Local, None),
+                        Some(input) => {
+                            if let Some(input) = input.strip_prefix("global") {
+                                (
+                                    Visibility::Global,
+                                    ReferenceDescriptor::from_str(input.trim_start_matches('.')),
+                                )
+                            } else {
+                                (Visibility::Local, ReferenceDescriptor::from_str(input))
+                            }
+                        }
+                    };
+
+                    references.push(RefCapture {
+                        node: capture.node,
+                        visibility,
+                        descriptor,
+                    });
                 } else if capture_name == "occurrence.skip" {
                     let offset = capture.node.start_byte();
-                    self.skip_occurrences_at_offsets.insert(offset);
+                    skip_occurrences_at_offsets.insert(offset);
                 } else {
                     debug_assert!(false, "Discarded capture: {capture_name}")
                 }
@@ -574,7 +671,7 @@ impl<'a> LocalResolver<'a> {
     /// Build a tree of scopes for pre-order traversal by sorting scopes, definitions
     /// and references. Definitions and references are added or hoisted to the
     /// closest enclosing scope as appropriate.
-    fn build_tree(&mut self, top_scope: ScopeId<'a>, captures: Captures<'a>) -> Result<()> {
+    fn build_tree(&mut self, captures: Captures<'a>) -> Result<()> {
         let Captures {
             mut scopes,
             mut definitions,
@@ -587,30 +684,29 @@ impl<'a> LocalResolver<'a> {
         let mut definitions_iter = definitions.iter();
         let mut references_iter = references.iter();
 
-        let mut current_scope = top_scope;
+        let mut current_scope = self.top_scope;
         for ScopeCapture {
             kind: scope_kind,
             node: scope_node,
         } in scopes
         {
-            let new_scope_end = scope_node.end_byte();
-            while new_scope_end > self.end_byte(current_scope) {
-                // Add all remaining definitions before end of current
-                // scope before traversing to parent
-                let scope_end_byte = self.end_byte(current_scope);
-                self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
+            // Close all scopes that end before the new scope
+            let new_scope_end = scope_node.start_byte();
+            let scopes_to_close: Vec<_> = self
+                .ancestors_with_self(current_scope)
+                .take_while(|scope| new_scope_end > self.end_byte(*scope))
+                .collect();
+            for scope in scopes_to_close {
+                let scope_end_byte = self.end_byte(scope);
+                self.add_defs_while(scope, &mut definitions_iter, |def_capture| {
                     def_capture.node.start_byte() < scope_end_byte
                 })?;
-                self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
+                self.add_refs_while(scope, &mut references_iter, |ref_capture| {
                     ref_capture.node.start_byte() < scope_end_byte
                 })?;
-
-                if let Some(parent_scope) = self[current_scope].parent {
-                    current_scope = parent_scope
-                } else {
-                    break;
-                }
+                current_scope = self[scope].parent.unwrap_or(current_scope);
             }
+
             // Before adding the new scope we first attach all
             // definitions and references that belong to the current
             // scope
@@ -623,7 +719,7 @@ impl<'a> LocalResolver<'a> {
             })?;
 
             let new_scope = self.arena.alloc(Scope::new(
-                scope_kind.to_string(),
+                self.interner.get_or_intern(scope_kind),
                 scope_node,
                 Some(current_scope),
             ));
@@ -631,31 +727,17 @@ impl<'a> LocalResolver<'a> {
             current_scope = new_scope
         }
 
-        // We need to climb back to the top level scope and add
-        // all remaining definitions
-        let mut fuel = MAX_SCOPE_DEPTH;
-        loop {
-            fuel -= 1;
-            if fuel <= 0 {
-                eprintln!("Detected a likely infinite loop in syntax_analysis::locals::LocalResolver::build_tree");
-                break;
-            }
-            let scope_end_byte = self.end_byte(current_scope);
-            self.add_defs_while(current_scope, &mut definitions_iter, |def_capture| {
+        // We need to climb back to the top level scope and add all remaining definitions
+        let scopes_to_toplevel: Vec<_> = self.ancestors_with_self(current_scope).collect();
+        for scope in scopes_to_toplevel {
+            let scope_end_byte = self.end_byte(scope);
+            self.add_defs_while(scope, &mut definitions_iter, |def_capture| {
                 def_capture.node.start_byte() < scope_end_byte
             })?;
-            self.add_refs_while(current_scope, &mut references_iter, |ref_capture| {
+            self.add_refs_while(scope, &mut references_iter, |ref_capture| {
                 ref_capture.node.start_byte() < scope_end_byte
             })?;
-
-            if let Some(parent) = self[current_scope].parent {
-                current_scope = parent
-            } else {
-                // We've made it to the top level scope
-                break;
-            }
         }
-
         debug_assert!(
             definitions_iter.next().is_none(),
             "Should've entered all definitions into the tree"
@@ -674,22 +756,48 @@ impl<'a> LocalResolver<'a> {
         name: Name,
         start_byte: usize,
     ) -> Option<&Definition<'a>> {
-        let mut current_scope = scope;
-        let mut fuel = MAX_SCOPE_DEPTH;
-        loop {
-            fuel -= 1;
-            if fuel <= 0 {
-                eprintln!("Detected a likely infinite loop in syntax_analysis::locals::LocalResolver::find_def");
-                return None;
-            }
-            let scope = &self[current_scope];
-            if let Some(def) = scope.find_def(name, start_byte) {
-                return Some(def);
-            } else if let Some(parent_scope) = scope.parent {
-                current_scope = parent_scope
-            } else {
-                return None;
-            }
+        self.ancestors_with_self(scope)
+            .find_map(|scope| self[scope].find_def(name, start_byte))
+    }
+
+    fn make_global_reference(&self, reference: &Reference) -> scip::types::Occurrence {
+        let referenced_name = self.interner.resolve(reference.name).unwrap().to_string();
+
+        let suffix = match reference.descriptor {
+            Some(ReferenceDescriptor::Type) => descriptor::Suffix::Type,
+            Some(ReferenceDescriptor::Method) => descriptor::Suffix::Method,
+            Some(ReferenceDescriptor::Term) => descriptor::Suffix::Term,
+            Some(ReferenceDescriptor::Namespace) => descriptor::Suffix::Namespace,
+            None => descriptor::Suffix::Term,
+        };
+
+        let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+            scheme: SCIP_SYNTAX_SCHEME.into(),
+            package: None.into(),
+            descriptors: vec![scip::types::Descriptor {
+                name: referenced_name,
+                suffix: suffix.into(),
+                ..Default::default()
+            }],
+            ..Default::default()
+        });
+
+        scip::types::Occurrence {
+            range: reference.node.scip_range(),
+            symbol,
+            ..Default::default()
+        }
+    }
+
+    fn make_local_reference(
+        &self,
+        reference: &Reference,
+        def_id: DefId,
+    ) -> scip::types::Occurrence {
+        scip::types::Occurrence {
+            range: reference.node.scip_range(),
+            symbol: format_symbol(def_id.as_local_symbol()),
+            ..Default::default()
         }
     }
 
@@ -698,27 +806,20 @@ impl<'a> LocalResolver<'a> {
 
         for (scope_ref, scope) in self.arena.iter() {
             for reference in scope.references.iter() {
-                let def_id = if let Some(resolved) = reference.resolves_to {
-                    resolved
-                } else if self
-                    .skip_references_at_offsets
-                    .contains(&reference.node.start_byte())
-                {
-                    // See the comment on LocalResolver.definition_start_bytes
+                if let Some(def_id) = reference.resolves_to {
+                    ref_occurrences.push(self.make_local_reference(reference, def_id));
                     continue;
-                } else if let Some(def) =
-                    self.find_def(scope_ref, reference.name, reference.node.start_byte())
-                {
-                    def.id
-                } else {
-                    continue;
-                };
-
-                ref_occurrences.push(scip::types::Occurrence {
-                    range: reference.node.scip_range(),
-                    symbol: format_symbol(def_id.as_local_symbol()),
-                    ..Default::default()
-                });
+                }
+                let offset = reference.node.start_byte();
+                if reference.visibility == Visibility::Local {
+                    if let Some(def) = self.find_def(scope_ref, reference.name, offset) {
+                        ref_occurrences.push(self.make_local_reference(reference, def.id));
+                        continue;
+                    }
+                }
+                if self.options.emit_global_references {
+                    ref_occurrences.push(self.make_global_reference(reference))
+                }
             }
         }
 
@@ -736,17 +837,14 @@ impl<'a> LocalResolver<'a> {
         let captures = self.collect_captures(config, tree, self.source_bytes);
 
         // Next we build a tree structure of scopes and definitions
-        let top_scope = self
-            .arena
-            .alloc(Scope::new("global".to_string(), tree.root_node(), None));
-        self.build_tree(top_scope, captures)?;
+        self.build_tree(captures)?;
         match test_writer {
             None => {}
-            Some(w) => self.print_scope(w, top_scope, 0),
+            Some(w) => self.print_scope(w, self.top_scope, 0),
         }
+
         // Finally we resolve all references against that tree structure
         self.resolve_references();
-
         Ok(self.occurrences)
     }
 }
@@ -774,12 +872,21 @@ mod test {
         .expect("dump document")
     }
 
-    fn parse_file_for_lang(config: &LocalConfiguration, source_code: &str) -> (Document, String) {
+    fn parse_file_for_lang(
+        config: &LocalConfiguration,
+        source_code: &str,
+        emit_global_references: bool,
+    ) -> (Document, String) {
         let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
-
-        let resolver = LocalResolver::new(source_code);
+        let resolver = LocalResolver::new(
+            source_code,
+            tree.root_node(),
+            LocalResolutionOptions {
+                emit_global_references,
+            },
+        );
         let mut tree_output = String::new();
         let occ = resolver.process(config, &tree, Some(&mut tree_output));
 
@@ -801,7 +908,7 @@ mod test {
     fn go() {
         let config = crate::languages::get_local_configuration(ParserId::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
-        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code, false);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!("go_occurrences", dumped);
         insta::assert_snapshot!("go_scopes", scope_tree);
@@ -811,7 +918,7 @@ mod test {
     fn perl() {
         let config = crate::languages::get_local_configuration(ParserId::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
-        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code, false);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!("perl_occurrences", dumped);
         insta::assert_snapshot!("perl_scopes", scope_tree);
@@ -821,7 +928,7 @@ mod test {
     fn matlab() {
         let config = crate::languages::get_local_configuration(ParserId::Matlab).unwrap();
         let source_code = include_str!("../testdata/locals.m");
-        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code, false);
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!("matlab_occurrences", dumped);
         insta::assert_snapshot!("matlab_scopes", scope_tree);
@@ -831,9 +938,9 @@ mod test {
     fn java() {
         let config = crate::languages::get_local_configuration(ParserId::Java).unwrap();
         let source_code = include_str!("../testdata/locals.java");
-        let (doc, scope_tree) = parse_file_for_lang(config, source_code);
+        let (doc, scope_tree) = parse_file_for_lang(config, source_code, true);
         let dumped = snapshot_syntax_document(&doc, source_code);
-        insta::assert_snapshot!("java_occurrences", dumped);
         insta::assert_snapshot!("java_scopes", scope_tree);
+        insta::assert_snapshot!("java_occurrences", dumped);
     }
 }

@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -94,7 +94,7 @@ func TestRecloneRepository(t *testing.T) {
 	t.Cleanup(func() {
 		backend.Mocks = backend.MockServices{}
 	})
-	r := newSchemaResolver(db, gitserver.NewStrictMockClient())
+	r := newSchemaResolver(db, gitserver.NewStrictMockClient(), nil)
 
 	_, err := r.RecloneRepository(context.Background(), &struct{ Repo graphql.ID }{Repo: repoID})
 	require.NoError(t, err)

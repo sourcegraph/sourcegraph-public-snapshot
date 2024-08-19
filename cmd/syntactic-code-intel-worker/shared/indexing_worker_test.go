@@ -9,13 +9,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/require"
-
 	"github.com/bazelbuild/rules_go/go/runfiles"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
+
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	testutils "github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/testkit"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
@@ -24,9 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-
 	"github.com/sourcegraph/sourcegraph/lib/iterator"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestIndexingWorker(t *testing.T) {
@@ -54,7 +52,7 @@ func TestIndexingWorker(t *testing.T) {
 
 	config := IndexingWorkerConfig{}
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, sqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, db)
 	require.NoError(t, err)
 
 	gitserverClient := gitserver.NewMockClient()
@@ -78,7 +76,7 @@ func TestIndexingWorker(t *testing.T) {
 		jobStore,
 		config,
 		db,
-		stores.NewCodeIntelDB(logger, sqlDB),
+		codeintelDB,
 		gitserverClient,
 		uploadStore,
 	)

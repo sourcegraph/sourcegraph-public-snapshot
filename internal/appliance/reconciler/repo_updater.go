@@ -95,13 +95,30 @@ func (r *Reconciler) reconcileRepoUpdaterDeployment(ctx context.Context, sg *con
 	}
 
 	podTemplate := pod.NewPodTemplate(name, cfg)
+	redisConnSpecs, err := r.getRedisSecrets(ctx, sg)
+	if err != nil {
+		return err
+	}
+	redisConnHash, err := configHash(redisConnSpecs)
+	if err != nil {
+		return err
+	}
+	podTemplate.Template.ObjectMeta.Annotations["checksum/redis"] = redisConnHash
+
 	podTemplate.Template.Spec.Containers = []corev1.Container{ctr}
 
 	dep := deployment.NewDeployment(name, sg.Namespace, sg.Spec.RequestedVersion)
 	dep.Spec.Template = podTemplate.Template
 	dep.Spec.Template.Spec.ServiceAccountName = name
 
-	return reconcileObject(ctx, r, sg.Spec.RepoUpdater, &dep, &appsv1.Deployment{}, sg, owner)
+	ifChanged := struct {
+		config.RepoUpdaterSpec
+		RedisConnSpecs
+	}{
+		RepoUpdaterSpec: cfg,
+		RedisConnSpecs:  redisConnSpecs,
+	}
+	return reconcileObject(ctx, r, ifChanged, &dep, &appsv1.Deployment{}, sg, owner)
 }
 
 func (r *Reconciler) reconcileRepoUpdaterServiceAccount(ctx context.Context, sg *config.Sourcegraph, owner client.Object) error {

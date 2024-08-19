@@ -16,7 +16,7 @@ query TagsPage_TagsQuery(
 fragment GitTagsConnection on GitRefConnection {
     nodes {
         id
-        ...GitReference_Ref
+        ...GitReferencesTable_Ref
     }
     pageInfo {
         hasNextPage

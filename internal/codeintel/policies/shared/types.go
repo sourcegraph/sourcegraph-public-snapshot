@@ -1,6 +1,8 @@
 package shared
 
-import "time"
+import (
+	"time"
+)
 
 type ConfigurationPolicy struct {
 	ID                        int
@@ -13,7 +15,26 @@ type ConfigurationPolicy struct {
 	RetentionEnabled          bool
 	RetentionDuration         *time.Duration
 	RetainIntermediateCommits bool
-	IndexingEnabled           bool
+	PreciseIndexingEnabled    bool
+	SyntacticIndexingEnabled  bool
+	IndexCommitMaxAge         *time.Duration
+	IndexIntermediateCommits  bool
+	EmbeddingEnabled          bool
+}
+
+type ConfigurationPolicyPatch struct {
+	ID                        int
+	RepositoryID              *int
+	RepositoryPatterns        *[]string
+	Name                      string
+	Type                      GitObjectType
+	Pattern                   string
+	Protected                 bool
+	RetentionEnabled          bool
+	RetentionDuration         *time.Duration
+	RetainIntermediateCommits bool
+	PreciseIndexingEnabled    bool
+	SyntacticIndexingEnabled  *bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
 	EmbeddingEnabled          bool

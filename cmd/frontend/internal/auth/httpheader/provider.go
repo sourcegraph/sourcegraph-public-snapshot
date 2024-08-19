@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/textproto"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -22,9 +22,6 @@ func (provider) ConfigID() providers.ConfigID {
 // Config implements providers.Provider.
 func (p provider) Config() schema.AuthProviders { return schema.AuthProviders{HttpHeader: p.c} }
 
-// Refresh implements providers.Provider.
-func (p provider) Refresh(context.Context) error { return nil }
-
 // CachedInfo implements providers.Provider.
 func (p provider) CachedInfo() *providers.Info {
 	return &providers.Info{
@@ -36,4 +33,8 @@ func (p *provider) ExternalAccountInfo(ctx context.Context, account extsvc.Accou
 	return &extsvc.PublicAccountData{
 		DisplayName: account.AccountID,
 	}, nil
+}
+
+func (p *provider) Type() providers.ProviderType {
+	return providers.ProviderTypeHTTPHeader
 }

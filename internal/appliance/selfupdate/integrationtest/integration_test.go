@@ -2,6 +2,7 @@ package integrationtest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logr"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/k8senvtest"
 	"github.com/sourcegraph/sourcegraph/internal/appliance/selfupdate"
@@ -80,8 +82,12 @@ func TestSelfUpdateLoop(t *testing.T) {
 	nsName := ns.GetName()
 
 	// provision example appliance deployment
-	dep := buildTestDeployment(nsName)
-	err = k8sClient.Create(ctx, dep)
+	dep1 := buildTestDeployment("appliance", nsName)
+	err = k8sClient.Create(ctx, dep1)
+	require.NoError(t, err)
+
+	dep2 := buildTestDeployment("appliance-frontend", nsName)
+	err = k8sClient.Create(ctx, dep2)
 	require.NoError(t, err)
 
 	cfgMap := &corev1.ConfigMap{
@@ -101,64 +107,38 @@ func TestSelfUpdateLoop(t *testing.T) {
 		{Version: "4.5.7", Public: true},
 	}, nil)
 	selfUpdater := &selfupdate.SelfUpdate{
-		Interval:       time.Second,
-		Logger:         logtest.Scoped(t),
-		RelregClient:   relregClient,
-		K8sClient:      k8sClient,
-		DeploymentName: "appliance",
-		Namespace:      nsName,
+		Interval:        time.Second,
+		Logger:          logtest.Scoped(t),
+		RelregClient:    relregClient,
+		K8sClient:       k8sClient,
+		DeploymentNames: "appliance,appliance-frontend",
+		Namespace:       nsName,
 	}
 
 	loopCtx, cancel := context.WithCancel(context.Background())
 	loopDone := make(chan struct{})
 	go func() {
-		_ = selfUpdater.Loop(loopCtx)
+		err := selfUpdater.Loop(loopCtx)
+		if !errors.Is(err, context.Canceled) {
+			require.NoError(t, err)
+		}
 		close(loopDone)
 	}()
 
-	err = selfUpdater.Once(ctx)
-	require.NoError(t, err)
-
-	require.Eventually(t, func() bool {
-		var dep appsv1.Deployment
-		depName := types.NamespacedName{Name: "appliance", Namespace: nsName}
-		require.NoError(t, k8sClient.Get(ctx, depName, &dep))
-		return strings.HasSuffix(dep.Spec.Template.Spec.Containers[0].Image, "4.5.7")
-	}, time.Second*10, time.Second)
+	for _, depName := range []string{"appliance", "appliance-frontend"} {
+		require.Eventually(t, func() bool {
+			var dep appsv1.Deployment
+			depName := types.NamespacedName{Name: depName, Namespace: nsName}
+			require.NoError(t, k8sClient.Get(ctx, depName, &dep))
+			return strings.HasSuffix(dep.Spec.Template.Spec.Containers[0].Image, "4.5.7")
+		}, time.Second*10, time.Second)
+	}
 
 	cancel()
 	<-loopDone
 }
 
-func TestSelfUpdate_ExitsWithNoErrorWhenConfigmapNotFound(t *testing.T) {
-	ns, err := k8senvtest.NewRandomNamespace("test-appliance-self-update")
-	require.NoError(t, err)
-	err = k8sClient.Create(ctx, ns)
-	require.NoError(t, err)
-	nsName := ns.GetName()
-
-	// provision example appliance deployment
-	dep := buildTestDeployment(nsName)
-	err = k8sClient.Create(ctx, dep)
-	require.NoError(t, err)
-
-	selfUpdater := &selfupdate.SelfUpdate{
-		Logger:         logtest.Scoped(t),
-		K8sClient:      k8sClient,
-		DeploymentName: "appliance",
-		Namespace:      nsName,
-	}
-
-	err = selfUpdater.Once(ctx)
-	require.NoError(t, err)
-
-	depName := types.NamespacedName{Name: "appliance", Namespace: nsName}
-	require.NoError(t, k8sClient.Get(ctx, depName, dep))
-	require.Equal(t, "index.docker.io/sourcegraph/appliance:4.3.1", dep.Spec.Template.Spec.Containers[0].Image)
-}
-
-func buildTestDeployment(namespace string) *appsv1.Deployment {
-	name := "appliance"
+func buildTestDeployment(name, namespace string) *appsv1.Deployment {
 	defaultContainer := container.NewContainer(name, nil, config.ContainerConfig{
 		Image:     "index.docker.io/sourcegraph/appliance:4.3.1",
 		Resources: &corev1.ResourceRequirements{},

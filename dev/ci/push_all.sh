@@ -57,14 +57,20 @@ function create_push_command() {
   fi
 
   for registry in "${registries[@]}"; do
-    cmd="bazel \
-      ${bazelrc[*]} \
-      run \
-      $target \
-      --stamp \
-      --workspace_status_command=./dev/bazel_stamp_vars.sh"
+    # This biblical bash string replaces running `bazel run` on each oci_push target, to avoid the (temporary) bazel server lock
+    # that is unnecessary for us due to building all the targets beforehand, allowing the maximum possible concurrency. It is similar
+    # to the script that is emitted by `bazel run --run_script=out.sh <target>`, but without the need to wait for the server to be unlocked
+    # in the same way as just running `bazel run`.
+    # It makes the following assumptions:
+    # - the executable script for the oci_push target is named push_<target name>.sh
+    # - the target is built and exists in the bazel bindir (we do this with a bazel build below)
+    # - runfiles are always adajcent to the executable script
 
-    echo "$cmd -- $tags_args --repository ${registry}/${repository} && $(echo_append_annotation "$repository" "$registry" "${tags_args[@]}")"
+    # echo to /dev/null is for the final output in Buildkite
+    echo "echo $target >/dev/null && \
+      pushd $(realpath bazel-bin)$(echo "${target}.sh.runfiles/__main__" | sed 's/:/\/push_/') && \
+      $(realpath bazel-bin)$(echo "${target}.sh" | sed 's/:/\/push_/') $tags_args --repository ${registry}/${repository} && \
+      popd && $(echo_append_annotation "$repository" "$registry" "${tags_args[@]}")"
   done
 }
 
@@ -119,7 +125,7 @@ elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
   # format introduced by https://github.com/sourcegraph/sourcegraph/pull/48050
   # by release branch deployments.
   push_prod=true
-elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+elif [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+\.(x|[0-9]+)$ ]]; then
   # Patch release builds only need to be pushed to internal registries.
   push_prod=false
   dev_tags+=("$BUILDKITE_BRANCH-insiders")
@@ -166,9 +172,24 @@ if $push_prod; then
   done
 fi
 
-honeyvent=$(bazel "${bazelrc[@]}" build //dev/tools:honeyvent 2>/dev/null && bazel "${bazelrc[@]}" cquery //dev/tools:honeyvent --output=files 2>/dev/null)
-
 images=$(bazel "${bazelrc[@]}" query 'kind("oci_push rule", //...)')
+
+echo "--- :bazel: Building all oci_push targets"
+
+# shellcheck disable=SC2086
+bazel "${bazelrc[@]}" build \
+  --announce_rc \
+  --profile=bazel-profile.gz \
+  --experimental_execution_log_compact_file=execution_log.zstd \
+  --stamp --workspace_status_command=./dev/bazel_stamp_vars.sh \
+  --build_event_binary_file=build_event_log.bin \
+  --build_event_binary_file_path_conversion=false \
+  --build_event_binary_file_upload_mode=wait_for_upload_complete \
+  --build_event_publish_all_actions=true \
+  --remote_download_outputs=toplevel \
+  ${images}
+
+echo "--- :bash: Generating jobfile - started"
 
 job_file=$(mktemp)
 # shellcheck disable=SC2064
@@ -186,14 +207,18 @@ for target in ${images[@]}; do
   fi
 done
 
-echo "--- :bash: Generated jobfile"
+echo "--- :bash: Generating jobfile - done"
 cat "$job_file"
 
 echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $log_file" EXIT
-parallel --jobs=16 --line-buffer --joblog "$log_file" -v <"$job_file"
+
+# See dev/ci/internal/ci/images_operations.go
+JOBS="${PUSH_CONCURRENT_JOBS:-4}"
+
+parallel --jobs="$JOBS" --line-buffer --joblog "$log_file" -v <"$job_file"
 
 # Pretty print the output from gnu parallel
 while read -r line; do
@@ -209,15 +234,6 @@ while read -r line; do
     else
       echo "--- :docker::arrow_heading_up: $target ${duration}s: failed with $exitcode) :red_circle:"
     fi
-
-    $honeyvent -k "$CI_HONEYCOMB_API_KEY" -d "buildkite-pushall" \
-      -n "exit_code" -v "$exitcode" \
-      -n "duration" -v "$duration" \
-      -n "target" -v "$target" \
-      -n "commit" -v "$BUILDKITE_COMMIT" \
-      -n "build_number" -v "$BUILDKITE_BUILD_NUMBER" \
-      -n "branch" -v "$BUILDKITE_BRANCH" \
-      -n "label" -v "$BUILDKITE_LABEL"s
   fi
 done <"$log_file"
 

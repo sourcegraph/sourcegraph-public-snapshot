@@ -72,13 +72,40 @@ type RepoStore interface {
 	Count(context.Context, ReposListOptions) (int, error)
 	Create(context.Context, ...*types.Repo) error
 	Delete(context.Context, ...api.RepoID) error
+	// Get gets information about a single repo.
+	//
+	// Prefer using GetByIDs or GetReposSetByIDs for bulk retrieval.
+	//
+	// Returns database.RepoNotFoundErr if the repo was not found.
+	// Returns types.BlockedRepoError if the repo was blocked.
 	Get(context.Context, api.RepoID) (*types.Repo, error)
+	// GetByIDs returns a slice containing information about repos present on the instance.
+	//
+	// The slice may have fewer entries than the number of input RepoIDs,
+	// due to repos not being found or having been deleted/blocked etc.
+	//
+	// Even if the number of elements matches, the caller may not assume anything
+	// about ordering. Use the ID field on each types.Repo value instead.
 	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
+	// GetByName is analogous to Get but using an api.RepoName.
+	//
+	// Prefer using Get over GetByName for trusted input.
+	//
+	// Returns database.RepoNotFoundErr if the repo was not found.
+	// Returns types.BlockedRepoError if the repo was blocked.
 	GetByName(context.Context, api.RepoName) (*types.Repo, error)
 	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
 	GetFirstRepoByCloneURL(context.Context, string) (*types.Repo, error)
+	// GetReposSetByIDs returns a map containing information about repos present on the instance.
+	//
+	// The map may have fewer key-value pairs than the number of input RepoIDs,
+	// due to repos not being found or having been deleted/blocked etc.
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+	// GetRepoDescriptionsByIDs returns descriptions about repos present on the instance.
+	//
+	// The map may have fewer key-value pairs than the number of input RepoIDs,
+	// due to repos not being found or having been deleted/blocked etc.
 	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
@@ -742,8 +769,10 @@ type ReposListOptions struct {
 }
 
 type RepoKVPFilter struct {
-	Key   string
-	Value *string
+	// A regex pattern that matches the key
+	Key types.RegexpPattern
+	// A regex pattern that matches the value
+	Value *types.RegexpPattern
 	// If negated is true, this filter will select only repos
 	// that do _not_ have the associated key and value
 	Negated bool
@@ -1186,27 +1215,13 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 	}
 
 	if len(opt.KVPFilters) > 0 {
-		var ands []*sqlf.Query
+		ands := make([]*sqlf.Query, 0, len(opt.KVPFilters))
 		for _, filter := range opt.KVPFilters {
-			if filter.KeyOnly {
-				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s)"
-				if filter.Negated {
-					q = "NOT " + q
-				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key))
-			} else if filter.Value != nil {
-				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)"
-				if filter.Negated {
-					q = "NOT " + q
-				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key, *filter.Value))
-			} else {
-				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)"
-				if filter.Negated {
-					q = "NOT " + q
-				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key))
+			cond, err := kvpCondition(filter)
+			if err != nil {
+				return nil, errors.Wrap(err, "creating KVPFilter condition")
 			}
+			ands = append(ands, cond)
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
@@ -1675,6 +1690,71 @@ func parseDescriptionPattern(tr trace.Trace, p string) ([]*sqlf.Query, error) {
 		conds = append(conds, sqlf.Sprintf("lower(description) ~* %s", strings.ToLower(pattern)))
 	}
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
+}
+
+func kvpCondition(filter RepoKVPFilter) (res *sqlf.Query, _ error) {
+	if filter.KeyOnly {
+		cond, err := keyOrValueCondition("key", filter.Key)
+		if err != nil {
+			return nil, err
+		}
+		q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND %s)"
+		if filter.Negated {
+			q = "NOT " + q
+		}
+		return sqlf.Sprintf(q, cond), nil
+	} else if filter.Value != nil {
+		keyCond, err := keyOrValueCondition("key", filter.Key)
+		if err != nil {
+			return nil, err
+		}
+		valueCond, err := keyOrValueCondition("value", *filter.Value)
+		if err != nil {
+			return nil, err
+		}
+		q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND %s AND %s)"
+		if filter.Negated {
+			q = "NOT " + q
+		}
+		return sqlf.Sprintf(q, keyCond, valueCond), nil
+	} else {
+		keyCond, err := keyOrValueCondition("key", filter.Key)
+		if err != nil {
+			return nil, err
+		}
+		q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND %s AND value IS NULL)"
+		if filter.Negated {
+			q = "NOT " + q
+		}
+		return sqlf.Sprintf(q, keyCond), nil
+	}
+}
+
+func keyOrValueCondition(target string, p types.RegexpPattern) (*sqlf.Query, error) {
+	if target != "key" && target != "value" {
+		panic("safety: only allow static targets")
+	}
+
+	exact, like, pattern, err := parseIncludePattern(string(p))
+	if err != nil {
+		return nil, err
+	}
+
+	var conds []*sqlf.Query
+	if exact != nil {
+		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
+			conds = append(conds, sqlf.Sprintf("TRUE"))
+		} else {
+			conds = append(conds, sqlf.Sprintf(target+" = ANY (%s)", pq.Array(exact)))
+		}
+	}
+	for _, v := range like {
+		conds = append(conds, sqlf.Sprintf(target+` LIKE %s`, v))
+	}
+	if pattern != "" {
+		conds = append(conds, sqlf.Sprintf(target+" ~* %s", pattern))
+	}
+	return sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR")), nil
 }
 
 // parseCursorConds returns the WHERE conditions for the given cursor

@@ -1,0 +1,25 @@
+# List of regular expressions to match fully qualified type names.
+#
+# For example:
+#
+#   github\.com/sourcegraph/sourcegraph/internal/codeintel/.*
+#
+# If this list is empty, all structs are tested.
+# Default: []
+include_types:
+- '.+Locus$'
+- '.+Loci$'
+- '.+UploadMatchingOptions'
+- '.+codenav.+Usage$'
+- '.*codenav.*UsageBuilder$'
+- '.+codenav.*Matcher$'
+- '.+codenav.*FindUsagesKey$'
+- '.+codenav.+SymbolUsagesOptions$'
+- '.+codenav.+UsagesForSymbol.*Args$'
+- '.+codenav.+usageResolver$'
+
+# Same as above, but for exclusion.
+#
+# Default: []
+exclude_types:
+# - '.+/cobra\.Command$'

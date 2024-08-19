@@ -191,7 +191,12 @@ func NewHandler(
 	if config.Fireworks.AccessToken == "" {
 		logger.Error("Fireworks access token not set. Not registering Fireworks-related endpoints.")
 	} else {
-		fireworksHandler := completions.NewFireworksHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Fireworks, flaggedPromptRecorder, upstreamConfig)
+		tracedFireworksRequestsCounter, err := meter.Int64Counter("cody-gateway.fireworks-traced-requests",
+			metric.WithDescription("number of Fireworks requests with tracing enabled"))
+		if err != nil {
+			return nil, errors.Wrap(err, "init metric 'fireworks-traced-requests'")
+		}
+		fireworksHandler := completions.NewFireworksHandler(logger, eventLogger, rs, config.RateLimitNotifier, httpClient, config.Fireworks, flaggedPromptRecorder, upstreamConfig, tracedFireworksRequestsCounter)
 		registerStandardEndpoint(
 			"v1.completions.fireworks",
 			"/completions/fireworks",

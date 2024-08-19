@@ -1,48 +1,93 @@
 import type { FC } from 'react'
 
+import { Navigate } from 'react-router-dom'
+
+import { CodyWebPanelProvider } from '@sourcegraph/cody-web'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { ButtonLink, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
-import type { SourcegraphContext } from '../../jscontext'
+import { Page } from '../../components/Page'
+import { PageTitle } from '../../components/PageTitle'
+import { PageRoutes } from '../../routes.constants'
+import { getTelemetrySourceClient } from '../../telemetry'
+import { CodyProRoutes } from '../codyProRoutes'
+import { ChatUi } from '../components/ChatUi'
 
-import { CodyChatPage as OldCodyChatPage } from './old-chat/CodyChatPage'
+import { CodyColorIcon } from './CodyPageIcon'
 
-// Lazy loaded new cody chat page, we have to lazy load it
-// since new cody web client pulls heavy agent
-const LazyNewCodyChatPage = lazyComponent(() => import('./new-chat/NewCodyChatPage'), 'NewCodyChatPage')
+import styles from './CodyChatPage.module.scss'
 
-interface CodyChatPageProps extends TelemetryV2Props {
+interface CodyChatPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser
-    context: Pick<SourcegraphContext, 'externalURL'>
 }
 
-const AuthenticatedCodyChatPage: FC<CodyChatPageProps> = ({
-    isSourcegraphDotCom,
-    authenticatedUser,
-    context,
-    telemetryRecorder,
-}) => {
-    // We have two different version of Cody Web, first was created as original
-    // Cody Web chat, second version (NewCodyChatPage) is a port from VSCode
-    // cody extension.
-    const newCodyWeb = useExperimentalFeatures(features => features.newCodyWeb)
+const AuthenticatedCodyChatPage: FC<CodyChatPageProps> = props => {
+    const { isSourcegraphDotCom, authenticatedUser } = props
 
-    // Load new cody web only for authorized users, fallback on old cody web
-    // for better non-logged-in user experience.
-    return newCodyWeb && authenticatedUser !== null ? (
-        <LazyNewCodyChatPage isSourcegraphDotCom={isSourcegraphDotCom} />
-    ) : (
-        <OldCodyChatPage
-            isSourcegraphDotCom={isSourcegraphDotCom}
-            authenticatedUser={authenticatedUser}
-            context={context}
-            telemetryRecorder={telemetryRecorder}
-        />
+    if (!authenticatedUser) {
+        return null
+    }
+
+    return (
+        <Page className={styles.root}>
+            <PageTitle title="Cody Chat" />
+
+            <CodyPageHeader isSourcegraphDotCom={isSourcegraphDotCom} className={styles.pageHeader} />
+
+            <div className={styles.chatContainer}>
+                <CodyWebPanelProvider
+                    accessToken=""
+                    serverEndpoint={window.location.origin}
+                    customHeaders={window.context.xhrHeaders}
+                    telemetryClientName={getTelemetrySourceClient()}
+                >
+                    <ChatUi className={styles.chat} />
+                </CodyWebPanelProvider>
+            </div>
+        </Page>
     )
 }
 
 export const CodyChatPage = withAuthenticatedUser(AuthenticatedCodyChatPage)
+
+interface CodyPageHeaderProps {
+    isSourcegraphDotCom: boolean
+    className: string
+}
+
+const CodyPageHeader: FC<CodyPageHeaderProps> = props => {
+    const { isSourcegraphDotCom, className } = props
+
+    const codyDashboardLink = isSourcegraphDotCom ? CodyProRoutes.Manage : PageRoutes.CodyDashboard
+
+    if (!window.context?.codyEnabledForCurrentUser) {
+        return <Navigate to={PageRoutes.CodyDashboard} />
+    }
+
+    return (
+        <PageHeader
+            className={className}
+            actions={
+                <div className="d-flex flex-gap-1">
+                    <ButtonLink variant="link" to={codyDashboardLink}>
+                        Editor extensions
+                    </ButtonLink>
+                    <ButtonLink variant="secondary" to={codyDashboardLink}>
+                        Dashboard
+                    </ButtonLink>
+                </div>
+            }
+        >
+            <PageHeader.Heading as="h2" styleAs="h1">
+                <PageHeader.Breadcrumb icon={CodyColorIcon}>
+                    <div className="d-inline-flex align-items-center">
+                        Cody Chat
+                        <ProductStatusBadge status="beta" className="ml-2" />
+                    </div>
+                </PageHeader.Breadcrumb>
+            </PageHeader.Heading>
+        </PageHeader>
+    )
+}

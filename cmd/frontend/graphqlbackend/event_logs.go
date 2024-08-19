@@ -3,13 +3,13 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type eventLogsArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	EventName *string // return only event logs matching the event name
 }
 
@@ -59,7 +59,7 @@ func (r *userEventLogsConnectionResolver) TotalCount(ctx context.Context) (int32
 	return int32(count), err
 }
 
-func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	var count int
 	var err error
 
@@ -72,5 +72,5 @@ func (r *userEventLogsConnectionResolver) PageInfo(ctx context.Context) (*graphq
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && count > r.opt.Limit), nil
+	return gqlutil.HasNextPage(r.opt.LimitOffset != nil && count > r.opt.Limit), nil
 }

@@ -86,9 +86,3 @@ export const JetBrainsSearchBoxStory: StoryFn = () => {
         </WildcardThemeContext.Provider>
     )
 }
-
-JetBrainsSearchBoxStory.parameters = {
-    chromatic: {
-        disableSnapshot: false,
-    },
-}

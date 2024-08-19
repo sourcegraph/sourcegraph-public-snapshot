@@ -135,6 +135,12 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: maintenanceGroupUpdatesItemLabel,
             to: '/site-admin/updates',
+            condition: ({ applianceUpdateTarget }) => applianceUpdateTarget === '',
+        },
+        {
+            label: maintenanceGroupUpdatesItemLabel,
+            to: window.context.applianceUpdateTarget,
+            condition: ({ applianceUpdateTarget }) => applianceUpdateTarget !== '',
         },
         {
             label: 'Documentation',
@@ -228,11 +234,6 @@ export const batchChangesGroup: SiteAdminSideBarGroup = {
 const businessGroup: SiteAdminSideBarGroup = {
     header: { label: 'Business', icon: BriefcaseIcon },
     items: [
-        {
-            label: 'Enterprise customers',
-            to: '/site-admin/dotcom/customers',
-            condition: () => SHOW_BUSINESS_FEATURES,
-        },
         {
             label: 'Enterprise subscriptions',
             to: '/site-admin/dotcom/product/subscriptions',

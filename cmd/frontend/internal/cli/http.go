@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/ipallowlist"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
@@ -31,7 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
-	"github.com/sourcegraph/sourcegraph/internal/session"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -95,6 +97,7 @@ func newExternalHTTPHandler(
 	}
 	// Mount handlers and assets.
 	sm := http.NewServeMux()
+
 	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
 	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
 	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
@@ -117,6 +120,12 @@ func newExternalHTTPHandler(
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = tracepkg.HTTPMiddleware(logger, h)
 	h = instrumentation.HTTPMiddleware("external", h)
+	// 🚨 SECURITY: The tenant middleware must be the second to run to avoid handling
+	// requests in other middlewares without a tenant.
+	h = tenant.ExternalTenantFromHostnameMiddleware(tenant.TenantHostnameMapper(func(ctx context.Context, host string) (int, error) {
+		// TODO: For now, we hard-code all tenants to be tenant 1 to avoid any disruptions.
+		return 1, nil
+	}), h)
 	// 🚨 SECURITY: ip allowlist must be the first middleware to run to avoid doing unnecessary things
 	h = ipAllowlistMiddleware.Handle(h)
 
@@ -161,11 +170,14 @@ func newInternalHTTPHandler(
 	)
 
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
-		actor.HTTPMiddleware(
+		tenant.InternalHTTPMiddleware(
 			logger,
-			featureflag.Middleware(
-				db.FeatureFlags(),
-				internalRouter,
+			actor.HTTPMiddleware(
+				logger,
+				featureflag.Middleware(
+					db.FeatureFlags(),
+					internalRouter,
+				),
 			),
 		),
 	))

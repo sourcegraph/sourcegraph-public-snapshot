@@ -170,7 +170,13 @@ resources:
           indexedSearch:
             disabled: true
 
-          openTelemetry:
+          nodeExporter:
+            disabled: true
+
+          openTelemetryCollector:
+            disabled: true
+
+          openTelemetryAgent:
             disabled: true
 
           pgsql:

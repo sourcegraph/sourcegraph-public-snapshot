@@ -21,7 +21,13 @@ spec:
 
   indexedSearch: {}
 
-  openTelemetry:
+  nodeExporter:
+    disabled: true
+
+  openTelemetryCollector:
+    disabled: true
+
+  openTelemetryAgent:
     disabled: true
 
   pgsql:

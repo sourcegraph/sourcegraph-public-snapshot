@@ -16,8 +16,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/githubapp"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -125,7 +125,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 
 func newSchema(db database.DB, bcr graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
 	ghar := githubapp.NewResolver(log.NoOp(), db)
-	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, bcr, ghar)
+	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, nil, bcr, ghar)
 }
 
 func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {

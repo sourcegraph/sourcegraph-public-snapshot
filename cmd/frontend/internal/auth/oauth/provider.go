@@ -13,12 +13,13 @@ import (
 	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -51,6 +52,10 @@ func (p *Provider) ConfigID() providers.ConfigID {
 	}
 }
 
+func (p *Provider) Type() providers.ProviderType {
+	return providers.ProviderTypeOAuth
+}
+
 func (p *Provider) Config() schema.AuthProviders {
 	return p.SourceConfig
 }
@@ -66,6 +71,8 @@ func (p *Provider) CachedInfo() *providers.Info {
 		displayName = p.SourceConfig.Gitlab.DisplayName
 	case p.SourceConfig.Bitbucketcloud != nil && p.SourceConfig.Bitbucketcloud.DisplayName != "":
 		displayName = p.SourceConfig.Bitbucketcloud.DisplayName
+	case p.SourceConfig.Bitbucketserver != nil && p.SourceConfig.Bitbucketserver.DisplayName != "":
+		displayName = p.SourceConfig.Bitbucketserver.DisplayName
 	}
 	return &providers.Info{
 		ServiceID:   p.ServiceID,
@@ -78,10 +85,6 @@ func (p *Provider) CachedInfo() *providers.Info {
 	}
 }
 
-func (p *Provider) Refresh(ctx context.Context) error {
-	return nil
-}
-
 func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
 	switch account.ServiceType {
 	case extsvc.TypeGitHub:
@@ -90,6 +93,8 @@ func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Accou
 		return gitlab.GetPublicExternalAccountData(ctx, &account.AccountData)
 	case extsvc.TypeBitbucketCloud:
 		return bitbucketcloud.GetPublicExternalAccountData(ctx, &account.AccountData)
+	case extsvc.TypeBitbucketServer:
+		return bitbucketserver.GetPublicExternalAccountData(ctx, &account.AccountData, p.ServiceID)
 	case extsvc.TypeAzureDevOps:
 		return azuredevops.GetPublicExternalAccountData(ctx, &account.AccountData)
 	}
@@ -263,7 +268,7 @@ func canRedirect(redirect string) bool {
 		return false
 	}
 	// if we have a non-relative url, make sure it's the same host as the sourcegraph instance
-	if redirectURL.Host != "" && redirectURL.Host != globals.ExternalURL().Host {
+	if redirectURL.Host != "" && redirectURL.Host != conf.ExternalURLParsed().Host {
 		return false
 	}
 	// TODO: do we want to exclude any internal paths here?

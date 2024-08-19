@@ -65,6 +65,7 @@ const SearchUpsellPage = lazyComponent(() => import('./search/upsell/SearchUpsel
 const SearchPageWrapper = lazyComponent(() => import('./search/SearchPageWrapper'), 'SearchPageWrapper')
 const SearchJob = lazyComponent(() => import('./enterprise/search-jobs/SearchJobsPage'), 'SearchJobsPage')
 const SavedSearchArea = lazyComponent(() => import('./savedSearches/Area'), 'Area')
+const PromptsArea = lazyComponent(() => import('./prompts/Area'), 'Area')
 
 const Index = lazyComponent(() => import('./Index'), 'IndexPage')
 
@@ -186,8 +187,28 @@ export const routes: RouteObject[] = [
         path: `${PageRoutes.SavedSearches}/*`,
         element: (
             <LegacyRoute
-                render={props => <SavedSearchArea {...props} />}
+                render={props => (
+                    <SavedSearchArea
+                        authenticatedUser={props.authenticatedUser}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        telemetryRecorder={props.telemetryRecorder}
+                    />
+                )}
                 condition={() => window.context?.codeSearchEnabledOnInstance}
+            />
+        ),
+    },
+    {
+        path: `${PageRoutes.Prompts}/*`,
+        element: (
+            <LegacyRoute
+                render={props => (
+                    <PromptsArea
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={props.telemetryRecorder}
+                    />
+                )}
+                condition={() => window.context?.codyEnabledOnInstance}
             />
         ),
     },
@@ -278,6 +299,7 @@ export const routes: RouteObject[] = [
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
                         codeInsightsEnabled={window.context.codeInsightsEnabled}
+                        applianceUpdateTarget={window.context.applianceUpdateTarget}
                         telemetryRecorder={props.platformContext.telemetryRecorder}
                     />
                 )}

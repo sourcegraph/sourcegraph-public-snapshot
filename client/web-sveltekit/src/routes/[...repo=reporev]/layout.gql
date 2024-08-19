@@ -18,6 +18,7 @@ query RepositoryGitCommits($repoName: String!, $query: String!, $revision: Strin
         }
     }
 }
+
 query ResolveRepoRevision($repoName: String!, $revision: String!) {
     repositoryRedirect(name: $repoName) {
         __typename
@@ -34,8 +35,14 @@ fragment ResolvedRepository on Repository {
     id
     commit(rev: $revision) {
         oid
+        perforceChangelist {
+            cid
+            canonicalURL
+        }
     }
     changelist(cid: $revision) {
+        cid
+        canonicalURL
         commit {
             oid
         }
@@ -47,6 +54,14 @@ fragment ResolvedRepository on Repository {
     }
     defaultBranch {
         abbrevName
+        target {
+            commit {
+                perforceChangelist {
+                    cid
+                    canonicalURL
+                }
+            }
+        }
     }
     externalURLs {
         url
@@ -55,4 +70,40 @@ fragment ResolvedRepository on Repository {
     ...RepoPage_ResolvedRevision
     ...BlobPage_ResolvedRevision
     ...CodySidebar_ResolvedRevision
+}
+
+query DepotChangelists($depotName: String!, $revision: String!) {
+    repository(name: $depotName) {
+		changelist: commit(rev: $revision) {
+            ...RevPickerChangelist
+        }
+        ancestorChangelists: commit(rev: $revision) {
+            ancestors(first: 15) {
+                nodes {
+                    ...RevPickerChangelist
+                }
+            }
+        }
+    }
+}
+
+query DepotChangelist($depotName: String!, $revision: String!) {
+    repository(name: $depotName) {
+		commit(rev: $revision) {
+            perforceChangelist {
+                    cid
+                    canonicalURL
+            }
+        }
+    }
+}
+
+fragment DepotChangelistAuthor on GitCommit {
+    author {
+        date
+        person {
+            __typename
+            ...Avatar_Person
+        }
+    }
 }

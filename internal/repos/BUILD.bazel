@@ -144,6 +144,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":repos"],
+    shard_count = 4,
     tags = [
         TAG_PLATFORM_SOURCE,
         # Test requires localhost database

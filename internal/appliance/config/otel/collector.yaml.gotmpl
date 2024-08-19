@@ -1,0 +1,36 @@
+receivers:
+  otlp:
+    protocols:
+      grpc: # port 4317
+      http: # port 4318
+{{ if .Processors }}
+processors:
+  {{- toYaml .Processors | nindent 6 }}
+{{ end }}
+exporters:
+  {{- toYaml .Exporters | nindent 6 }}
+
+extensions:
+  health_check:
+    endpoint: ":13133"
+  zpages:
+    endpoint: "localhost:55679"
+
+service:
+  extensions:
+    - health_check
+    - zpages
+  pipelines:
+    traces:
+      receivers:
+        - otlp
+      {{- if .Processors }}
+      processors:
+        {{- range $name, $cfg := .Processors }}
+        - {{ $name }}
+        {{- end }}
+      {{- end }}
+      exporters:
+        {{- range $name, $cfg := .Exporters }}
+        - {{ $name }}
+        {{- end }}

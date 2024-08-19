@@ -82,6 +82,7 @@ type DB interface {
 	AssignedOwners() AssignedOwnersStore
 	AssignedTeams() AssignedTeamsStore
 	OwnSignalConfigurations() SignalConfigurationStore
+	Prompts() PromptStore
 
 	WithTransact(context.Context, func(tx DB) error) error
 }
@@ -374,4 +375,8 @@ func (d *db) AssignedTeams() AssignedTeamsStore {
 
 func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
 	return SignalConfigurationStoreWith(d.Store)
+}
+
+func (d *db) Prompts() PromptStore {
+	return PromptsWith(d.Store)
 }

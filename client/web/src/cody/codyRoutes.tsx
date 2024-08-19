@@ -53,9 +53,8 @@ export const codyRoutes: RouteObject[] = [
                 render={props => (
                     <CodyIgnoreProvider isSourcegraphDotCom={props.isSourcegraphDotCom}>
                         <CodyChatPage
-                            {...props}
-                            context={window.context}
-                            telemetryRecorder={props.platformContext.telemetryRecorder}
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            authenticatedUser={props.authenticatedUser}
                         />
                     </CodyIgnoreProvider>
                 )}

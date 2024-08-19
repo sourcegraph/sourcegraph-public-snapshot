@@ -537,7 +537,7 @@ func runOneDefinitionRequest(logger log.Logger, projectRoot string, bundle *prec
 
 func transformLocationToResponse(location precise.LocationData) Location {
 	return Location{
-		URI: "file://" + location.URI,
+		URI: "file://" + location.DocumentPath,
 		Range: Range{
 			Start: Position{
 				Line:      location.StartLine,

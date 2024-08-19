@@ -11,8 +11,8 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -260,38 +260,41 @@ func GetAndSaveUser(
 	// We handle all V2 telemetry related to GetAndSaveUser within this defer
 	// closure, to ensure we cover all exit paths correctly after the other mega
 	// closure above.
-	defer func() {
-		action := telemetry.ActionSucceeded
-		if err != nil { // check final error
-			action = telemetry.ActionFailed
-		}
+	//
+	// We only store the event if a new user was created.
+	if newUserSaved {
+		defer func() {
+			action := telemetry.ActionSucceeded
+			if err != nil { // check final error
+				action = telemetry.ActionFailed
+			}
 
-		// Most auth providers services have an exstvc.Variant, so try and
-		// extract that from the account spec. For ease of use in we also
-		// preserve the raw value in the private metadata.
-		serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
-		privateMetadata := map[string]any{"serviceType": acct.AccountSpec.ServiceType}
+			// Most auth providers services have an exstvc.Variant, so try and
+			// extract that from the account spec. For ease of use in we also
+			// preserve the raw value in the private metadata.
+			serviceVariant, _ := extsvc.VariantValueOf(acct.AccountSpec.ServiceType)
+			privateMetadata := map[string]any{"serviceType": acct.AccountSpec.ServiceType}
 
-		// Include safe err if there is one for maybe-useful diagnostics
-		if len(safeErrMsg) > 0 {
-			privateMetadata["safeErrMsg"] = safeErrMsg
-		}
+			// Include safe err if there is one for maybe-useful diagnostics
+			if len(safeErrMsg) > 0 {
+				privateMetadata["safeErrMsg"] = safeErrMsg
+			}
 
-		// Record our V2 event.
-		recorder.Record(telemetryCtx, telemetryV2UserSignUpFeatureName, action, &telemetry.EventParameters{
-			Version: 2, // We've significantly refactored telemetryV2UserSignUpFeatureName occurrences
-			Metadata: telemetry.MergeMetadata(
-				telemetry.EventMetadata{
-					"serviceVariant": telemetry.Number(serviceVariant),
-					// Track the various outcomes of the massive signup closure above.
-					"newUserSaved": telemetry.Bool(newUserSaved),
-					"extAcctSaved": telemetry.Bool(extAcctSaved),
-				},
-				op.UserCreateEventProperties,
-			),
-			PrivateMetadata: privateMetadata,
-		})
-	}()
+			// Record our V2 event.
+			recorder.Record(telemetryCtx, telemetryV2UserSignUpFeatureName, action, &telemetry.EventParameters{
+				Version: 2, // We've significantly refactored telemetryV2UserSignUpFeatureName occurrences
+				Metadata: telemetry.MergeMetadata(
+					telemetry.EventMetadata{
+						"serviceVariant": telemetry.Number(serviceVariant),
+						// Track the various outcomes of the massive signup closure above.
+						"extAcctSaved": telemetry.Bool(extAcctSaved),
+					},
+					op.UserCreateEventProperties,
+				),
+				PrivateMetadata: privateMetadata,
+			})
+		}()
+	}
 
 	if err != nil {
 		// Legacy event - retain because it is still exported by the legacy

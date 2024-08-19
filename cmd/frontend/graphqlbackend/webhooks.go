@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
@@ -22,7 +22,7 @@ type WebhooksResolver interface {
 type WebhookConnectionResolver interface {
 	Nodes(ctx context.Context) ([]WebhookResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	PageInfo(ctx context.Context) (*gqlutil.PageInfo, error)
 }
 
 // WebhookResolver is an interface for querying a single webhook.
@@ -61,7 +61,7 @@ type UpdateWebhookArgs struct {
 }
 
 type ListWebhookArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	After *string
 	Kind  *string
 }

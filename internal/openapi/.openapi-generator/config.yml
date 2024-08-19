@@ -1,0 +1,4 @@
+additionalProperties:
+  packageName: goapi
+globalProperties:
+  models: true

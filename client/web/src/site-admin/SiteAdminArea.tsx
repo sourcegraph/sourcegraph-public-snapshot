@@ -59,6 +59,7 @@ export interface SiteAdminAreaRouteContext
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
 
     codeInsightsEnabled: boolean
+    applianceUpdateTarget: string
 
     endUserOnboardingEnabled: boolean
 }
@@ -77,6 +78,7 @@ interface SiteAdminAreaProps
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
     codeInsightsEnabled: boolean
+    applianceUpdateTarget: string
 }
 
 const sourcegraphOperatorSiteAdminMaintenanceBlockItems = new Set([
@@ -142,6 +144,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         telemetryService: props.telemetryService,
         telemetryRecorder: props.telemetryRecorder,
         codeInsightsEnabled: props.codeInsightsEnabled,
+        applianceUpdateTarget: props.applianceUpdateTarget,
         endUserOnboardingEnabled,
     }
 
@@ -161,6 +164,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
                     codeInsightsEnabled={props.codeInsightsEnabled}
+                    applianceUpdateTarget={props.applianceUpdateTarget}
                     endUserOnboardingEnabled={endUserOnboardingEnabled}
                 />
                 <div className="flex-bounded">

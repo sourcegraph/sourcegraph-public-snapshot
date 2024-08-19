@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"context"
+	"sync"
 
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -24,12 +25,17 @@ import (
 var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
+	sync.Mutex
 	client.Client
-	Scheme   *runtime.Scheme
-	Recorder record.EventRecorder
+	Scheme               *runtime.Scheme
+	Recorder             record.EventRecorder
+	BeginHealthCheckLoop chan struct{}
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	r.Mutex.Lock()
+	defer r.Mutex.Unlock()
+
 	reqLog := log.FromContext(ctx)
 	reqLog.Info("reconciling sourcegraph appliance")
 
@@ -49,6 +55,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Perhaps this should be feature-flagged so that it is only emitted during
 	// tests, if it isn't useful elsewhere.
 	defer r.Recorder.Event(&applianceSpec, "Normal", "ReconcileFinished", "Reconcile finished.")
+
+	status := applianceSpec.GetAnnotations()[config.AnnotationKeyStatus]
+	if r.BeginHealthCheckLoop != nil && config.IsPostInstallStatus(config.Status(status)) {
+		close(r.BeginHealthCheckLoop)
+		r.BeginHealthCheckLoop = nil
+	}
 
 	// TODO place holder code until we get the configmap spec'd out and working'
 	data, ok := applianceSpec.Data["spec"]
@@ -126,6 +138,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	}
 	if err := r.reconcileJaeger(ctx, &sourcegraph, &applianceSpec); err != nil {
 		return ctrl.Result{}, errors.Newf("failed to reconcile jaeger: %w", err)
+	}
+	if err := r.reconcileOtelAgent(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile OpenTelemetry Agent: %w", err)
+	}
+	if err := r.reconcileOtelCollector(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile OpenTelemetry Collector: %w", err)
+	}
+	if err := r.reconcileNodeExporter(ctx, &sourcegraph, &applianceSpec); err != nil {
+		return ctrl.Result{}, errors.Newf("failed to reconcile NodeExporter: %w", err)
 	}
 
 	// Set the current version annotation in case migration logic depends on it.

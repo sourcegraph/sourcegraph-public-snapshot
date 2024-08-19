@@ -10,14 +10,16 @@ func (a *Appliance) Routes() *mux.Router {
 	r := mux.NewRouter()
 	r.Use(a.checkAuthorization)
 
-	// ported appliance React UI endpoints
+	// Route errors
 	r.NotFoundHandler = http.HandlerFunc(a.notFoundResponse)
 	r.MethodNotAllowedHandler = http.HandlerFunc(a.methodNotAllowedResponse)
 
-	r.Handle("/api/operator/v1beta1/stage", a.getStageJSONHandler())
-	r.Handle("/api/operator/v1beta1/install/progress", a.getInstallProgressJSONHandler())
-	r.Handle("/api/operator/v1beta1/maintenance/status", a.getStageJSONHandler())
-	r.Handle("/api/operator/v1beta1/fake/stage", a.postStageJSONHandler())
+	// Maintenance API URIs
+	r.Handle("/api/v1/appliance/status", a.getStatusJSONHandler()).Methods("GET")
+	r.Handle("/api/v1/appliance/status", a.postStatusJSONHandler()).Methods("POST")
+	r.Handle("/api/v1/appliance/install/progress", a.getInstallProgressJSONHandler()).Methods("GET")
+	r.Handle("/api/v1/appliance/maintenance/serviceStatuses", a.getMaintenanceStatusHandler()).Methods("GET")
+	r.Handle("/api/v1/releases/sourcegraph", a.getReleasesHandler()).Methods("GET")
 
 	return r
 }

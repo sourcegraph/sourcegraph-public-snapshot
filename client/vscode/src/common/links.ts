@@ -34,7 +34,7 @@ const VSCE_LINK_PARAMS_UTM_SIDEBAR = {
 export const VSCE_LINK_MARKETPLACE = 'https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph'
 export const VSCE_LINK_USER_DOCS =
     'https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token' + VSCE_SIDEBAR_PARAMS
-export const VSCE_LINK_FEEDBACK = 'https://github.com/sourcegraph/sourcegraph/discussions/categories/feedback'
+export const VSCE_LINK_FEEDBACK = 'https://community.sourcegraph.com'
 export const VSCE_LINK_ISSUES =
     'https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board'
 export const VSCE_LINK_TROUBLESHOOT =

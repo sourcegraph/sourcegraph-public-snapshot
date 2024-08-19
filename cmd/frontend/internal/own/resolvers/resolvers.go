@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -399,7 +398,7 @@ func (r *ownResolver) ownershipConnection(
 	}
 
 	// 5. Apply pagination from the parameter & compute next cursor:
-	cursor, err := graphqlutil.DecodeCursor(args.After)
+	cursor, err := gqlutil.DecodeCursor(args.After)
 	if err != nil {
 		return nil, err
 	}
@@ -496,8 +495,8 @@ func (r *ownershipConnectionResolver) TotalOwners(_ context.Context) (int32, err
 	return int32(r.totalOwners), nil
 }
 
-func (r *ownershipConnectionResolver) PageInfo(_ context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.EncodeCursor(r.next), nil
+func (r *ownershipConnectionResolver) PageInfo(_ context.Context) (*gqlutil.PageInfo, error) {
+	return gqlutil.EncodeCursor(r.next), nil
 }
 
 func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend.OwnershipResolver, error) {

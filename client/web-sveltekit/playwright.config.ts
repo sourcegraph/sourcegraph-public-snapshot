@@ -11,11 +11,19 @@ const config: PlaywrightTestConfig = {
               command: 'pnpm build:preview && pnpm preview',
               port: PORT,
               reuseExistingServer: true,
+              env: {
+                  // Disable proxying to a real Sourcegraph instance in local testing
+                  SK_DISABLE_PROXY: 'true',
+              },
+              timeout: 5 * 60_000,
           }
         : undefined,
     reporter: 'list',
     // note: if you proxy into a locally running vite preview, you may have to raise this to 60 seconds
-    timeout: 5_000,
+    timeout: process.env.BAZEL ? 60_000 : 30_000,
+    expect: {
+        timeout: process.env.BAZEL ? 20_000 : 5_000,
+    },
     use: {
         baseURL: `http://localhost:${PORT}`,
     },

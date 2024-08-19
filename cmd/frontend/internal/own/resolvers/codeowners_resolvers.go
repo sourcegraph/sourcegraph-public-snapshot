@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -187,7 +186,7 @@ func (r *ownResolver) CodeownersIngestedFiles(ctx context.Context, args *graphql
 		codeownersStore: r.db.Codeowners(),
 	}
 	if args.After != nil {
-		cursor, err := graphqlutil.DecodeIntCursor(args.After)
+		cursor, err := gqlutil.DecodeIntCursor(args.After)
 		if err != nil {
 			return nil, err
 		}
@@ -262,7 +261,7 @@ type codeownersIngestedFileConnectionResolver struct {
 	once     sync.Once
 	cursor   int32
 	limit    int
-	pageInfo *graphqlutil.PageInfo
+	pageInfo *gqlutil.PageInfo
 	err      error
 
 	codeownersFiles []*types.CodeownersFile
@@ -283,9 +282,9 @@ func (r *codeownersIngestedFileConnectionResolver) compute(ctx context.Context) 
 		}
 		r.codeownersFiles = codeownersFiles
 		if next > 0 {
-			r.pageInfo = graphqlutil.EncodeIntCursor(&next)
+			r.pageInfo = gqlutil.EncodeIntCursor(&next)
 		} else {
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pageInfo = gqlutil.HasNextPage(false)
 		}
 	})
 }
@@ -308,7 +307,7 @@ func (r *codeownersIngestedFileConnectionResolver) TotalCount(ctx context.Contex
 	return r.codeownersStore.CountCodeownersFiles(ctx)
 }
 
-func (r *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *codeownersIngestedFileConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	r.compute(ctx)
 	return r.pageInfo, r.err
 }

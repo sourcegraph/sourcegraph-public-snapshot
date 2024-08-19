@@ -1,0 +1,71 @@
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
+load("//dev:oci_defs.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//wolfi-images:defs.bzl", "wolfi_base")
+
+filegroup(
+    name = "config",
+    srcs = ["nginx.conf"],
+)
+
+filegroup(
+    name = "init_script",
+    srcs = ["init.sh"],
+)
+
+pkg_tar(
+    name = "tar_config",
+    srcs = [":config"],
+    package_dir = "/etc/nginx",
+)
+
+pkg_tar(
+    name = "tar_init_script",
+    srcs = [":init_script"],
+    package_dir = "/",
+)
+
+oci_image(
+    name = "image",
+    base = ":base_image",
+    entrypoint = [
+        "/init.sh",
+        "nginx",
+        "-g",
+        "daemon off;",
+    ],
+    tars = [
+        ":tar_init_script",
+        ":tar_config",
+        "//internal/appliance/frontend/maintenance:tar_config",
+        "//internal/appliance/frontend/maintenance:tar_frontend",
+    ],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["appliance-frontend:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+        TAG_INFRA_DEVINFRA,
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("appliance-frontend"),
+)
+
+wolfi_base()

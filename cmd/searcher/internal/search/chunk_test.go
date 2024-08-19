@@ -370,8 +370,8 @@ func BenchmarkColumnHelper(b *testing.B) {
 		offset := 0
 		for offset < len(data) {
 			col := columnHelper.get(lineOffset, offset)
-			if col != offset+1 {
-				b.Fatal("column is not offset even though data is ASCII")
+			if col != offset {
+				b.Fatal("column is not offset even though data is ASCII", col, offset)
 			}
 			offset += dist
 		}

@@ -18,8 +18,6 @@ go_library(
     deps = [
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
-        "//cmd/frontend/internal/auth",
-        "//cmd/frontend/internal/registry",
         "//internal/actor",
         "//internal/codeintel",
         "//internal/conf",
@@ -40,6 +38,7 @@ go_test(
     name = "modelconfig_test",
     srcs = [
         "builder_test.go",
+        "resolver_test.go",
         "siteconfig_completions_test.go",
         "util_test.go",
     ],

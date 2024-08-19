@@ -51,6 +51,32 @@ internal:
               echo "Build created, see:"
               echo $body | jq .web_url
             fi
+      minor:
+        - name: 'buildkite'
+          cmd: |
+            echo "Triggering build on sourcegraph/sourcegraph with VERSION={{version}} on branch {{git.branch}}"
+            body=$(wget --content-on-error -O- --header="Content-Type: application/json" --header="Authorization: Bearer $BUILDKITE_ACCESS_TOKEN" --post-data '{
+              "commit": "HEAD",
+              "branch": "{{git.branch}}",
+              "message": "Internal release build for {{version}}",
+              "env": {
+                    "RELEASE_INTERNAL": "true",
+                    "VERSION": "{{tag}}",
+                    "IS_DEVELOPMENT_RELEASE": "{{is_development}}"
+              }
+            }' https://api.buildkite.com/v2/organizations/sourcegraph/pipelines/sourcegraph/builds)
+            exit_code=$?
+
+            if [ $exit_code != 0 ]; then
+              echo "❌ Failed to create build on Buildkite, got:"
+              echo "--- raw body ---"
+              echo $body
+              echo "--- raw body ---"
+              exit $exit_code
+            else
+              echo "Build created, see:"
+              echo $body | jq .web_url
+            fi
   finalize:
     steps:
       - name: 'Register on release registry'
@@ -75,7 +101,9 @@ internal:
           fi
       - name: 'Trigger Security scan'
         cmd: |
-          curl --location 'https://incoming.sgdev.org/new-image-scan?tag={{tag}}&scanType=release&dev=true' --header 'X-Special-Header: ${SCANNER_TOKEN}'
+          set -eu
+
+          curl --location 'https://security-manager.sgdev.org/internal-release-scan?release={{tag}}' --request POST --header "Authorization: Bearer ${SECURITY_SCANNER_TOKEN}"
       - name: 'notifications'
         cmd: |
           set -eu
@@ -114,8 +142,8 @@ test:
           echo "pulling $image image ${IMAGE}"
           # docker pull "${IMAGE}"
 
-          echo "checking $image binary in $image image for web bundle"
-          marker=$(docker run -t --rm --entrypoint /bin/sh "${IMAGE}" -c "strings $image | grep WEB_BUNDLE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+          echo "checking $image has web-bundle at /assets-dist inside the container"
+          marker=$(docker run --rm --entrypoint /bin/sh "${IMAGE}" -c "grep -h 'WEB_BUNDLE' -R /assets-dist | sed -e 's/^[[:space:]]*//'")
           if [[ "$marker" != '"_marker": "WEB_BUNDLE"' ]]; then
             echo "$image:{{tag}} does not contain the web bundle marker string: '$marker'"
             exit 1

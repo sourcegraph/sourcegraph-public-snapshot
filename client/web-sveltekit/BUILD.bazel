@@ -18,8 +18,6 @@ SRCS = [
     ".eslintignore",
     ".eslintrc.cjs",
     ".prettierignore",
-    ".env",
-    ".env.dotcom",
     "//client/wildcard:sass-breakpoints",
     "//client/wildcard:global-style-sources",
     "//client/web/dist/img:copy",
@@ -99,6 +97,7 @@ BUILD_DEPS = [
     ":node_modules/@sentry/sveltekit",
     ":node_modules/@sourcegraph/branded",
     ":node_modules/@sourcegraph/client-api",
+    ":node_modules/@sourcegraph/cody-web",
     ":node_modules/@sourcegraph/common",
     ":node_modules/@sourcegraph/http-client",
     ":node_modules/@sourcegraph/shared",
@@ -109,7 +108,6 @@ BUILD_DEPS = [
     ":node_modules/@sveltejs/kit",
     ":node_modules/@sveltejs/vite-plugin-svelte",
     ":node_modules/@urql/core",
-    ":node_modules/cody-web-experimental",
     ":node_modules/graphql",
     ":node_modules/hotkeys-js",
     ":node_modules/mermaid",
@@ -201,12 +199,14 @@ playwright_test_bin.playwright_test(
     ],
     data = glob(
         [
-            "src/**/*.spec.ts",
+            "src/**/*.ts",
             "src/testing/*.ts",
         ],
     ) + [
         "playwright.config.ts",
+        "tsconfig.json",
         ":generate-graphql-types",
+        ":sveltekit-sync",
         ":test_app_assets",
         "//cmd/frontend/graphqlbackend:graphql_schema",
         "//dev/tools:chromium",
@@ -216,8 +216,6 @@ playwright_test_bin.playwright_test(
         "BAZEL": "1",
         "ASSETS_DIR": "./client/web-sveltekit/test_app_assets/test_build/_sk/",
     },
-    flaky = True,
-    tags = ["manual"],
 )
 
 TESTS = glob([
@@ -332,10 +330,10 @@ svelte_check.svelte_check_test(
     args = [
         "--tsconfig",
         "tsconfig.json",
-        "--compiler-warnings",
-        # missing-declaration is raised for our icon components. The Svelte compiler
-        # does not take into account ambient declarations (will be fixed in Svelte 5).
-        "missing-declaration:ignore",
+        # This causes only errors to be displayed, which is what we want
+        # to keep noise down in CI
+        "--threshold",
+        "error",
     ],
     chdir = package_name(),
     data = SRCS + BUILD_DEPS + CONFIGS + [
@@ -346,6 +344,11 @@ svelte_check.svelte_check_test(
         # Needed to properly extend vite's UserConfig type
         ":node_modules/vitest",
     ],
+    env = {
+        # It appears that svelte-check will start the vite dev server,
+        # but in this case we don't want the proxy to be enabled.
+        "SK_DISABLE_PROXY": "1",
+    },
 )
 
 filegroup(

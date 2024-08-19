@@ -11,14 +11,11 @@ import { OrgAvatar } from '../OrgAvatar'
 import type { OrgAreaRouteContext } from './OrgArea'
 
 interface Props extends OrgAreaRouteContext {
-    isSourcegraphDotCom: boolean
     navItems: readonly OrgAreaHeaderNavItem[]
     className?: string
 }
 
-export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {
-    isSourcegraphDotCom: boolean
-}
+export interface OrgAreaHeaderContext extends BatchChangesProps, Pick<Props, 'org'> {}
 
 export interface OrgAreaHeaderNavItem extends NavItemWithIconDescriptor<OrgAreaHeaderContext> {}
 
@@ -32,14 +29,12 @@ export const OrgHeader: React.FunctionComponent<React.PropsWithChildren<Props>> 
     org,
     navItems,
     className = '',
-    isSourcegraphDotCom,
 }) => {
     const context: OrgAreaHeaderContext = {
         batchChangesEnabled,
         batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled,
         org,
-        isSourcegraphDotCom,
     }
 
     const url = `/organizations/${org.name}`

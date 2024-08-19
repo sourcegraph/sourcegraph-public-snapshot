@@ -12,7 +12,7 @@ import {
 
 import { ApolloTelemetryExporter } from './apolloTelemetryExporter'
 
-function getTelemetrySourceClient(): string {
+export function getTelemetrySourceClient(): string {
     if (window.context?.sourcegraphDotComMode) {
         return 'dotcom.web'
     }

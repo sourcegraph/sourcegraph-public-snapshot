@@ -1,0 +1,4 @@
+api/openapi.yaml
+go/model_error.go
+go/model_list_models_response.go
+go/model_model.go

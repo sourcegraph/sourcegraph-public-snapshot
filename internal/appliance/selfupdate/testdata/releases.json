@@ -1,0 +1,52 @@
+[
+  {
+    "id": 117,
+    "name": "sourcegraph",
+    "public": false,
+    "created_at": "2024-08-12T23:37:41.351739Z",
+    "promoted_at": null,
+    "version": "v5.6.877",
+    "git_sha": "6e423717731ee5e672851353ef4163b92da0034a",
+    "is_development": false
+  },
+  {
+    "id": 112,
+    "name": "sourcegraph",
+    "public": true,
+    "created_at": "2024-08-08T21:22:13.186324Z",
+    "promoted_at": "2024-08-08T22:07:23.412792Z",
+    "version": "v5.6.185",
+    "git_sha": "02a08981d047b648f903dc4f707a15e5a79a6e3f",
+    "is_development": false
+  },
+  {
+    "id": 107,
+    "name": "sourcegraph",
+    "public": true,
+    "created_at": "2024-08-07T19:41:31.970668Z",
+    "promoted_at": "2024-08-07T22:53:00.840214Z",
+    "version": "v5.6.0",
+    "git_sha": "0fd6235fa41fdc9dbfac748e232e4a3a823acf66",
+    "is_development": false
+  },
+  {
+    "id": 106,
+    "name": "sourcegraph",
+    "public": false,
+    "created_at": "2024-08-06T05:42:27.548894Z",
+    "promoted_at": null,
+    "version": "v5.5.4710",
+    "git_sha": "a310035006c9738406ceb9beda916c843e37edd4",
+    "is_development": false
+  },
+  {
+    "id": 101,
+    "name": "sourcegraph",
+    "public": true,
+    "created_at": "2024-08-02T00:30:06.845858Z",
+    "promoted_at": "2024-08-02T01:34:59.987836Z",
+    "version": "v5.5.3956",
+    "git_sha": "dc97541a285b15f50998ef176fc1d882b3f42424",
+    "is_development": false
+  }
+]

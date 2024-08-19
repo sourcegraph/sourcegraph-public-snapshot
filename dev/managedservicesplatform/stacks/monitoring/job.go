@@ -63,35 +63,41 @@ func createJobAlerts(
 		// Use the duration calculated from the cron, with some leeway. Use
 		// math.Ceil just in case, as Minutes() may give us floats
 		absentMinutes := int(math.Ceil(interval.Minutes())) + 10
+		// GCP does not allow absence alerts above 23h30m - for jobs that run
+		// at a longer interval, depend on the implementor using the MSP job
+		// runtime to report runs to Sentry, and have Sentry handle alerting
+		// on missing executions instead.
+		if absentMinutes < int((23*time.Hour + 30*time.Minute).Minutes()) {
+			alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
+				Service:       vars.Service,
+				EnvironmentID: vars.EnvironmentID,
 
-		alert, err := alertpolicy.New(stack, id, &alertpolicy.Config{
-			Service:       vars.Service,
-			EnvironmentID: vars.EnvironmentID,
-
-			ID:          "job_execution_absence",
-			Name:        "Cloud Run Job Execution Absence",
-			Description: fmt.Sprintf("No Cloud Run Job executions were detected in expected window (%dm)", absentMinutes),
-			ProjectID:   vars.ProjectID,
-			MetricAbsence: &alertpolicy.MetricAbsence{
-				ConditionBuilder: alertpolicy.ConditionBuilder{
-					ResourceName: vars.Service.ID,
-					ResourceKind: alertpolicy.CloudRunJob,
-					Filters: map[string]string{
-						"metric.type": "run.googleapis.com/job/completed_task_attempt_count",
+				ID:          "job_execution_absence",
+				Name:        "Cloud Run Job Execution Absence",
+				Description: fmt.Sprintf("No Cloud Run Job executions were detected in expected window (%dm)", absentMinutes),
+				ProjectID:   vars.ProjectID,
+				MetricAbsence: &alertpolicy.MetricAbsence{
+					ConditionBuilder: alertpolicy.ConditionBuilder{
+						ResourceName: vars.Service.ID,
+						ResourceKind: alertpolicy.CloudRunJob,
+						Filters: map[string]string{
+							"metric.type": "run.googleapis.com/job/completed_task_attempt_count",
+						},
+						Aligner: alertpolicy.MonitoringAlignCount,
+						Reducer: alertpolicy.MonitoringReduceSum,
+						Period:  "60s",
 					},
-					Aligner: alertpolicy.MonitoringAlignCount,
-					Reducer: alertpolicy.MonitoringReduceSum,
-					Period:  "60s",
+					// Must be in seconds
+					Duration: fmt.Sprintf("%ds", absentMinutes*60),
 				},
-				// Must be in seconds
-				Duration: fmt.Sprintf("%ds", absentMinutes*60),
-			},
-			NotificationChannels: channels,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "job_execution_absence")
+				NotificationChannels: channels,
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "job_execution_absence")
+			}
+			alerts = append(alerts, alert.AlertPolicy)
 		}
-		alerts = append(alerts, alert.AlertPolicy)
+
 	}
 
 	return alerts, nil

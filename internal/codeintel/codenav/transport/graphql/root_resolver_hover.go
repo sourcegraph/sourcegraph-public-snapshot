@@ -4,10 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
 
@@ -22,38 +21,28 @@ func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs
 		Line:      int(args.Line),
 		Character: int(args.Character),
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(requestArgs))
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(&requestArgs))
 	defer endObservation()
 
-	text, rx, exists, err := r.codeNavSvc.GetHover(ctx, requestArgs, r.requestState)
+	text, range_, exists, err := r.codeNavSvc.GetHover(ctx, requestArgs, r.requestState)
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return newHoverResolver(text, sharedRangeTolspRange(rx)), nil
+	return newHoverResolver(text, range_.ToSCIPRange()), nil
 }
-
-//
-//
 
 type hoverResolver struct {
-	text     string
-	lspRange lsp.Range
+	text   string
+	range_ scip.Range
 }
 
-func newHoverResolver(text string, lspRange lsp.Range) resolverstubs.HoverResolver {
+func newHoverResolver(text string, range_ scip.Range) resolverstubs.HoverResolver {
 	return &hoverResolver{
-		text:     text,
-		lspRange: lspRange,
+		text:   text,
+		range_: range_,
 	}
 }
 
 func (r *hoverResolver) Markdown() resolverstubs.Markdown   { return resolverstubs.Markdown(r.text) }
-func (r *hoverResolver) Range() resolverstubs.RangeResolver { return newRangeResolver(r.lspRange) }
-
-//
-//
-
-func sharedRangeTolspRange(r shared.Range) lsp.Range {
-	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
-}
+func (r *hoverResolver) Range() resolverstubs.RangeResolver { return newRangeResolver(r.range_) }

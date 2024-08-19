@@ -11,7 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -53,31 +53,21 @@ func TestSetGitHubHandlerSleepTime(t *testing.T, val time.Duration) {
 	sleepTime = val
 }
 
-func (h *GitHubWebhook) handleGitHubWebhook(_ context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
-	// TODO: This MUST be removed once permissions syncing jobs are database backed!
-	// If we react too quickly to a webhook, the changes may not yet have properly
-	// propagated on GitHub's system, and we'll get old results, making the
-	// webhook useless.
-	// We have to wait some amount of time to process the webhook to ensure
-	// that we are getting fresh results.
-	go func() {
-		time.Sleep(sleepTime)
-		eventContext, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-		defer cancel()
-
-		switch e := payload.(type) {
-		case *gh.RepositoryEvent:
-			_ = h.handleRepositoryEvent(eventContext, db, e)
-		case *gh.MemberEvent:
-			_ = h.handleMemberEvent(eventContext, db, e, codeHostURN)
-		case *gh.OrganizationEvent:
-			_ = h.handleOrganizationEvent(eventContext, db, e, codeHostURN)
-		case *gh.MembershipEvent:
-			_ = h.handleMembershipEvent(eventContext, db, e, codeHostURN)
-		case *gh.TeamEvent:
-			_ = h.handleTeamEvent(eventContext, e, db)
-		}
-	}()
+func (h *GitHubWebhook) handleGitHubWebhook(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, payload any) error {
+	// TODO: Should we return errors here? We could receive a webhook for a repo
+	// that's not on Sourcegraph, so probably not?
+	switch e := payload.(type) {
+	case *gh.RepositoryEvent:
+		_ = h.handleRepositoryEvent(ctx, db, e)
+	case *gh.MemberEvent:
+		_ = h.handleMemberEvent(ctx, db, e, codeHostURN)
+	case *gh.OrganizationEvent:
+		_ = h.handleOrganizationEvent(ctx, db, e, codeHostURN)
+	case *gh.MembershipEvent:
+		_ = h.handleMembershipEvent(ctx, db, e, codeHostURN)
+	case *gh.TeamEvent:
+		_ = h.handleTeamEvent(ctx, e, db)
+	}
 	return nil
 }
 

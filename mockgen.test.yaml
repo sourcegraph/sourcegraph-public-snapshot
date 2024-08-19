@@ -179,10 +179,6 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store
       interfaces:
         - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
-      interfaces:
-        - Store
-      prefix: Worker
 - filename: internal/codeintel/dependencies/internal/background/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background
@@ -220,57 +216,20 @@
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - RepoStore
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
-      interfaces:
-        - Store
-      prefix: LSIF
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads
       interfaces:
         - PolicyService
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
-      interfaces:
-        - Store
-      prefix: Worker
 - filename: internal/codeintel/uploads/internal/background/processor/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/processor
       interfaces:
         - RepoStore
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
-      interfaces:
-        - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
-      interfaces:
-        - Store
-        - SCIPWriter
-      prefix: LSIF
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
-      interfaces:
-        - Store
-      prefix: Worker
 - filename: internal/codeintel/uploads/internal/background/expirer/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/expirer
       interfaces:
         - PolicyService
         - PolicyMatcher
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
-      interfaces:
-        - Store
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore
-      interfaces:
-        - Store
-        - SCIPWriter
-      prefix: LSIF
-    - path: github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store
-      interfaces:
-        - Store
-      prefix: Worker
-- filename: internal/codeintel/uploads/internal/background/backfiller/mocks_test.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store
-      interfaces:
-        - Store
 - filename: internal/database/migration/runner/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/database/migration/runner
   interfaces:
@@ -299,8 +258,8 @@
   interfaces:
     - Migrator
     - storeIface
-- filename: internal/uploadstore/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/uploadstore
+- filename: internal/object/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/object
   interfaces:
     - gcsAPI
     - gcsBucketHandle
@@ -308,7 +267,7 @@
     - gcsObjectHandle
     - s3API
     - s3Uploader
-  package: uploadstore
+  package: object
 - filename: internal/workerutil/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/workerutil
   interfaces:
@@ -348,8 +307,8 @@
     - path: github.com/sourcegraph/sourcegraph/internal/conf/conftypes
       interfaces:
         - SiteConfigQuerier
-- filename: internal/auth/userpasswd/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/auth/userpasswd
+- filename: cmd/frontend/internal/auth/userpasswd/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd
   interfaces:
     - LockoutStore
 - filename: internal/codeintel/uploads/transport/graphql/mocks_test.go
@@ -433,6 +392,12 @@
     - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionsservice
       interfaces:
         - StoreV1
+- filename: cmd/enterprise-portal/internal/codyaccessservice/mocks_test.go
+  package: codyaccessservice
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/codyaccessservice
+      interfaces:
+        - StoreV1
 - filename: dev/sg/internal/analytics/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics
   package: analytics
@@ -443,3 +408,15 @@
   package: mocks
   interfaces:
     - ReleaseRegistryClient
+- filename: cmd/enterprise-portal/internal/routines/licenseexpiration/mocks_test.go
+  package: licenseexpiration
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/routines/licenseexpiration
+      interfaces:
+        - Store
+- filename: cmd/enterprise-portal/internal/subscriptionlicensechecksservice/mocks_test.go
+  package: subscriptionlicensechecksservice
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/enterprise-portal/internal/subscriptionlicensechecksservice
+      interfaces:
+        - StoreV1

@@ -6,8 +6,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go/errors"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -38,8 +38,8 @@ func (m mockAuthnProvider) CachedInfo() *providers.Info {
 	// return &providers.Info{ServiceID: m.serviceID}
 }
 
-func (m mockAuthnProvider) Refresh(ctx context.Context) error {
-	panic("should not be called")
+func (m mockAuthnProvider) Type() providers.ProviderType {
+	return providers.ProviderTypeOAuth
 }
 
 type mockAuthnProviderUser struct {

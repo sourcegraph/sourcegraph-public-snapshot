@@ -4,16 +4,17 @@
 
     import { browser } from '$app/environment'
     import { beforeNavigate } from '$app/navigation'
-    import { isErrorLike } from '$lib/common'
     import GlobalHeader from '$lib/navigation/GlobalHeader.svelte'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { isLightTheme, setAppContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
+    // When adding global imports here, they should probably also be added in .storybook/preview.ts
     import '@fontsource-variable/roboto-mono'
     import '@fontsource-variable/inter'
     import './styles.scss'
 
+    import { isErrorLike } from '$lib/common'
     import { createFeatureFlagStore } from '$lib/featureflags'
     import FuzzyFinderContainer from '$lib/fuzzyfinder/FuzzyFinderContainer.svelte'
     import GlobalNotification from '$lib/global-notifications/GlobalNotifications.svelte'
@@ -21,6 +22,7 @@
     import { isRouteEnabled } from '$lib/navigation'
 
     import type { LayoutData } from './$types'
+    import WelcomeOverlay from './WelcomeOverlay.svelte'
 
     export let data: LayoutData
 
@@ -80,10 +82,10 @@
     $: currentUserID = data.user?.id
     $: handleOptOut = currentUserID
         ? async (): Promise<void> => {
-              if (currentUserID) {
-                  await data.disableSvelteFeatureFlags(currentUserID)
-                  window.location.reload()
-              }
+              // Show departure message after switching off
+              $temporarySettingsStorage.set('webNext.departureMessage.show', true)
+              await data.disableSvelteFeatureFlags(currentUserID)
+              window.location.reload()
           }
         : undefined
 </script>
@@ -103,6 +105,8 @@
 <main>
     <slot />
 </main>
+
+<WelcomeOverlay />
 
 <FuzzyFinderContainer />
 

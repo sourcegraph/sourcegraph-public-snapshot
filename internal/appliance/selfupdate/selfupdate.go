@@ -2,30 +2,31 @@ package selfupdate
 
 import (
 	"context"
+	"encoding/json"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/life4/genesis/slices"
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/appliance"
-	"github.com/sourcegraph/sourcegraph/internal/appliance/config"
 	"github.com/sourcegraph/sourcegraph/internal/releaseregistry"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SelfUpdate struct {
-	Interval       time.Duration
-	Logger         log.Logger
-	K8sClient      client.Client
-	RelregClient   releaseregistry.ReleaseRegistryClient
-	DeploymentName string
-	Namespace      string
+	Interval           time.Duration
+	Logger             log.Logger
+	K8sClient          client.Client
+	RelregClient       releaseregistry.ReleaseRegistryClient
+	PinnedReleasesFile string
+	DeploymentNames    string
+	Namespace          string
 }
 
 func (u *SelfUpdate) Loop(ctx context.Context) error {
@@ -34,6 +35,11 @@ func (u *SelfUpdate) Loop(ctx context.Context) error {
 	ticker := time.NewTicker(u.Interval)
 	defer ticker.Stop()
 
+	// Do one iteration without having to wait for the first tick
+	if err := u.Once(ctx); err != nil {
+		u.Logger.Error("error self-updating", log.Error(err))
+		return err
+	}
 	for {
 		select {
 		case <-ticker.C:
@@ -51,48 +57,33 @@ func (u *SelfUpdate) Loop(ctx context.Context) error {
 func (u *SelfUpdate) Once(ctx context.Context) error {
 	u.Logger.Info("starting self-update")
 
-	var dep appsv1.Deployment
-	depName := types.NamespacedName{Name: u.DeploymentName, Namespace: u.Namespace}
-	if err := u.K8sClient.Get(ctx, depName, &dep); err != nil {
-		return errors.Wrap(err, "getting deployment")
-	}
-
-	currentSGVersion, err := u.getCurrentlyDeployedSGVersion(ctx)
-	if err != nil {
-		// Wait for SG to be deployed before alloweing self-update
-		if kerrors.IsNotFound(err) {
-			u.Logger.Info("Sourcegraph ConfigMap not found, exiting appliance self-update")
-			return nil
+	var deps []appsv1.Deployment
+	for _, depName := range strings.Split(u.DeploymentNames, ",") {
+		depNsName := types.NamespacedName{Name: depName, Namespace: u.Namespace}
+		var dep appsv1.Deployment
+		if err := u.K8sClient.Get(ctx, depNsName, &dep); err != nil {
+			return errors.Wrap(err, "getting deployment")
 		}
-		return errors.Wrap(err, "determining current Sourcegraph version")
+		deps = append(deps, dep)
 	}
 
-	newTag, err := u.getLatestTag(ctx, currentSGVersion)
+	newTag, err := u.getLatestTag(ctx)
 	if err != nil {
 		return errors.Wrap(err, "getting latest tag")
 	}
 
-	dep.Spec.Template.Spec.Containers[0].Image = replaceTag(dep.Spec.Template.Spec.Containers[0].Image, newTag)
-	if err := u.K8sClient.Update(ctx, &dep); err != nil {
-		return errors.Wrap(err, "updating deployment")
+	for _, dep := range deps {
+		dep.Spec.Template.Spec.Containers[0].Image = replaceTag(dep.Spec.Template.Spec.Containers[0].Image, newTag)
+		if err := u.K8sClient.Update(ctx, &dep); err != nil {
+			return errors.Wrap(err, "updating deployment")
+		}
 	}
 
 	return nil
 }
 
-func (u *SelfUpdate) getCurrentlyDeployedSGVersion(ctx context.Context) (string, error) {
-	var cfgMap corev1.ConfigMap
-	cfgMapName := types.NamespacedName{Name: config.ConfigmapName, Namespace: u.Namespace}
-	if err := u.K8sClient.Get(ctx, cfgMapName, &cfgMap); err != nil {
-		return "", err
-	}
-	return cfgMap.GetAnnotations()[config.AnnotationKeyCurrentVersion], nil
-}
-
-// Get latest appliance version that is no more than 2 minor versions ahead of
-// the currently-deployed Sourcegraph version.
-func (u *SelfUpdate) getLatestTag(ctx context.Context, currentSGVersion string) (string, error) {
-	versions, err := u.RelregClient.ListVersions(ctx, "sourcegraph")
+func (u *SelfUpdate) getLatestTag(ctx context.Context) (string, error) {
+	versions, err := u.getVersions(ctx)
 	if err != nil {
 		return "", err
 	}
@@ -102,12 +93,30 @@ func (u *SelfUpdate) getLatestTag(ctx context.Context, currentSGVersion string) 
 	if len(versionStrs) == 0 {
 		return "", errors.New("no versions found")
 	}
-	latestVersion, err := appliance.HighestVersionNoMoreThanNMinorFromBase(versionStrs, currentSGVersion, 2)
+	semvers, err := appliance.ParseVersions(versionStrs)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "parsing versions from release registry")
 	}
+	latestVersion := semvers[len(semvers)-1].String()
+
 	u.Logger.Info("found latest version", log.String("version", latestVersion))
 	return latestVersion, nil
+}
+
+func (u *SelfUpdate) getVersions(ctx context.Context) ([]releaseregistry.ReleaseInfo, error) {
+	if u.PinnedReleasesFile != "" {
+		file, err := os.Open(u.PinnedReleasesFile)
+		if err != nil {
+			return nil, errors.Wrap(err, "opening pinned releases file")
+		}
+		defer file.Close()
+		var versions []releaseregistry.ReleaseInfo
+		if err := json.NewDecoder(file).Decode(&versions); err != nil {
+			return nil, err
+		}
+		return versions, nil
+	}
+	return u.RelregClient.ListVersions(ctx, "sourcegraph")
 }
 
 // I thought about using regular expressions for this but I swear that's not

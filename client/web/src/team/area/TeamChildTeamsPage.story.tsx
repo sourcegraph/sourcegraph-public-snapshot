@@ -12,9 +12,7 @@ import { testContext } from './testContext.mock'
 
 const config: Meta = {
     title: 'web/teams/TeamChildTeamsPage',
-    parameters: {
-        chromatic: { disableSnapshot: false },
-    },
+    parameters: {},
 }
 export default config
 

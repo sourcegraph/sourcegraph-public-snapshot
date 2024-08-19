@@ -131,6 +131,7 @@
 
     import { browser } from '$app/environment'
     import { goto } from '$app/navigation'
+    import { getExplorePanelContext } from '$lib/codenav/ExplorePanel.svelte'
     import type { LineOrPositionOrRange } from '$lib/common'
     import { type CodeIntelAPI, Occurrence } from '$lib/shared'
     import {
@@ -166,7 +167,7 @@
         getScrollSnapshot as getScrollSnapshot_internal,
     } from './codemirror/utils'
     import { registerHotkey } from './Hotkey'
-    import { goToDefinition, openImplementations, openReferences } from './repo/blob'
+    import { goToDefinition } from './repo/blob'
     import { createLocalWritable } from './stores'
 
     export let blobInfo: BlobInfo
@@ -229,15 +230,23 @@
         filePath: blobInfo.filePath,
         languages: blobInfo.languages,
     }
+    const { openReferences, openDefinitions, openImplementations } = getExplorePanelContext()
     $: codeIntelExtension = codeIntelAPI
         ? createCodeIntelExtension({
               api: {
                   api: codeIntelAPI,
                   documentInfo: documentInfo,
-                  goToDefinition: (view, definition, options) =>
-                      goToDefinition(documentInfo, view, definition, options),
-                  openReferences,
-                  openImplementations,
+                  goToDefinition: (view, definition, options) => {
+                      if (definition.type === 'multiple') {
+                          // Open the explore panel with the definitions
+                          openDefinitions({ documentInfo, occurrence: definition.occurrence })
+                      } else {
+                          goToDefinition(documentInfo, view, definition, options)
+                      }
+                  },
+                  openReferences: (_view, documentInfo, occurrence) => openReferences({ documentInfo, occurrence }),
+                  openImplementations: (_view, documentInfo, occurrence) =>
+                      openImplementations({ documentInfo, occurrence }),
                   createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
               },
               // TODO(fkling): Support tooltip pinning

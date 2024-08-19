@@ -1,14 +1,30 @@
-import { dev } from '$app/environment'
+import { browser, dev } from '$app/environment'
 
 import { svelteKitRoutes, type SvelteKitRoute } from './routes'
 
 let knownRoutesRegex: RegExp | undefined
 
+// Additional known routes that are not in the list of known routes provided by the server.
+// Having a separate list is error-prone and should be avoided if possible.
+const additionalKnownRoutes: string[] = [
+    // Cody's marketing page
+    '^/cody/?$',
+]
+
 function getKnownRoutesRegex(): RegExp {
     if (!knownRoutesRegex) {
-        knownRoutesRegex = new RegExp(`(${window.context?.svelteKit?.knownRoutes?.join(')|(')})`)
+        const knownRoutes = additionalKnownRoutes.concat((browser && window.context?.svelteKit?.knownRoutes) || [])
+        knownRoutesRegex = knownRoutes.length === 0 ? /$^/ : new RegExp(`${knownRoutes.join('|')}`)
     }
     return knownRoutesRegex
+}
+
+/**
+ * Returns true if the given pathname is a known sub page.
+ * This depends on the list of known routes provided by the server.
+ */
+export function isKnownSubPage(pathname: string): boolean {
+    return getKnownRoutesRegex().test(pathname)
 }
 
 /**
@@ -55,7 +71,7 @@ export function isRouteEnabled(pathname: string): boolean {
             // Check known routes to see if there is a more specific route than the repo root.
             // If yes then we should load the React app (if the more specific route was enabled
             // it would have been found above).
-            return !getKnownRoutesRegex().test(pathname)
+            return !isKnownSubPage(pathname)
         }
         return true
     }

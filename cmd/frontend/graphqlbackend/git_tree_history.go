@@ -4,12 +4,12 @@ import (
 	"context"
 	"io/fs"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type HistoryArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	After *string
 
 	// TODO(@camdencheek): implement follow. Right now, we wouldn't have
@@ -52,6 +52,6 @@ func (r *treeEntryHistoryConnection) TotalCount(ctx context.Context) (*int32, er
 	return r.commits.TotalCount(ctx)
 }
 
-func (r *treeEntryHistoryConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *treeEntryHistoryConnection) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	return r.commits.PageInfo(ctx)
 }

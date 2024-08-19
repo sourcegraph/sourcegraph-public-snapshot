@@ -1,6 +1,5 @@
 import type { ContentMatch } from '$lib/shared'
-
-import { test, expect } from '../../testing/integration'
+import { test, expect, type Page, Sourcegraph, type Locator } from '$testing/integration'
 import {
     createDoneEvent,
     createProgressEvent,
@@ -8,7 +7,8 @@ import {
     createContentMatch,
     createPathMatch,
     createSymbolMatch,
-} from '../../testing/search-testdata'
+    createRepositoryMatch,
+} from '$testing/search-testdata'
 
 const chunkMatch: ContentMatch = {
     type: 'content',
@@ -287,6 +287,96 @@ test.describe('search results', async () => {
         await searchInput.press('Enter')
         await expect(page).toHaveURL(/\/search\?q=test&patternType=standard&sm=0/)
     })
+
+    test('focus shortcuts', async ({ page, sg }) => {
+        sg.mockOperations({
+            HighlightedFile: () => ({
+                repository: {
+                    commit: {
+                        blob: {
+                            highlight: {
+                                aborted: true,
+                                lineRanges: [],
+                            },
+                        },
+                    },
+                },
+            }),
+        })
+        const stream = await sg.mockSearchStream()
+        await page.goto('/search?q=test')
+        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+        const contentMatch = createContentMatch()
+        contentMatch.chunkMatches = contentMatch.chunkMatches?.slice(0, 2)
+        const pathMatch = createPathMatch()
+        const repoMatch = createRepositoryMatch()
+        const symbolMatch = createSymbolMatch()
+        const commitMatch = createCommitMatch('commit')
+
+        await stream.publish(
+            {
+                type: 'matches',
+                data: [contentMatch, pathMatch, repoMatch, symbolMatch, commitMatch],
+            },
+            createProgressEvent(),
+            createDoneEvent()
+        )
+        await stream.close()
+
+        function firstLine(s: string): string {
+            return s.split('\n')[0].trim()
+        }
+
+        // Iterate downwards through each result type
+        {
+            for (const chunkMatch of contentMatch.chunkMatches?.slice(0, 2) ?? []) {
+                await expect(page.locator('*:focus')).toContainText(firstLine(chunkMatch.content))
+                await page.keyboard.press('j')
+            }
+
+            await expect(page.locator('*:focus')).toContainText(pathMatch.path.split('/').at(-1) ?? '')
+            await page.keyboard.press('ArrowDown') // Check a down arrow too
+
+            await expect(page.locator('*:focus')).toContainText(repoMatch.repository.split('/').slice(1).join('/'))
+            await page.keyboard.press('j')
+
+            for (const symbol of symbolMatch.symbols) {
+                await expect(page.locator(`*:focus [data-line="${symbol.line + 1}"]`)).toBeVisible()
+                await page.keyboard.press('j')
+            }
+
+            await expect(page.locator('*:focus')).toContainText(firstLine(commitMatch.message))
+            await page.keyboard.press('j')
+
+            // Pressing down on the last result keeps us on the last result
+            await expect(page.locator('*:focus')).toContainText(firstLine(commitMatch.message))
+        }
+
+        // Go in reverse, iterating up through the results
+        {
+            for (const symbol of symbolMatch.symbols.reverse()) {
+                await page.keyboard.press('k')
+                await expect(page.locator(`*:focus [data-line="${symbol.line + 1}"]`)).toBeVisible()
+            }
+
+            await page.keyboard.press('k')
+            await expect(page.locator('*:focus')).toContainText(repoMatch.repository.split('/').slice(1).join('/'), {
+                useInnerText: true,
+            })
+
+            await page.keyboard.press('ArrowUp') // Check an up arrow too
+            await expect(page.locator('*:focus')).toContainText(pathMatch.path.split('/').at(-1) ?? '')
+
+            for (const chunkMatch of contentMatch.chunkMatches?.slice(0, 2)?.reverse() ?? []) {
+                await page.keyboard.press('k')
+                await expect(page.locator('*:focus')).toContainText(firstLine(chunkMatch.content))
+            }
+
+            // Pressing up on the top result stays on the top result
+            await page.keyboard.press('k')
+            await expect(page.locator('*:focus')).toContainText(firstLine(contentMatch.chunkMatches?.[0].content ?? ''))
+        }
+    })
 })
 
 test.describe('search filters', async () => {
@@ -334,5 +424,81 @@ test.describe('search filters', async () => {
 
         await page.getByRole('link', { name: 'Test snippet' }).click()
         await page.waitForURL(/Test\+snippet/)
+    })
+})
+
+test.describe('search jobs', async () => {
+    let button: Locator
+    let popover: Locator
+    let createSearchJobHeading: Locator
+    let createSearchJobButton: Locator
+
+    async function setup(page: Page, sg: Sourcegraph): Promise<void> {
+        const stream = await sg.mockSearchStream()
+        await sg.signIn()
+        await page.goto('/search?q=test')
+        await page.getByRole('heading', { name: 'Filter results' }).waitFor()
+        await stream.publish(
+            {
+                type: 'matches',
+                data: [chunkMatch],
+            },
+            createProgressEvent(),
+            createDoneEvent()
+        )
+        await stream.close()
+        await button.click()
+        await expect(popover).toBeVisible()
+    }
+
+    test.beforeEach(async ({ page }) => {
+        button = page.getByTestId('page.search-results.progress-button')
+        popover = page.getByTestId('page.search-results.progress-popover')
+        createSearchJobHeading = popover.getByRole('heading', { name: 'Create a search job' })
+        createSearchJobButton = popover.getByRole('button', { name: 'Create a search job' })
+    })
+
+    test('not visible when search jobs is disabled', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: false })
+        await setup(page, sg)
+        await expect(createSearchJobHeading).toBeHidden()
+    })
+
+    test('visible when search jobs are enabled', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: true })
+        await setup(page, sg)
+        await expect(createSearchJobHeading).toBeVisible()
+    })
+
+    test('shows error if query validation fails', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: true })
+        sg.mockOperations({
+            ValidateSearchJob() {
+                throw new Error('Test error')
+            },
+        })
+        await setup(page, sg)
+        await expect(popover.getByText('Test error')).toBeVisible()
+        await expect(createSearchJobButton).toBeDisabled()
+    })
+
+    test('shows error if job creation fails', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: true })
+        sg.mockOperations({
+            CreateSearchJob() {
+                throw new Error('Test error')
+            },
+        })
+        await setup(page, sg)
+        await createSearchJobButton.click()
+        await expect(popover.getByText('Test error')).toBeVisible()
+        await expect(createSearchJobButton).toBeEnabled()
+    })
+
+    test('redirects on job creation', async ({ page, sg }) => {
+        await sg.setWindowContext({ searchJobsEnabled: true })
+        await setup(page, sg)
+        await createSearchJobButton.click()
+        await expect(page).toHaveURL(/\/search-jobs/)
     })
 })

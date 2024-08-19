@@ -24,13 +24,20 @@ func NewManager() *Manager {
 	}
 }
 
+func NewManagerWithCache(cache *rcache.Cache) *Manager {
+	return &Manager{
+		cache: cache,
+	}
+}
+
 type Provider string
 
 const (
-	OpenAI      Provider = "openai"
-	AzureOpenAI Provider = "azureopenai"
-	AwsBedrock  Provider = "awsbedrock"
-	Anthropic   Provider = "anthropic"
+	OpenAI           Provider = "openai"
+	OpenAICompatible Provider = "openaicompatible"
+	AzureOpenAI      Provider = "azureopenai"
+	AwsBedrock       Provider = "awsbedrock"
+	Anthropic        Provider = "anthropic"
 )
 
 func (m *Manager) UpdateTokenCountsFromModelUsage(inputTokens, outputTokens int, model, feature string, provider Provider) error {

@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/inconshreveable/log15" //nolint:logging // TODO move all logging to sourcegraph/log
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/schollz/progressbar/v3"
+	"github.com/sourcegraph/log"
 )
 
 // extractOwnerRepoFromCSVLine extracts the owner and repo from a line that comes from a CSV file that a GHE instance
@@ -44,7 +44,7 @@ type producer struct {
 	// how many we have already processed
 	numAlreadyDone int64
 	// logger for the pump
-	logger log15.Logger
+	logger log.Logger
 	// terminal UI progress bar
 	bar *progressbar.ProgressBar
 	// skips this many lines from the input before starting to feed into the pipe
@@ -89,7 +89,7 @@ func (prdc *producer) pumpFile(ctx context.Context, path string) error {
 			reposSucceededCounter.Inc()
 			remainingWorkGauge.Add(-1.0)
 			prdc.remaining--
-			prdc.logger.Debug("repo already done in previous run", "owner/repo", line)
+			prdc.logger.Debug("repo already done in previous run", log.String("owner/repo", line))
 			continue
 		}
 		select {

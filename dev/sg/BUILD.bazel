@@ -80,6 +80,7 @@ go_library(
         "//dev/sg/msp",
         "//dev/sg/root",
         "//dev/sg/sams",
+        "//dev/sg/tail",
         "//dev/team",
         "//internal/accesstoken",
         "//internal/collections",

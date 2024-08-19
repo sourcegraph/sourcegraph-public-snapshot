@@ -1,9 +1,9 @@
 package ci
 
 import (
+	"context"
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
+	"github.com/sourcegraph/sourcegraph/internal/execute"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -97,12 +98,20 @@ func NewConfig(now time.Time) Config {
 			changedFiles, err = gitops.GetBranchChangedFiles(baseBranch, commit)
 		}
 	} else {
-		out, giterr := exec.Command("git", "rev-parse", "HEAD").Output()
+		out, giterr := execute.Git(context.Background(), "rev-parse", "HEAD")
 		if giterr != nil {
 			panic(giterr)
 		}
 
 		commit = strings.TrimSpace(string(out))
+		var mergeBaseOut []byte
+		mergeBaseOut, err = execute.Git(context.Background(), "merge-base", "origin/main", commit)
+		if err != nil {
+			panic(fmt.Sprintf("failed to find merge base origin/main..%s: %v", commit, err))
+		}
+		if string(mergeBaseOut) == "" {
+			panic("no merge base was found for origin/main..%s - this typically means that git was unable to find a common ancestor between the current commit and the target branch. This can potentially be caused if the current repository has a limited depth or is a shallow clone")
+		}
 		changedFiles, err = gitops.GetBranchChangedFiles("main", commit)
 	}
 
@@ -222,10 +231,6 @@ type MessageFlags struct {
 	// hash output.
 	SkipHashCompare bool
 
-	// ForceReadyForReview, if true will skip the draft pull request check and run the Chromatic steps.
-	// This allows a user to run the job without marking their PR as ready for review
-	ForceReadyForReview bool
-
 	// NoBazel, if true prevents automatic replacement of job with their Bazel equivalents.
 	NoBazel bool
 }
@@ -233,8 +238,7 @@ type MessageFlags struct {
 // parseMessageFlags gets MessageFlags from the given commit message.
 func parseMessageFlags(msg string) MessageFlags {
 	return MessageFlags{
-		ProfilingEnabled:    strings.Contains(msg, "[buildkite-enable-profiling]"),
-		SkipHashCompare:     strings.Contains(msg, "[skip-hash-compare]"),
-		ForceReadyForReview: strings.Contains(msg, "[review-ready]"),
+		ProfilingEnabled: strings.Contains(msg, "[buildkite-enable-profiling]"),
+		SkipHashCompare:  strings.Contains(msg, "[skip-hash-compare]"),
 	}
 }

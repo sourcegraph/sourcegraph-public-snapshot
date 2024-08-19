@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -87,8 +87,8 @@ func (p *Provider) CachedInfo() *providers.Info {
 	}
 }
 
-func (p *Provider) Refresh(ctx context.Context) error {
-	return nil
+func (p *Provider) Type() providers.ProviderType {
+	return providers.ProviderTypeGerrit
 }
 
 func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {

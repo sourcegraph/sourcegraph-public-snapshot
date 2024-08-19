@@ -67,10 +67,6 @@ export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> 
         [codyChatStore, isSidebarOpen, setIsSidebarOpen, setFocusProvided, setSidebarSize, inputNeedsFocus]
     )
 
-    // dirty fix because CodyRecipesWidget is rendered inside a different React DOM tree.
-    const global = window as any
-    global.codySidebarStore = state
-
     return <CodySidebarContext.Provider value={state}>{children}</CodySidebarContext.Provider>
 }
 

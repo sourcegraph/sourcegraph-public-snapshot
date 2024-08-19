@@ -12,13 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// InitRawDB initializes and returns a connection to the codeintel db.
-func InitRawDB(observationCtx *observation.Context) (*sql.DB, error) {
-	return initDBMemo.Init(observationCtx)
-}
-
 func InitDB(observationCtx *observation.Context) (codeintelshared.CodeIntelDB, error) {
-	rawDB, err := InitRawDB(observationCtx)
+	rawDB, err := initDBMemo.Init(observationCtx)
 	if err != nil {
 		return nil, err
 	}

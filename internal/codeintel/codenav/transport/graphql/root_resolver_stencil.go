@@ -17,7 +17,7 @@ func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []resolverstub
 		},
 		Path: r.requestState.Path,
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.stencil, time.Second, getObservationArgs(args))
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.stencil, time.Second, getObservationArgs(&args))
 	defer endObservation()
 
 	ranges, err := r.codeNavSvc.GetStencil(ctx, args, r.requestState)
@@ -27,7 +27,7 @@ func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []resolverstub
 
 	resolvers := make([]resolverstubs.RangeResolver, 0, len(ranges))
 	for _, r := range ranges {
-		resolvers = append(resolvers, newRangeResolver(convertRange(r)))
+		resolvers = append(resolvers, newRangeResolver(r.ToSCIPRange()))
 	}
 
 	return resolvers, nil

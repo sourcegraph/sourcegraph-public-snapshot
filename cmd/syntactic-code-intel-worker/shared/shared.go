@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/syntactic_indexing/jobstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -37,13 +36,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	name := "syntactic-codeintel-worker"
 
-	frontendSqlDB, err := initDB(observationCtx, name)
+	db, err := initDB(observationCtx, name)
 	if err != nil {
 		return errors.Wrap(err, "initializing frontend db")
 	}
-	db := database.NewDB(logger, frontendSqlDB)
 
-	jobStore, err := jobstore.NewStoreWithDB(observationCtx, frontendSqlDB)
+	jobStore, err := jobstore.NewStoreWithDB(observationCtx, db)
 	if err != nil {
 		return errors.Wrap(err, "initializing worker store")
 	}
@@ -79,18 +77,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 }
 
 func initCodeintelDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
-	// This is an internal service, so we rely on the
-	// frontend to do authz checks for user requests.
-	// Authz checks are enforced by the DB layer
-	//
-	// This call to SetProviders is here so that calls to GetProviders don't block.
-	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
-	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
-
-	authz.SetProviders(true, []authz.Provider{})
-
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-		return serviceConnections.PostgresDSN
+		return serviceConnections.CodeIntelPostgresDSN
 	})
 
 	sqlDB, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, name)
@@ -103,17 +91,7 @@ func initCodeintelDB(observationCtx *observation.Context, name string) (*sql.DB,
 	return sqlDB, nil
 }
 
-func initDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
-	// This is an internal service, so we rely on the
-	// frontend to do authz checks for user requests.
-	// Authz checks are enforced by the DB layer
-	//
-	// This call to SetProviders is here so that calls to GetProviders don't block.
-	// Relevant PR: https://github.com/sourcegraph/sourcegraph/pull/15755
-	// Relevant issue: https://github.com/sourcegraph/sourcegraph/issues/15962
-
-	authz.SetProviders(true, []authz.Provider{})
-
+func initDB(observationCtx *observation.Context, name string) (database.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
@@ -125,5 +103,5 @@ func initDB(observationCtx *observation.Context, name string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	return sqlDB, nil
+	return database.NewDB(observationCtx.Logger, sqlDB), nil
 }

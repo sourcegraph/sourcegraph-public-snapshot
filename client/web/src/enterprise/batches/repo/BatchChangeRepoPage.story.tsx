@@ -96,12 +96,7 @@ const decorator: Decorator = story => <div className="p-3 container web-content"
 const config: Meta = {
     title: 'web/batches/repo/BatchChangeRepoPage',
     decorators: [decorator],
-    parameters: {
-        chromatic: {
-            viewports: [320, 576, 978, 1440],
-            disableSnapshot: false,
-        },
-    },
+    parameters: {},
 }
 
 export default config

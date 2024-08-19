@@ -19,13 +19,13 @@ var buildEphemeralCommand = cli.Command{
 
 func writeAdditionalBuildCommandsSuggestion(version string) {
 	versionLine := fmt.Sprintf("The build will push images with the following tag/version: `%s`", version)
-	deployLine := fmt.Sprintf("create a deployment with this build by running `sg cloud deploy --version %s`", version)
-	upgradeLine := fmt.Sprintf("upgrade the existing deployment with this build by running `sg cloud upgrade --version %s`", version)
+	deployLine := fmt.Sprintf("create a deployment with this build by running `sg cloud eph deploy --version %s`", version)
+	upgradeLine := fmt.Sprintf("upgrade the existing deployment with this build by running `sg cloud eph upgrade --version %s`", version)
 	markdown := `%s
 Once this build completes, you can:
 * %s
 * %s`
-	std.Out.WriteMarkdown(fmt.Sprintf(markdown, versionLine, deployLine, upgradeLine))
+	std.Out.WriteMarkdown(withFAQ(fmt.Sprintf(markdown, versionLine, deployLine, upgradeLine)))
 }
 
 func buildCloudEphemeral(ctx *cli.Context) error {
@@ -50,7 +50,16 @@ Please make sure you have either pushed or pulled the latest changes before tryi
 			steps := "1. create a new branch off main by running `git switch <branch-name>`\n"
 			steps += "2. push the branch to the remote by running `git push -u origin <branch-name>`\n"
 			steps += "3. trigger the build by running `sg cloud ephemeral build`\n"
-			std.Out.WriteMarkdown(fmt.Sprintf("Alternatively, if you still want to deploy \"main\" you can do:\n%s", steps))
+			std.Out.WriteMarkdown(withFAQ(fmt.Sprintf("Alternatively, if you still want to deploy \"main\" you can do:\n%s", steps)))
+		} else if errors.Is(err, ErrMainDryRunBranch) {
+			msg := "Triggering Cloud Ephemeral builds from \"main-dry-run\" branches are not supported. Try renaming the branch to not have the \"main-dry-run\" prefix as it complicates the eventual pipeline that gets generated"
+			suggestion := "To rename a branch and launch a cloud ephemeral deployment do:\n"
+			suggestion += fmt.Sprintf("1. `git branch -m %q <my-new-name>`\n", currRepo.Branch)
+			suggestion += "2. `git push --set-upstream origin <my-new-name>`\n"
+			suggestion += "3. trigger the build by running `sg cloud ephemeral build`\n"
+
+			std.Out.WriteWarningf(msg)
+			std.Out.WriteMarkdown(withFAQ(suggestion))
 		}
 		return errors.Wrapf(err, "failed to trigger epehemeral build for branch")
 	}

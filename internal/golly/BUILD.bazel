@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "golly",
+    srcs = [
+        "doc.go",
+        "env_variables.go",
+        "golly.go",
+        "recording.go",
+        "testing_credentials.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/golly",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/httpcli",
+        "//lib/errors",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)

@@ -13,16 +13,19 @@
 </script>
 
 <script lang="ts">
-    import { browser } from '$app/environment'
+    import { beforeNavigate } from '$app/navigation'
     import { page } from '$app/stores'
     import { onClickOutside } from '$lib/dom'
     import Icon from '$lib/Icon.svelte'
     import MainNavigationLink from '$lib/navigation/MainNavigationLink.svelte'
     import Popover from '$lib/Popover.svelte'
     import SourcegraphLogo from '$lib/SourcegraphLogo.svelte'
-    import { isViewportMediumDown, isViewportMobile } from '$lib/stores'
-    import { Badge, Button } from '$lib/wildcard'
+    import { isViewportMediumDown } from '$lib/stores'
+    import { Button } from '$lib/wildcard'
+    import { getButtonClassName } from '$lib/wildcard/Button'
+    import ProductStatusBadge from '$lib/wildcard/ProductStatusBadge.svelte'
 
+    import FeedbackDialog from './FeedbackDialog.svelte'
     import { GlobalNavigation_User } from './GlobalNavigation.gql'
     import { type NavigationEntry, type NavigationMenu, isNavigationMenu, isCurrent } from './mainNavigation'
     import UserMenu from './UserMenu.svelte'
@@ -30,10 +33,6 @@
     export let authenticatedUser: GlobalNavigation_User | null | undefined
     export let handleOptOut: (() => Promise<void>) | undefined
     export let entries: (NavigationEntry | NavigationMenu)[]
-
-    const isDevOrS2 =
-        (browser && window.location.hostname === 'localhost') ||
-        window.location.hostname === 'sourcegraph.sourcegraph.com'
 
     let sidebarNavigationOpen: boolean = false
     let closeMenuTimer: number = 0
@@ -52,6 +51,10 @@
             openedMenu = ''
         }, 500)
     }
+    beforeNavigate(() => {
+        // Always close the sidebar when navigating to a new page
+        sidebarNavigationOpen = false
+    })
 </script>
 
 <header class="root" data-global-header class:withCustomContent class:sidebarMode>
@@ -60,8 +63,8 @@
             <Icon icon={ILucideMenu} aria-label="Navigation menu" />
         </button>
 
-        <a href="/search">
-            <Icon icon={ISgMark} aria-label="Sourcegraph" aria-hidden="true" --icon-color="initial" />
+        <a class="home-link" href="/search" aria-label="Got to search home">
+            <Icon icon={ISgMark} aria-label="Sourcegraph" aria-hidden="true" />
         </a>
     </div>
 
@@ -74,7 +77,7 @@
         >
             <div class="sidebar-navigation-header">
                 <button class="close-button" on:click={() => (sidebarNavigationOpen = false)}>
-                    <Icon icon={ILucideX} aria-label="Close sidebar navigation" />
+                    <Icon icon={ILucideX} />
                 </button>
 
                 <a href="/search" class="logo-link">
@@ -84,18 +87,22 @@
             </div>
             <ul class="top-navigation">
                 {#each entries as entry (entry.label)}
-                    {@const open = openedMenu === entry.label}
+                    {@const open = sidebarMode || openedMenu === entry.label}
                     <li class:open on:mouseenter={() => openMenu(entry.label)} on:mouseleave={closeMenu}>
                         {#if isNavigationMenu(entry)}
                             <span>
-                                <MainNavigationLink {entry} />
                                 <Button
                                     variant="icon"
                                     on:click={() => (openedMenu = open ? '' : entry.label)}
                                     aria-label="{open ? 'Close' : 'Open'} '{entry.label}' submenu"
                                     aria-expanded={open}
+                                    disabled={sidebarMode}
                                 >
-                                    <Icon icon={ILucideChevronDown} inline aria-hidden />
+                                    {#if entry.icon}
+                                        <Icon icon={entry.icon} aria-hidden="true" inline />&nbsp;
+                                    {/if}
+                                    {entry.label}&nbsp;
+                                    <span class="chevron"><Icon icon={ILucideChevronDown} inline aria-hidden /></span>
                                 </Button>
                             </span>
 
@@ -122,29 +129,20 @@
 
     <div class="global-portal" bind:this={$extensionElement} />
 
-    <Popover let:registerTrigger let:toggle showOnHover={!$isViewportMobile} hoverDelay={100} hoverCloseDelay={50}>
-        <button class="web-next-badge" use:registerTrigger on:click={() => toggle()}>
-            <Badge variant="warning">Experimental</Badge>
-        </button>
-        <div slot="content" class="web-next-content">
-            <h3>Experimental web app</h3>
-            <p>
-                You are using an experimental version of the Sourcegraph web app. This version is under active
-                development and may contain bugs or incomplete features.
-            </p>
-            {#if isDevOrS2}
-                <p>
-                    If you encounter any issues, please report them in our <a
-                        href="https://sourcegraph.slack.com/archives/C05MHAP318B">Slack channel</a
-                    >.
-                </p>
-            {/if}
-            {#if handleOptOut}
-                Or you can <button role="link" class="opt-out" on:click={handleOptOut}>opt out</button> of the Sveltekit
-                experiment.
-            {/if}
-        </div>
-    </Popover>
+    <div class="web-next-notice">
+        <ProductStatusBadge status="beta" />
+        <Popover let:registerTrigger let:toggle placement="bottom-end">
+            <button
+                use:registerTrigger
+                class={getButtonClassName({ variant: 'secondary', size: 'sm' })}
+                on:click={() => toggle()}
+            >
+                New UI Feedback
+                <Icon icon={ILucideChevronDown} inline />
+            </button>
+            <FeedbackDialog slot="content" {handleOptOut} />
+        </Popover>
+    </div>
     <div>
         {#if authenticatedUser}
             <UserMenu user={authenticatedUser} />
@@ -182,18 +180,22 @@
             margin-left: 0;
         }
 
-        :global([data-icon]):hover {
-            @keyframes spin {
-                50% {
-                    transform: rotate(180deg) scale(1.2);
-                }
-                100% {
-                    transform: rotate(180deg) scale(1);
-                }
-            }
+        .home-link {
+            --icon-color: initial;
 
-            @media (prefers-reduced-motion: no-preference) {
-                animation: spin 0.5s ease-in-out 1;
+            &:hover {
+                @keyframes spin {
+                    50% {
+                        transform: rotate(180deg) scale(1.2);
+                    }
+                    100% {
+                        transform: rotate(180deg) scale(1);
+                    }
+                }
+
+                @media (prefers-reduced-motion: no-preference) {
+                    animation: spin 0.5s ease-in-out 1;
+                }
             }
         }
     }
@@ -214,6 +216,10 @@
             list-style: none;
             padding: 0;
             margin: 0;
+        }
+
+        :global(button) {
+            font-weight: normal;
         }
     }
 
@@ -383,10 +389,9 @@
             margin: 0;
             background-color: var(--color-bg-1);
 
-            :global(button) {
-                display: none;
-            }
-
+            // Menu buttons (have not function in sidebar mode)
+            :global(button),
+            // Nav entries
             :global(a) {
                 display: flex;
                 flex-wrap: wrap;
@@ -394,10 +399,17 @@
                 gap: 0.25rem;
                 padding: 0.375rem 0.75rem;
                 font-size: 1rem;
+                // Overwrites disabled button style
+                color: var(--body-color);
+            }
 
-                &:hover {
-                    background-color: var(--secondary-2);
-                }
+            :global(a):hover {
+                background-color: var(--secondary-2);
+            }
+
+            // Don't show chevron in sidebar mode because the menu is always open
+            .chevron {
+                display: none;
             }
         }
 
@@ -411,28 +423,13 @@
         }
     }
 
-    // Opt out experiment badge and tooltip styles
-    .opt-out {
-        all: unset;
-        cursor: pointer;
-        color: var(--link-color);
-        text-decoration: underline;
-    }
-
-    .web-next-badge {
-        all: unset;
-        cursor: pointer;
-        padding: 0.25rem;
-        margin-left: auto;
-    }
-
-    .web-next-content {
-        padding: 1rem;
-        width: 20rem;
-
-        p:last-child {
-            margin-bottom: 0;
-        }
+    .web-next-notice {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: var(--font-size-small);
+        font-weight: 500;
+        margin-right: 1rem;
     }
 
     // Custom menu with sidebar navigation controls styles

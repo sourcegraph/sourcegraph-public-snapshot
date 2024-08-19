@@ -15,10 +15,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
@@ -1151,16 +1151,16 @@ func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graph
 	return resolvers, nil
 }
 
-func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	_, next, err := d.computeViews(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if next != "" {
-		return graphqlutil.NextPageCursor(string(relay.MarshalID(insightKind, d.next))), nil
+		return gqlutil.NextPageCursor(string(relay.MarshalID(insightKind, d.next))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 func (r *InsightViewQueryConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {

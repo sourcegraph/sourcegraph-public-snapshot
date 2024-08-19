@@ -5,9 +5,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -35,7 +35,7 @@ func (r *schemaResolver) permissionByID(ctx context.Context, id graphql.ID) (Per
 	return &permissionResolver{permission: permission}, nil
 }
 
-func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*gqlutil.ConnectionResolver[PermissionResolver], error) {
 	connectionStore := permissionConnectionStore{
 		db: r.db,
 	}
@@ -73,10 +73,10 @@ func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionAr
 		connectionStore.roleID = roleID
 	}
 
-	return graphqlutil.NewConnectionResolver[PermissionResolver](
+	return gqlutil.NewConnectionResolver[PermissionResolver](
 		&connectionStore,
 		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverOptions{
 			OrderBy: database.OrderBy{
 				{Field: "permissions.id"},
 			},

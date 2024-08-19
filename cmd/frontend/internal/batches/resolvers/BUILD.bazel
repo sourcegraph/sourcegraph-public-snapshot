@@ -40,10 +40,8 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/enterprise",
-        "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/externallink",
-        "//cmd/frontend/graphqlbackend/graphqlutil",
         "//cmd/frontend/internal/githubapp",
         "//internal/actor",
         "//internal/api",
@@ -130,10 +128,9 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//cmd/frontend/backend",
-        "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/externallink",
+        "//cmd/frontend/internal/backend",
         "//cmd/frontend/internal/batches/resolvers/apitest",
         "//cmd/frontend/internal/githubapp",
         "//internal/actor",

@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
+	"github.com/sourcegraph/sourcegraph/internal/tenant"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -240,6 +241,7 @@ func newInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 			ExpJitterDelayOrRetryAfterDelay(internalRetryDelayBase, internalRetryDelayMax),
 		),
 		MeteredTransportOpt(subsystem),
+		TenantTransportOpt,
 		ActorTransportOpt,
 		RequestClientTransportOpt,
 		RequestInteractionTransportOpt,
@@ -412,6 +414,8 @@ type denyRule struct {
 var defaultDenylist = []denyRule{
 	{builtin: "loopback"},
 	{pattern: "169.254.169.254"},
+	{pattern: "0.0.0.0"},
+	{pattern: "<nil>"},
 }
 
 var localDevDenylist = []denyRule{
@@ -942,6 +946,23 @@ func ActorTransportOpt(cli *http.Client) error {
 
 	cli.Transport = &wrappedTransport{
 		RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+// TenantTransportOpt wraps an existing http.Transport of an http.Client to pull the tenant
+// from the context and add it to each request's HTTP headers.
+//
+// Servers can use tenant.InternalHTTPMiddleware to populate tenant context from incoming requests.
+func TenantTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &tenant.InternalHTTPTransport{RoundTripper: cli.Transport},
 		Wrapped:      cli.Transport,
 	}
 

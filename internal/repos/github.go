@@ -712,7 +712,7 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 	}
 }
 
-func batchRepos(repos []*github.Repository, batchSize int) (batches [][]*github.Repository) {
+func batchPublicRepos(repos []*github.PublicRepository, batchSize int) (batches [][]*github.PublicRepository) {
 	for i := 0; i < len(repos); i += batchSize {
 		end := i + batchSize
 		if end > len(repos) {
@@ -753,7 +753,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		// The ListPublicRepositories endpoint returns incomplete information,
 		// so we make additional calls to get the full information of each repo.
 
-		batchedRepos := batchRepos(repos, 30)
+		batchedRepos := batchPublicRepos(repos, 30)
 		for _, batch := range batchedRepos {
 			namesWithOwners := make([]string, 0, len(batch))
 

@@ -16,8 +16,8 @@ type savedSearches struct {
 
 	OrgOwnedSavedSearches, OrgSavedSearches int32 // 2nd is the old field name for backcompat
 
-	SavedSearchesCreatedLast24h int32
-	SavedSearchesUpdatedLast24h int32
+	SavedSearchesCreatedLastUTCDay int32
+	SavedSearchesUpdatedLastUTCDay int32
 
 	NotificationsSent    int32
 	NotificationsClicked int32
@@ -32,8 +32,8 @@ func GetSavedSearches(ctx context.Context, db database.DB) (*savedSearches, erro
 	(SELECT COUNT(DISTINCT org_id) FROM saved_searches) AS uniqueOrgSavedSearchOwners,
 	(SELECT COUNT(*) FROM saved_searches WHERE user_id IS NOT NULL) AS userOwnedSavedSearches,
 	(SELECT COUNT(*) FROM saved_searches WHERE org_id IS NOT NULL) AS orgOwnedSavedSearches,
-	(SELECT COUNT(*) FROM saved_searches WHERE created_at > NOW() - INTERVAL '24 hours') AS savedSearchesCreatedLast24h,
-	(SELECT COUNT(*) FROM saved_searches WHERE updated_at > NOW() - INTERVAL '24 hours') AS savedSearchesUpdatedLast24h,
+	(SELECT COUNT(*) FROM saved_searches WHERE created_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC') - INTERVAL '1 day' AND created_at < DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC')) AS savedSearchesCreatedLastUTCDay,
+	(SELECT COUNT(*) FROM saved_searches WHERE updated_at >= DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC') - INTERVAL '1 day' AND updated_at < DATE_TRUNC('day', NOW() AT TIME ZONE 'UTC')) AS savedSearchesUpdatedLastUTCDay,
 	(SELECT COUNT(*) FROM event_logs WHERE event_logs.name = 'SavedSearchEmailNotificationSent') AS notificationsSent,
 	(SELECT COUNT(*) FROM event_logs WHERE event_logs.name = 'SavedSearchEmailClicked') AS notificationsClicked,
 	(SELECT COUNT(DISTINCT user_id) FROM event_logs WHERE event_logs.name = 'ViewSavedSearchListPage') AS uniqueUserPageViews
@@ -45,8 +45,8 @@ func GetSavedSearches(ctx context.Context, db database.DB) (*savedSearches, erro
 		&ss.UniqueOrgSavedSearchOwners,
 		&ss.UserOwnedSavedSearches,
 		&ss.OrgOwnedSavedSearches,
-		&ss.SavedSearchesCreatedLast24h,
-		&ss.SavedSearchesUpdatedLast24h,
+		&ss.SavedSearchesCreatedLastUTCDay,
+		&ss.SavedSearchesUpdatedLastUTCDay,
 		&ss.NotificationsSent,
 		&ss.NotificationsClicked,
 		&ss.UniqueUserPageViews,

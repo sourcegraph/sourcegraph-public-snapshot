@@ -6,8 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 const gitserverIDKind = "GitserverInstance"
@@ -42,7 +42,7 @@ func (r *schemaResolver) gitserverByID(ctx context.Context, id graphql.ID) (*git
 	}, nil
 }
 
-func (r *schemaResolver) Gitservers(ctx context.Context) (graphqlutil.SliceConnectionResolver[*gitserverResolver], error) {
+func (r *schemaResolver) Gitservers(ctx context.Context) (gqlutil.SliceConnectionResolver[*gitserverResolver], error) {
 	// 🚨 SECURITY: Only site admins can query gitserver information.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -62,7 +62,7 @@ func (r *schemaResolver) Gitservers(ctx context.Context) (graphqlutil.SliceConne
 		})
 	}
 	noOfResolvers := len(resolvers)
-	return graphqlutil.NewSliceConnectionResolver(resolvers, noOfResolvers, noOfResolvers), nil
+	return gqlutil.NewSliceConnectionResolver(resolvers, noOfResolvers, noOfResolvers), nil
 }
 
 type gitserverResolver struct {

@@ -17,13 +17,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/sveltekit"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -118,7 +118,7 @@ func repoShortName(name api.RepoName) string {
 // serveErrorHandler is a function signature used in newCommon and
 // mockNewCommon. This is used as syntactic sugar to prevent programmer's
 // (fragile creatures from planet Earth) from crashing out.
-type serveErrorHandler func(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int)
+type serveErrorHandler func(w http.ResponseWriter, r *http.Request, db database.DB, configurationServer *conf.Server, err error, statusCode int)
 
 // mockNewCommon is used in tests to mock newCommon (duh!).
 //
@@ -144,7 +144,7 @@ var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, ser
 //
 // In the case of a repository that is cloning, a Common data structure is
 // returned but it has a nil Repo.
-func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
+func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, configurationServer *conf.Server, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
 	logger := log.Scoped("commonHandler")
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
@@ -190,7 +190,7 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
 			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
 		},
-		Context:         jscontext.NewJSContextFromRequest(r, db),
+		Context:         jscontext.NewJSContextFromRequest(r, db, configurationServer),
 		Title:           title,
 		Manifest:        manifest,
 		PreloadedAssets: preloadedAssets,
@@ -237,18 +237,18 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 			}
 			if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 				// Revision does not exist.
-				serveError(w, r, db, err, http.StatusNotFound)
+				serveError(w, r, db, configurationServer, err, http.StatusNotFound)
 				return nil, nil
 			}
 			if errors.HasType[*gitserver.RepoNotCloneableErr](err) {
 				if errcode.IsNotFound(err) {
 					// Repository is not found.
-					serveError(w, r, db, err, http.StatusNotFound)
+					serveError(w, r, db, configurationServer, err, http.StatusNotFound)
 					return nil, nil
 				}
 
 				// Repository is not cloneable.
-				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
+				dangerouslyServeError(w, r, db, configurationServer, errors.New("repository could not be cloned"), http.StatusInternalServerError)
 				return nil, nil
 			}
 			if gitdomain.IsRepoNotExist(err) {
@@ -257,17 +257,17 @@ func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title str
 					return common, nil
 				}
 				// Repo does not exist.
-				serveError(w, r, db, err, http.StatusNotFound)
+				serveError(w, r, db, configurationServer, err, http.StatusNotFound)
 				return nil, nil
 			}
 			if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
 				// Repo does not exist.
-				serveError(w, r, db, err, http.StatusNotFound)
+				serveError(w, r, db, configurationServer, err, http.StatusNotFound)
 				return nil, nil
 			}
 			if errcode.IsUnauthorized(err) {
 				// Not authorized to access repository.
-				serveError(w, r, db, err, http.StatusUnauthorized)
+				serveError(w, r, db, configurationServer, err, http.StatusUnauthorized)
 				return nil, nil
 			}
 			return nil, err
@@ -324,15 +324,15 @@ const (
 	noIndex = false
 )
 
-func serveBrandedPageString(db database.DB, titles string, description *string, indexed bool) handlerFunc {
-	return serveBasicPage(db, func(c *Common, r *http.Request) string {
+func serveBrandedPageString(db database.DB, configurationServer *conf.Server, titles string, description *string, indexed bool) handlerFunc {
+	return serveBasicPage(db, configurationServer, func(c *Common, r *http.Request) string {
 		return brandNameSubtitle(titles)
 	}, description, indexed)
 }
 
-func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) string, description *string, indexed bool) handlerFunc {
+func serveBasicPage(db database.DB, configurationServer *conf.Server, title func(c *Common, r *http.Request) string, description *string, indexed bool) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, db, "", indexed, serveError)
+		common, err := newCommon(w, r, db, configurationServer, "", indexed, serveError)
 		if err != nil {
 			return err
 		}
@@ -348,9 +348,9 @@ func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) strin
 	}
 }
 
-func serveHome(db database.DB) handlerFunc {
+func serveHome(db database.DB, configurationServer *conf.Server) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, db, conf.Branding().BrandName, index, serveError)
+		common, err := newCommon(w, r, db, configurationServer, conf.Branding().BrandName, index, serveError)
 		if err != nil {
 			return err
 		}
@@ -377,9 +377,9 @@ func serveHome(db database.DB) handlerFunc {
 	}
 }
 
-func serveSignIn(db database.DB) handlerFunc {
+func serveSignIn(db database.DB, configurationServer *conf.Server) handlerFunc {
 	handler := func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, db, "", index, serveError)
+		common, err := newCommon(w, r, db, configurationServer, "", index, serveError)
 		if err != nil {
 			return err
 		}
@@ -394,7 +394,7 @@ func serveSignIn(db database.DB) handlerFunc {
 	return handler
 }
 
-func serveEmbed(db database.DB) handlerFunc {
+func serveEmbed(db database.DB, configurationServer *conf.Server) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		flagSet := featureflag.FromContext(r.Context())
 		if enabled := flagSet.GetBoolOr("enable-embed-route", false); !enabled {
@@ -411,7 +411,7 @@ func serveEmbed(db database.DB) handlerFunc {
 		// Any changes to this function could have security implications. Please consult the security team before making changes.
 		w.Header().Del("X-Frame-Options")
 
-		common, err := newCommon(w, r, db, "", index, serveError)
+		common, err := newCommon(w, r, db, configurationServer, "", index, serveError)
 		if err != nil {
 			return err
 		}
@@ -425,7 +425,7 @@ func serveEmbed(db database.DB) handlerFunc {
 
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
-func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB, client gitserver.Client) (requestHandled bool, err error) {
+func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB, client gitserver.Client, configurationServer *conf.Server) (requestHandled bool, err error) {
 	// NOTE: It makes no sense for this function to proceed if the commit ID
 	// for the repository is empty. It is most likely the repository is still
 	// clone in progress.
@@ -445,7 +445,7 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 	stat, err := client.Stat(r.Context(), common.Repo.Name, common.CommitID, path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			serveError(w, r, db, err, http.StatusNotFound)
+			serveError(w, r, db, configurationServer, err, http.StatusNotFound)
 			return true, nil
 		}
 		return false, err
@@ -466,9 +466,9 @@ func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseW
 }
 
 // serveTree serves the tree (directory) pages.
-func serveTree(db database.DB, title func(c *Common, r *http.Request) string) handlerFunc {
+func serveTree(db database.DB, configurationServer *conf.Server, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, db, "", index, serveError)
+		common, err := newCommon(w, r, db, configurationServer, "", index, serveError)
 		if err != nil {
 			return err
 		}
@@ -484,7 +484,7 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient("http.servetree"))
+		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient("http.servetree"), configurationServer)
 		if handled {
 			return nil
 		}
@@ -498,9 +498,9 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 	}
 }
 
-func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
+func serveRepoOrBlob(db database.DB, configurationServer *conf.Server, routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, db, "", index, serveError)
+		common, err := newCommon(w, r, db, configurationServer, "", index, serveError)
 		if err != nil {
 			return err
 		}
@@ -516,7 +516,7 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 			w.Header().Set("X-Robots-Tag", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient("http.serverepoorblob"))
+		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient("http.serverepoorblob"), configurationServer)
 		if handled {
 			return nil
 		}

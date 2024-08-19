@@ -2,20 +2,20 @@ import { dirname } from 'path'
 
 import { readable, derived, type Readable } from 'svelte/store'
 
+import { SourcegraphURL } from '@sourcegraph/common'
+
 import { CodyContextFiltersSchema, getFiltersFromCodyContextFilters } from '$lib/cody/config'
-import type { LineOrPositionOrRange } from '$lib/common'
 import { getGraphQLClient, infinityQuery, type GraphQLClient, IncrementalRestoreStrategy } from '$lib/graphql'
 import { ROOT_PATH, fetchSidebarFileTree } from '$lib/repo/api/tree'
 import { resolveRevision } from '$lib/repo/utils'
 import { parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
-import { CodyContextFiltersQuery, GitHistoryQuery, LastCommitQuery, RepoPage_PreciseCodeIntel } from './layout.gql'
+import { CodyContextFiltersQuery, GitHistoryQuery, LastCommitQuery } from './layout.gql'
 
 const HISTORY_COMMITS_PER_PAGE = 20
-const REFERENCES_PER_PAGE = 20
 
-export const load: LayoutLoad = async ({ parent, params }) => {
+export const load: LayoutLoad = async ({ parent, params, url }) => {
     const client = getGraphQLClient()
     const { repoName, revision = '' } = parseRepoRevision(params.repo)
     const filePath = params.path ? decodeURIComponent(params.path) : ''
@@ -39,6 +39,7 @@ export const load: LayoutLoad = async ({ parent, params }) => {
         fileTree,
         filePath,
         parentPath,
+        lineOrPosition: SourcegraphURL.from(url).lineRange,
         isCodyAvailable: createCodyAvailableStore(client, repoName),
         lastCommit: resolvedRevision
             .then(revspec =>
@@ -78,35 +79,6 @@ export const load: LayoutLoad = async ({ parent, params }) => {
                     n => ({ first: n.length })
                 ),
         }),
-
-        // We are not extracting the selected position from the URL because that creates a dependency
-        // on the full URL, which causes this loader to be re-executed on every URL change.
-        getReferenceStore: (lineOrPosition: LineOrPositionOrRange & { line: number }) =>
-            infinityQuery({
-                client,
-                query: RepoPage_PreciseCodeIntel,
-                variables: resolvedRevision.then(revspec => ({
-                    repoName,
-                    revspec,
-                    filePath,
-                    first: REFERENCES_PER_PAGE,
-                    // Line and character are 1-indexed, but the API expects 0-indexed
-                    line: lineOrPosition.line - 1,
-                    character: lineOrPosition.character! - 1,
-                    afterCursor: null as string | null,
-                })),
-                map: result => {
-                    const references = result.data?.repository?.commit?.blob?.lsif?.references
-                    return {
-                        nextVariables: references?.pageInfo.hasNextPage
-                            ? { afterCursor: references.pageInfo.endCursor }
-                            : undefined,
-                        data: references?.nodes,
-                        error: result.error,
-                    }
-                },
-                merge: (previous, next) => (previous ?? []).concat(next ?? []),
-            }),
     }
 }
 

@@ -49,7 +49,7 @@ func resolveLocations(bundle *GroupedBundleDataMaps, resultID ID) []LocationData
 		path := chunk.DocumentPaths[docIDRngID.DocumentID]
 		rng := bundle.Documents[path].Ranges[docIDRngID.RangeID]
 		locations = append(locations, LocationData{
-			URI:            path,
+			DocumentPath:   path,
 			StartLine:      rng.StartLine,
 			StartCharacter: rng.StartCharacter,
 			EndLine:        rng.EndLine,

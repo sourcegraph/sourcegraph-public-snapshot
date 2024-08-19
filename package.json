@@ -46,8 +46,6 @@
     "storybook:build": "pnpm --filter @sourcegraph/storybook run build",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "pnpm --filter @sourcegraph/browser run build",
-    "chromatic": "CHROMATIC=true pnpm run _chromatic --storybook-config-dir client/storybook/src --build-script-name=storybook:build",
-    "_chromatic": "chromatic",
     "install:browsers": "pnpm -r install:browsers"
   },
   "jscpd": {
@@ -184,7 +182,6 @@
     "bundlesize2": "^0.0.31",
     "chalk": "^4.1.0",
     "chokidar-cli": "^2.1.0",
-    "chromatic": "^11.0.8",
     "chrome-webstore-upload-cli": "^1.2.0",
     "command-exists": "^1.2.9",
     "compression": "^1.7.4",
@@ -261,8 +258,7 @@
     "typescript": "^5.0.2",
     "utc-version": "^2.0.2",
     "vite": "^4.1.4",
-    "vite-plugin-turbosnap": "^1.0.3",
-    "vitest": "1.0.0-beta.4",
+    "vitest": "2.0.3",
     "vitest-fetch-mock": "^0.2.2",
     "vsce": "^2.7.0",
     "wildcard-mock-link": "^2.0.1",
@@ -271,6 +267,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.8.0-alpha.7",
+    "@bufbuild/protobuf": "^1.10.0",
     "@codemirror/autocomplete": "^6.1.0",
     "@codemirror/commands": "^6.0.1",
     "@codemirror/lang-json": "^6.0.0",
@@ -281,6 +278,9 @@
     "@codemirror/search": "^6.0.1",
     "@codemirror/state": "^6.4.0",
     "@codemirror/view": "^6.26.3",
+    "@connectrpc/connect": "^1.4.0",
+    "@connectrpc/connect-query": "^1.4.1",
+    "@connectrpc/connect-web": "^1.4.0",
     "@date-fns/utc": "^1.1.1",
     "@graphiql/react": "^0.10.0",
     "@lezer/common": "^1.0.0",
@@ -309,6 +309,7 @@
     "@reach/visually-hidden": "^0.16.0",
     "@react-aria/live-announcer": "^3.1.0",
     "@sentry/browser": "^7.8.1",
+    "@sourcegraph/cody-web": "^0.4.0",
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@stripe/react-stripe-js": "^2.7.0",
     "@stripe/stripe-js": "^3.3.0",
@@ -333,7 +334,6 @@
     "bloomfilter": "^0.0.18",
     "buffer": "^6.0.3",
     "classnames": "^2.2.6",
-    "cody-web-experimental": "^0.2.7",
     "comlink": "^4.3.0",
     "copy-to-clipboard": "^3.3.1",
     "core-js": "^3.8.2",
@@ -427,11 +427,7 @@
     "webextension-polyfill": "^0.6.0",
     "whatwg-url": "^14.0.0",
     "yaml-ast-parser": "^0.0.43",
-    "zustand": "^3.6.9",
-    "@bufbuild/protobuf": "^1.10.0",
-    "@connectrpc/connect": "^1.4.0",
-    "@connectrpc/connect-query": "^1.4.1",
-    "@connectrpc/connect-web": "^1.4.0"
+    "zustand": "^3.6.9"
   },
   "packageManager": "pnpm@8.9.2",
   "pnpm": {

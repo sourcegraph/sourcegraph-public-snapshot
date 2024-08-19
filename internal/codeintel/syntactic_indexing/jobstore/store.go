@@ -2,12 +2,12 @@ package jobstore
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -36,7 +36,7 @@ func (s *syntacticIndexingJobStoreImpl) DBWorkerStore() dbworkerstore.Store[*Syn
 	return s.store
 }
 
-func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticIndexingJobStore, error) {
+func NewStoreWithDB(observationCtx *observation.Context, db database.DB) (SyntacticIndexingJobStore, error) {
 	// Make sure this is in sync with the columns of the
 	// syntactic_scip_indexing_jobs_with_repository_name view
 	var columnExpressions = []*sqlf.Query{
@@ -66,10 +66,9 @@ func NewStoreWithDB(observationCtx *observation.Context, db *sql.DB) (SyntacticI
 		Scan:              dbworkerstore.BuildWorkerScan(ScanSyntacticIndexRecord),
 	}
 
-	handle := basestore.NewHandleWithDB(observationCtx.Logger, db, sql.TxOptions{})
 	return &syntacticIndexingJobStoreImpl{
-		store:      dbworkerstore.New(observationCtx, handle, storeOptions),
-		db:         basestore.NewWithHandle(handle),
+		store:      dbworkerstore.New(observationCtx, db.Handle(), storeOptions),
+		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationCtx),
 		logger:     observationCtx.Logger.Scoped("syntactic_indexing.store"),
 	}, nil
@@ -113,7 +112,7 @@ func (s *syntacticIndexingJobStoreImpl) InsertIndexingJobs(ctx context.Context, 
 		for _, id := range insertedJobIds {
 			jobLookupQueries = append(jobLookupQueries, sqlf.Sprintf("%d", id))
 		}
-		indexingJobs, err = scanIndexes(tx.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(jobLookupQueries, ", "), authzConds)))
+		indexingJobs, err = scanJobs(tx.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(jobLookupQueries, ", "), authzConds)))
 		return err
 	})
 
@@ -169,11 +168,12 @@ SELECT
 	u.should_reindex,
 	u.enqueuer_user_id
 FROM syntactic_scip_indexing_jobs_with_repository_name u
+JOIN repo ON repo.id = u.repository_id AND repo.deleted_at IS NULL AND repo.blocked IS NULL
 WHERE u.id IN (%s) and %s
 ORDER BY u.id
 `
 
-func scanIndex(s dbutil.Scanner) (index SyntacticIndexingJob, err error) {
+func scanJob(s dbutil.Scanner) (index SyntacticIndexingJob, err error) {
 	if err := s.Scan(
 		&index.ID,
 		&index.Commit,
@@ -196,4 +196,4 @@ func scanIndex(s dbutil.Scanner) (index SyntacticIndexingJob, err error) {
 	return index, nil
 }
 
-var scanIndexes = basestore.NewSliceScanner(scanIndex)
+var scanJobs = basestore.NewSliceScanner(scanJob)

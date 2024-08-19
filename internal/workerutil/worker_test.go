@@ -676,10 +676,9 @@ func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
 	// Wait until a job has been dequeued.
 	<-dequeued
 
-	go func() {
-		<-dequeueContext.Done()
+	context.AfterFunc(dequeueContext, func() {
 		block <- struct{}{}
-	}()
+	})
 
 	// Drain dequeue loop and wait for the one active handler to finish.
 	err := worker.Stop(ctx)

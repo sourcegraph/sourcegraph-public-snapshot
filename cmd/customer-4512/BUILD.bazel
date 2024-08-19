@@ -1,0 +1,62 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("//dev:oci_defs.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository", "oci_image", "oci_push", "oci_tarball")
+
+go_library(
+    name = "customer-4512_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/customer-4512",
+    tags = [TAG_CODY_PRIME],
+    visibility = ["//visibility:private"],
+    deps = ["@com_github_sourcegraph_log//:log"],
+)
+
+go_binary(
+    name = "customer-4512",
+    embed = [":customer-4512_lib"],
+    tags = [TAG_CODY_PRIME],
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar_customer-4512",
+    srcs = [":customer-4512"],
+)
+
+oci_image(
+    name = "image",
+    base = "//wolfi-images/sourcegraph-base:base_image",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/customer-4512",
+    ],
+    tars = [":tar_customer-4512"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["customer-4512:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+        TAG_CODY_PRIME,
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("customer-4512"),
+)

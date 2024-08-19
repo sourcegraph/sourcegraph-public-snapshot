@@ -1,0 +1,50 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tenant",
+    srcs = [
+        "context.go",
+        "enforcement.go",
+        "externalhttp.go",
+        "grpc.go",
+        "http.go",
+        "tenant.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/tenant",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/errcode",
+        "//internal/testutil",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_grpc_ecosystem_go_grpc_middleware//:go-grpc-middleware",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//metadata",
+        "@org_golang_google_grpc//status",
+        "@org_uber_go_atomic//:atomic",
+    ],
+)
+
+go_test(
+    name = "tenant_test",
+    srcs = [
+        "context_test.go",
+        "externalhttp_test.go",
+        "grpc_test.go",
+        "http_test.go",
+    ],
+    embed = [":tenant"],
+    deps = [
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//metadata",
+        "@org_golang_google_grpc//status",
+    ],
+)

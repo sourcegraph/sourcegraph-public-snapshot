@@ -147,17 +147,17 @@ function fetchBlameHunks(repoName: string, revision: string, filePath: string): 
 function fetchRawBlameHunks(repoName: string, revision: string, filePath: string): Observable<RawStreamHunk[]> {
     const repoAndRevisionPath = `/${repoName}${revision ? `@${revision}` : ''}`
     return new Observable<RawStreamHunk[]>(subscriber => {
-        fetchEventSource(`/.api/blame${repoAndRevisionPath}/stream/${filePath}`, {
+        fetchEventSource(`/.api/blame${repoAndRevisionPath}/-/stream/${filePath}`, {
             method: 'GET',
             headers: {
-                'X-Requested-With': 'Sourcegraph',
+                ...window.context.xhrHeaders,
                 'X-Sourcegraph-Should-Trace': new URLSearchParams(window.location.search).get('trace') || 'false',
             },
             async onopen(response) {
                 if (response.ok && response.headers.get('content-type') === EventStreamContentType) {
                     return
                 }
-                subscriber.error(new Error('request for blame data failed: ' + (await response.text())))
+                throw new Error('request for blame data failed: ' + (await response.text()))
             },
             onmessage(event) {
                 if (event.event === 'hunk') {
@@ -165,8 +165,8 @@ function fetchRawBlameHunks(repoName: string, revision: string, filePath: string
                     subscriber.next(rawHunks)
                 }
             },
-            onerror(event) {
-                subscriber.error(event)
+            onerror(err) {
+                throw err
             },
         }).then(
             () => subscriber.complete(),

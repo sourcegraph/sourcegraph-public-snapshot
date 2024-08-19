@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	dbworker "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 func TestSyntacticIndexingScheduler(t *testing.T) {
@@ -81,7 +82,7 @@ func TestSyntacticIndexingScheduler(t *testing.T) {
 
 	err := scheduler.Schedule(observationCtx, ctx, time.Now())
 	require.NoError(t, err)
-	require.Equal(t, 2, unwrap(jobStore.DBWorkerStore().QueuedCount(ctx, false))(t))
+	require.Equal(t, 2, unwrap(jobStore.DBWorkerStore().CountByState(ctx, dbworker.StateQueued|dbworker.StateErrored))(t))
 
 	job1, recordReturned, err := jobStore.DBWorkerStore().Dequeue(ctx, "worker-1", []*sqlf.Query{})
 	require.NoError(t, err)
@@ -143,7 +144,7 @@ func bootstrapScheduler(t *testing.T, observationCtx *observation.Context,
 	)
 	repoSchedulingStore := reposcheduler.NewSyntacticStore(observationCtx, frontendDB)
 	repoSchedulingSvc := reposcheduler.NewService(repoSchedulingStore)
-	jobStore := unwrap(jobstore.NewStoreWithDB(observationCtx, frontendRawDB))(t)
+	jobStore := unwrap(jobstore.NewStoreWithDB(observationCtx, frontendDB))(t)
 
 	repoStore := frontendDB.Repos()
 	enqueuer := NewIndexEnqueuer(observationCtx, jobStore, repoSchedulingStore, repoStore)
@@ -198,6 +199,6 @@ func setupRepoPolicies(t *testing.T, ctx context.Context, db database.DB, polici
 	for _, policyID := range []int{1100} {
 		policy, _, err := policies.GetConfigurationPolicyByID(ctx, policyID)
 		require.NoError(t, err)
-		require.NoError(t, policies.UpdateReposMatchingPolicyPatterns(ctx, policy))
+		require.NoError(t, policies.UpdateReposMatchingPolicyPatterns(ctx, policy.RepositoryPatterns, policy.ID))
 	}
 }

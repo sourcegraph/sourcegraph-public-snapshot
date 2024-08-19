@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -45,7 +44,7 @@ func (r *roleResolver) System() bool {
 	return r.role.System
 }
 
-func (r *roleResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+func (r *roleResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*gqlutil.ConnectionResolver[PermissionResolver], error) {
 	// 🚨 SECURITY: Only viewable by site admins.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -58,10 +57,10 @@ func (r *roleResolver) Permissions(ctx context.Context, args *ListPermissionArgs
 		db:     r.db,
 		roleID: r.role.ID,
 	}
-	return graphqlutil.NewConnectionResolver[PermissionResolver](
+	return gqlutil.NewConnectionResolver[PermissionResolver](
 		connectionStore,
 		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
+		&gqlutil.ConnectionResolverOptions{
 			AllowNoLimit: true,
 		},
 	)

@@ -49,7 +49,7 @@ func TestGitserverResolver(t *testing.T) {
 		mockGitserverClient := gitserver.NewMockClient()
 		mockGitserverClient.SystemsInfoFunc.SetDefaultReturn(gitserverInstances, nil)
 
-		s, err := NewSchemaWithGitserverClient(db, mockGitserverClient)
+		s, err := NewSchemaWithGitserverClient(db, nil, mockGitserverClient)
 		require.NoError(t, err)
 
 		testCases := []struct {
@@ -103,7 +103,7 @@ func TestGitserverResolver(t *testing.T) {
 		mockGitserverClient := gitserver.NewMockClient()
 		mockGitserverClient.SystemInfoFunc.SetDefaultReturn(gitserverInstances[0], nil)
 
-		s, err := NewSchemaWithGitserverClient(db, mockGitserverClient)
+		s, err := NewSchemaWithGitserverClient(db, nil, mockGitserverClient)
 		require.NoError(t, err)
 
 		id := marshalGitserverID(gitserverInstances[0].Address)

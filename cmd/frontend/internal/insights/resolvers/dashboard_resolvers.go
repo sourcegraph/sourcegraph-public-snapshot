@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -102,15 +102,15 @@ func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacke
 	return resolvers, nil
 }
 
-func (d *dashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (d *dashboardConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
 	_, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if d.next != 0 {
-		return graphqlutil.NextPageCursor(string(newRealDashboardID(d.next).marshal())), nil
+		return gqlutil.NextPageCursor(string(newRealDashboardID(d.next).marshal())), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return gqlutil.HasNextPage(false), nil
 }
 
 type insightsDashboardResolver struct {
@@ -192,8 +192,8 @@ func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]g
 	return resolvers, nil
 }
 
-func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*gqlutil.PageInfo, error) {
+	return gqlutil.HasNextPage(false), nil
 }
 
 func (d *DashboardInsightViewConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {

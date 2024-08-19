@@ -8,7 +8,7 @@
         echo "No netrc config set, continuing"
       fi
   root: ""
-  indexer: sourcegraph/scip-go@sha256:bf89e619382fed5efa21a51806d7c6f22d19b6dea458a58554c0af89120f4ca3
+  indexer: sourcegraph/scip-go@sha256:e6ca2d4b55bd1379631d45faab169fc32dc6da2c1939ed11a700261ac4c4d26f
   indexer_args:
     - GO111MODULE=off
     - scip-go

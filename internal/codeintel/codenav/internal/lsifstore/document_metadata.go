@@ -73,18 +73,18 @@ func (s *store) GetRanges(ctx context.Context, bundleID int, path core.UploadRel
 	}
 
 	var ranges []shared.CodeIntelligenceRange
-	for _, occurrence := range documentData.SCIPData.Occurrences {
+	for _, lookupOccurrence := range documentData.SCIPData.Occurrences {
 
-		r := shared.TranslateRange(scip.NewRangeUnchecked(occurrence.Range))
+		r := shared.TranslateRange(scip.NewRangeUnchecked(lookupOccurrence.Range))
 
 		if (startLine <= r.Start.Line && r.Start.Line < endLine) || (startLine <= r.End.Line && r.End.Line < endLine) {
-			data := extractOccurrenceData(documentData.SCIPData, occurrence)
+			data := extractOccurrenceData(documentData.SCIPData, lookupOccurrence)
 
 			ranges = append(ranges, shared.CodeIntelligenceRange{
 				Range:           r,
-				Definitions:     convertSCIPRangesToLocations(data.definitions, bundleID, path),
-				References:      convertSCIPRangesToLocations(data.references, bundleID, path),
-				Implementations: convertSCIPRangesToLocations(data.implementations, bundleID, path),
+				Definitions:     shared.BuildUsages(data.definitions, bundleID, path, shared.UsageKindDefinition),
+				References:      shared.BuildUsages(data.references, bundleID, path, shared.UsageKindReference),
+				Implementations: shared.BuildUsages(data.implementations, bundleID, path, shared.UsageKindImplementation),
 				HoverText:       strings.Join(data.hoverText, "\n"),
 			})
 		}
@@ -105,16 +105,3 @@ WHERE
 	sid.document_path = %s
 LIMIT 1
 `
-
-func convertSCIPRangesToLocations(ranges []scip.Range, uploadID int, path core.UploadRelPath) []shared.Location {
-	locations := make([]shared.Location, 0, len(ranges))
-	for _, r := range ranges {
-		locations = append(locations, shared.Location{
-			UploadID: uploadID,
-			Path:     path,
-			Range:    shared.TranslateRange(r),
-		})
-	}
-
-	return locations
-}

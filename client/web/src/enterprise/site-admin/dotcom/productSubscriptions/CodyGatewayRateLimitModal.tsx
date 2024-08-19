@@ -1,78 +1,99 @@
 import React, { useCallback, useState } from 'react'
 
+import { Duration } from '@bufbuild/protobuf'
+
 import { logger } from '@sourcegraph/common'
-import { useMutation } from '@sourcegraph/http-client'
-import { Button, Modal, Input, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
+import { Button, Modal, Input, H3, Text, ErrorAlert, Form, Alert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import type {
-    CodyGatewayRateLimitFields,
-    Scalars,
-    UpdateCodyGatewayConfigResult,
-    UpdateCodyGatewayConfigVariables,
-} from '../../../../graphql-operations'
 
-import { UPDATE_CODY_GATEWAY_CONFIG } from './backend'
+import { type EnterprisePortalEnvironment, useUpdateCodyGatewayAccess } from './enterpriseportal'
+import type { CodyGatewayRateLimit } from './enterpriseportalgen/codyaccess_pb'
 import { numberFormatter, prettyInterval } from './utils'
 
 export interface CodyGatewayRateLimitModalProps {
+    enterprisePortalEnvironment: EnterprisePortalEnvironment
     onCancel: () => void
     afterSave: () => void
-    productSubscriptionID: Scalars['ID']
-    current: CodyGatewayRateLimitFields | null
+    productSubscriptionUUID: string
+    current: CodyGatewayRateLimit | undefined
     mode: 'chat' | 'code' | 'embeddings'
 }
 
 export const CodyGatewayRateLimitModal: React.FunctionComponent<
     React.PropsWithChildren<CodyGatewayRateLimitModalProps>
-> = ({ onCancel, afterSave, productSubscriptionID, current, mode }) => {
+> = ({ onCancel, afterSave, productSubscriptionUUID, current, mode, enterprisePortalEnvironment }) => {
     const labelId = 'codyGatewayRateLimit'
 
-    const [limit, setLimit] = useState<number>(Number(current?.limit) ?? 100)
+    const [limit, setLimit] = useState<bigint>(current?.limit ?? BigInt(100))
     const onChangeLimit = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setLimit(parseInt(event.target.value, 10))
+        setLimit(BigInt(parseInt(event.target.value || '0', 10)))
     }, [])
 
-    const [limitInterval, setLimitInterval] = useState<number>(current?.intervalSeconds ?? 60 * 60)
+    /**
+     * Interval is tracked in seconds in state.
+     */
+    const [limitInterval, setLimitInterval] = useState<bigint>(current?.intervalDuration?.seconds ?? BigInt(60 * 60))
     const onChangeLimitInterval = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
-        setLimitInterval(parseInt(event.target.value, 10))
+        setLimitInterval(BigInt(parseInt(event.target.value || '0', 10)))
     }, [])
 
-    const [updateCodyGatewayConfig, { loading, error }] = useMutation<
-        UpdateCodyGatewayConfigResult,
-        UpdateCodyGatewayConfigVariables
-    >(UPDATE_CODY_GATEWAY_CONFIG)
+    const {
+        error,
+        isPending: loading,
+        mutateAsync: updateCodyGatewayAccess,
+    } = useUpdateCodyGatewayAccess(enterprisePortalEnvironment)
 
     const onSubmit = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
 
             try {
-                await updateCodyGatewayConfig({
-                    variables: {
-                        productSubscriptionID,
-                        access: {
-                            ...(mode === 'chat'
-                                ? {
-                                      chatCompletionsRateLimit: String(limit),
-                                      chatCompletionsRateLimitIntervalSeconds: limitInterval,
-                                  }
-                                : {}),
+                // Explicitly indicate what should be updated - optional, but
+                // just to be clear/safe.
+                const paths: string[] = []
+                switch (mode) {
+                    case 'chat': {
+                        paths.push('chat_completions_rate_limit.limit', 'chat_completions_rate_limit.interval_duration')
+                        break
+                    }
+                    case 'code': {
+                        paths.push('code_completions_rate_limit.limit', 'code_completions_rate_limit.interval_duration')
+                        break
+                    }
+                    case 'embeddings': {
+                        paths.push('embeddings_rate_limit.limit', 'embeddings_rate_limit.interval_duration')
+                        break
+                    }
+                }
+                const rateLimit = {
+                    limit,
+                    intervalDuration: new Duration({ seconds: limitInterval }),
+                }
+                await updateCodyGatewayAccess({
+                    updateMask: { paths },
+                    access: {
+                        subscriptionId: productSubscriptionUUID,
+                        /**
+                         * All non-zero fields are included in the update
+                         */
+                        ...(mode === 'chat'
+                            ? {
+                                  chatCompletionsRateLimit: rateLimit,
+                              }
+                            : {}),
 
-                            ...(mode === 'code'
-                                ? {
-                                      codeCompletionsRateLimit: String(limit),
-                                      codeCompletionsRateLimitIntervalSeconds: limitInterval,
-                                  }
-                                : {}),
+                        ...(mode === 'code'
+                            ? {
+                                  codeCompletionsRateLimit: rateLimit,
+                              }
+                            : {}),
 
-                            ...(mode === 'embeddings'
-                                ? {
-                                      embeddingsRateLimit: String(limit),
-                                      embeddingsRateLimitIntervalSeconds: limitInterval,
-                                  }
-                                : {}),
-                        },
+                        ...(mode === 'embeddings'
+                            ? {
+                                  embeddingsRateLimit: rateLimit,
+                              }
+                            : {}),
                     },
                 })
 
@@ -82,24 +103,28 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                 logger.error(error)
             }
         },
-        [updateCodyGatewayConfig, productSubscriptionID, limit, limitInterval, afterSave, mode]
+        [updateCodyGatewayAccess, productSubscriptionUUID, limit, limitInterval, afterSave, mode]
     )
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <H3 id={labelId}>
-                Configure{' '}
+                Configure custom{' '}
                 {mode === 'chat'
                     ? 'chat request'
                     : mode === 'code'
                     ? 'code completion request'
                     : 'embeddings generation'}{' '}
-                rate limit for Cody Gateway
+                rate limit override for Cody Gateway access
             </H3>
             <Text>
-                Cody Gateway is a Sourcegraph managed service that allows customer instances to talk to upstream LLMs
-                and generate embeddings under our negotiated terms with third party providers in a safe manner.
+                Overrides take precedence over the default rate limits, which are based on the active licence's plan and
+                user count.
             </Text>
+            <Alert variant="warning">
+                Rate limit overrides are static: for example, they must be updated manually, or removed, to accomodate
+                an increase in user count.
+            </Alert>
 
             {error && <ErrorAlert error={error} />}
 
@@ -116,7 +141,7 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         spellCheck="false"
                         type="number"
                         min={1}
-                        value={limit}
+                        value={Number(limit)}
                         onChange={onChangeLimit}
                         label={mode === 'embeddings' ? 'Number of tokens embedded' : 'Number of requests'}
                     />
@@ -133,12 +158,13 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         min={1}
                         label="Rate limit interval"
                         description="The interval is defined in seconds. See below for a pretty-printed version."
-                        value={limitInterval}
+                        value={Number(limitInterval)}
                         onChange={onChangeLimitInterval}
                         message={
                             <>
-                                {numberFormatter.format(BigInt(limit))} {mode === 'embeddings' ? 'tokens' : 'requests'}{' '}
-                                per {prettyInterval(limitInterval)}
+                                {numberFormatter.format(BigInt(limit || 0))}{' '}
+                                {mode === 'embeddings' ? 'tokens' : 'requests'} per{' '}
+                                {prettyInterval(Number(limitInterval))}
                             </>
                         }
                     />

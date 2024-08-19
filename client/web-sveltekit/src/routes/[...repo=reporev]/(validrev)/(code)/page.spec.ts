@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '../../../../testing/integration'
+import { test, expect, type Page } from '$testing/integration'
 
 const repoName = 'github.com/sourcegraph/sourcegraph'
 
@@ -104,11 +104,7 @@ test.beforeEach(({ sg }) => {
 })
 
 test.describe('file sidebar', () => {
-    async function openSidebar(page: Page): Promise<void> {
-        return page.getByLabel('Open sidebar').click()
-    }
-
-    test.skip('basic functionality', async ({ page }) => {
+    test('basic functionality', async ({ page }) => {
         const readmeEntry = page.getByRole('treeitem', { name: 'README.md' })
 
         await page.goto(`/${repoName}`)
@@ -142,13 +138,13 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}`)
-        await openSidebar(page)
+        await page.getByLabel('Open sidebar').click()
         await expect(page.getByText(/Sidebar error/)).toBeVisible()
     })
 
     test('error handling children', async ({ page, sg }) => {
         await page.goto(`/${repoName}`)
-        await openSidebar(page)
+        await page.getByLabel('Open sidebar').click()
 
         const treeItem = page.getByRole('treeitem', { name: 'src' })
         // For some reason we need to wait for the tree to be rendered
@@ -166,7 +162,7 @@ test.describe('file sidebar', () => {
         await expect(page.getByText(/Child error/)).toBeVisible()
     })
 
-    test('error handling non-existing directory -> root', async ({ page, sg }) => {
+    test.skip('error handling non-existing directory -> root', async ({ page, sg }) => {
         // Here we expect the sidebar to show an error message, and after navigigating
         // to an existing directory, the directory contents
         sg.mockOperations({
@@ -176,7 +172,7 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}/-/tree/non-existing-directory`)
-        await openSidebar(page)
+        await page.getByLabel('Open sidebar').click()
         await expect(page.getByText(/Sidebar error/).first()).toBeVisible()
 
         sg.mockOperations({
@@ -188,7 +184,7 @@ test.describe('file sidebar', () => {
         })
 
         await page.goto(`/${repoName}`)
-        await openSidebar(page)
+        await page.getByLabel('Open sidebar').click()
         await expect(page.getByRole('treeitem', { name: 'README.md' })).toBeVisible()
     })
 })
@@ -249,6 +245,8 @@ test('history panel', async ({ page, sg }) => {
 })
 
 test('file popover', async ({ page, sg }) => {
+    test.slow()
+
     await page.goto(`/${repoName}`)
 
     // Open the sidebar
@@ -327,26 +325,25 @@ test.describe('cody sidebar', () => {
     }
 
     test.describe('dotcom', () => {
-        test.beforeEach(({ sg }) => {
-            sg.dotcomMode()
+        test.beforeEach(async ({ sg }) => {
+            await sg.dotcomMode()
         })
 
-        test('enabled when signed out', async ({ page, sg }) => {
+        test('disabled when signed out', async ({ page }) => {
             await page.goto(path)
-            await hasCody(page)
-            await expect(
-                page.getByText('Cody is only available to signed-in users. Sign in to use Cody.')
-            ).toBeVisible()
+            await doesNotHaveCody(page)
         })
 
         test('enabled when signed in', async ({ page, sg }) => {
-            sg.signIn()
+            await sg.signIn()
 
             await page.goto(path)
             await hasCody(page)
         })
 
         test('ignores context filters', async ({ page, sg }) => {
+            await sg.signIn()
+
             sg.mockTypes({
                 Site: () => ({
                     codyContextFilters: {
@@ -363,8 +360,8 @@ test.describe('cody sidebar', () => {
     })
 
     test.describe('enterprise', () => {
-        test.beforeEach(({ sg }) => {
-            sg.signIn()
+        test.beforeEach(async ({ sg }) => {
+            await sg.signIn()
 
             sg.mockTypes({
                 Site: () => ({
@@ -375,11 +372,11 @@ test.describe('cody sidebar', () => {
             })
         })
 
-        test.fixme('disabled when disabled on instance', async ({ page, sg }) => {
+        test('disabled when disabled on instance', async ({ page, sg }) => {
             // These tests seem to take longer than the default timeout
             test.setTimeout(10000)
 
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: false,
             })
 
@@ -387,11 +384,11 @@ test.describe('cody sidebar', () => {
             await doesNotHaveCody(page)
         })
 
-        test.fixme('disabled when disabled for user', async ({ page, sg }) => {
+        test('disabled when disabled for user', async ({ page, sg }) => {
             // These tests seem to take longer than the default timeout
             test.setTimeout(10000)
 
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: false,
             })
@@ -404,7 +401,7 @@ test.describe('cody sidebar', () => {
             // teardown takes longer than default timeout
             test.setTimeout(10000)
 
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: true,
             })
@@ -414,7 +411,7 @@ test.describe('cody sidebar', () => {
         })
 
         test('disabled for excluded repo', async ({ page, sg }) => {
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: true,
             })
@@ -433,7 +430,7 @@ test.describe('cody sidebar', () => {
         })
 
         test('disabled with invalid context filter', async ({ page, sg }) => {
-            sg.setWindowContext({
+            await sg.setWindowContext({
                 codyEnabledOnInstance: true,
                 codyEnabledForCurrentUser: true,
             })

@@ -35,6 +35,7 @@ go_test(
     ],
     deps = [
         "//internal/database/dbtest",
+        "//internal/database/migration/definition",
         "//internal/database/migration/drift",
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",

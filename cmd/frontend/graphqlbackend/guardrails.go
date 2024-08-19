@@ -3,7 +3,7 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 type GuardrailsResolver interface {
@@ -11,7 +11,7 @@ type GuardrailsResolver interface {
 }
 
 type SnippetAttributionArgs struct {
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	Snippet string
 }
 
@@ -19,7 +19,7 @@ type SnippetAttributionConnectionResolver interface {
 	TotalCount() int32
 	LimitHit() bool
 	SnippetThreshold() AttributionSnippetThresholdResolver
-	PageInfo() *graphqlutil.PageInfo
+	PageInfo() *gqlutil.PageInfo
 	Nodes() []SnippetAttributionResolver
 }
 

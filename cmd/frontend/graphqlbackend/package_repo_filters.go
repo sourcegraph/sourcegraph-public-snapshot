@@ -6,9 +6,10 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,7 +40,7 @@ func (r *filterMatchingResolver) ToPackageRepoReferenceVersionConnection() (*pac
 func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context, args struct {
 	Kind   string
 	Filter inputPackageFilter
-	graphqlutil.ConnectionArgs
+	gqlutil.ConnectionArgs
 	After *string
 },
 ) (_ *filterMatchingResolver, err error) {
@@ -186,6 +187,10 @@ func (r *schemaResolver) AddPackageRepoFilter(ctx context.Context, args struct {
 	Filter    inputPackageFilter
 },
 ) (*packageRepoFilterResolver, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
 		return nil, errors.New("must provide either nameFilter or versionFilter")
 	}
@@ -214,6 +219,10 @@ func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *stru
 	Filter    inputPackageFilter
 },
 ) (*EmptyResponse, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	if args.Filter.NameFilter == nil && args.Filter.VersionFilter == nil {
 		return nil, errors.New("must provide either nameFilter or versionFilter")
 	}
@@ -239,6 +248,10 @@ func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *stru
 }
 
 func (r *schemaResolver) DeletePackageRepoFilter(ctx context.Context, args struct{ ID graphql.ID }) (*EmptyResponse, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
 
 	var filterID int

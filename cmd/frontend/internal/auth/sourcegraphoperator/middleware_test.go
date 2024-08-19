@@ -19,11 +19,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
@@ -171,8 +171,7 @@ func newMockDBAndRequester() mockDetails {
 }
 
 func TestMiddleware(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 
 	const testCode = "testCode"
 	providerConfig := cloud.SchemaAuthProviderSourcegraphOperator{
@@ -184,14 +183,9 @@ func TestMiddleware(t *testing.T) {
 	defer oidcIDServer.Close()
 	providerConfig.Issuer = oidcIDServer.URL
 
-	mockProvider := NewProvider(providerConfig, httpcli.TestExternalClient).(*provider)
+	mockProvider := NewProvider(providerConfig, httpcli.TestExternalClient)
 	providers.MockProviders = []providers.Provider{mockProvider}
 	defer func() { providers.MockProviders = nil }()
-
-	t.Run("refresh", func(t *testing.T) {
-		err := mockProvider.Refresh(context.Background())
-		require.NoError(t, err)
-	})
 
 	t.Run("unauthenticated API request should pass through", func(t *testing.T) {
 		mocks := newMockDBAndRequester()

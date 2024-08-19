@@ -37,6 +37,7 @@ resources:
       template:
         metadata:
           annotations:
+            checksum/redis: 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a
             kubectl.kubernetes.io/default-container: searcher
           creationTimestamp: null
           labels:
@@ -176,7 +177,13 @@ resources:
           indexedSearch:
             disabled: true
 
-          openTelemetry:
+          nodeExporter:
+            disabled: true
+
+          openTelemetryCollector:
+            disabled: true
+
+          openTelemetryAgent:
             disabled: true
 
           pgsql:

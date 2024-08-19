@@ -3,6 +3,7 @@ package gitcli
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"sync"
 
@@ -13,12 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (g *gitCLIBackend) RawDiff(ctx context.Context, base string, head string, typ git.GitDiffComparisonType, paths ...string) (io.ReadCloser, error) {
-	baseOID, err := g.revParse(ctx, base)
+func (g *gitCLIBackend) RawDiff(ctx context.Context, base string, head string, typ git.GitDiffComparisonType, opts git.RawDiffOpts, paths ...string) (io.ReadCloser, error) {
+	baseOID, err := g.ResolveRevision(ctx, base)
 	if err != nil {
 		return nil, err
 	}
-	headOID, err := g.revParse(ctx, head)
+	headOID, err := g.ResolveRevision(ctx, head)
 	if err != nil {
 		return nil, err
 	}
@@ -58,12 +59,12 @@ func (g *gitCLIBackend) RawDiff(ctx context.Context, base string, head string, t
 		// we want.
 	}
 
-	args := buildRawDiffArgs(baseOID, headOID, paths)
+	args := buildRawDiffArgs(opts, baseOID, headOID, paths)
 
 	return g.NewCommand(ctx, WithArguments(args...))
 }
 
-func buildRawDiffArgs(base, head api.CommitID, paths []string) []string {
+func buildRawDiffArgs(opts git.RawDiffOpts, base, head api.CommitID, paths []string) []string {
 	return append([]string{
 		// Note: We use git diff-tree instead of git diff because git diff lets
 		// you diff any arbitrary files on disk, which is a security risk, diffing
@@ -72,7 +73,8 @@ func buildRawDiffArgs(base, head api.CommitID, paths []string) []string {
 		"--patch",
 		"--find-renames",
 		"--full-index",
-		"--inter-hunk-context=3",
+		fmt.Sprintf("--inter-hunk-context=%d", opts.InterHunkContext),
+		fmt.Sprintf("--unified=%d", opts.ContextLines),
 		"--no-prefix",
 		string(base),
 		string(head),

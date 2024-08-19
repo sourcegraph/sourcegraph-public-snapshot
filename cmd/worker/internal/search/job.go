@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
+	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -13,12 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 // config stores shared config we can override in each worker. We don't expose
@@ -38,12 +40,12 @@ type searchJob struct {
 	once         sync.Once
 	err          error
 	workerStores []interface {
-		QueuedCount(context.Context, bool) (int, error)
+		CountByState(_ context.Context, bitset dbworkerstore.RecordState) (int, error)
 	}
 	workers []goroutine.BackgroundRoutine
 }
 
-func NewSearchJob() job.Job {
+func NewSearchJob() workerjob.Job {
 	return &searchJob{
 		config: config{
 			WorkerInterval: 1 * time.Second,
@@ -56,7 +58,7 @@ func (j *searchJob) Description() string {
 }
 
 func (j *searchJob) Config() []env.Config {
-	return []env.Config{uploadstore.ConfigInst}
+	return []env.Config{search.ObjectStorageConfigInst}
 }
 
 func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
@@ -65,7 +67,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 	}
 	workCtx := actor.WithInternalActor(context.Background())
 
-	uploadStore, err := uploadstore.New(workCtx, observationCtx, uploadstore.ConfigInst)
+	uploadStore, err := search.NewObjectStorage(workCtx, observationCtx, search.ObjectStorageConfigInst)
 	if err != nil {
 		j.err = err
 		return nil, err
@@ -82,7 +84,7 @@ func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Cont
 func (j *searchJob) newSearchJobRoutines(
 	workCtx context.Context,
 	observationCtx *observation.Context,
-	uploadStore uploadstore.Store,
+	uploadStore object.Storage,
 	newSearcherFactory func(*observation.Context, database.DB) service.NewSearcher,
 ) ([]goroutine.BackgroundRoutine, error) {
 	j.once.Do(func() {
@@ -101,6 +103,8 @@ func (j *searchJob) newSearchJobRoutines(
 		searchWorkerStore := store.NewExhaustiveSearchJobWorkerStore(observationCtx, db.Handle())
 		repoWorkerStore := store.NewRepoSearchJobWorkerStore(observationCtx, db.Handle())
 		revWorkerStore := store.NewRevSearchJobWorkerStore(observationCtx, db.Handle())
+
+		svc := service.New(observationCtx, exhaustiveSearchStore, uploadStore, newSearcher)
 
 		j.workerStores = append(j.workerStores,
 			searchWorkerStore,
@@ -122,6 +126,8 @@ func (j *searchJob) newSearchJobRoutines(
 			newExhaustiveSearchWorkerResetter(observationCtx, searchWorkerStore),
 			newExhaustiveSearchRepoWorkerResetter(observationCtx, repoWorkerStore),
 			newExhaustiveSearchRepoRevisionWorkerResetter(observationCtx, revWorkerStore),
+
+			newJanitorJob(observationCtx, db, svc),
 		}
 	})
 
@@ -131,8 +137,9 @@ func (j *searchJob) newSearchJobRoutines(
 // hasWork returns true if any of the workers have work in its queue or is
 // processing something. This is only exposed for tests.
 func (j *searchJob) hasWork(ctx context.Context) bool {
+	statesBitset := dbworkerstore.StateQueued | dbworkerstore.StateErrored | dbworkerstore.StateProcessing
 	for _, w := range j.workerStores {
-		if count, _ := w.QueuedCount(ctx, true); count > 0 {
+		if count, _ := w.CountByState(ctx, statesBitset); count > 0 {
 			return true
 		}
 	}

@@ -13,9 +13,7 @@ Apache
 ## Feedback
 
 Your feedback is important to us and is greatly appreciated. Please do not hesitate to submit your ideas or suggestions
-about how we can improve the extension to
-our [VS Code Extension Feedback Discussion Thread](https://github.com/sourcegraph/sourcegraph/discussions/34821) on
-GitHub.
+about how we can improve the extension to our [Code Search discussion community](https://community.sourcegraph.com/c/code-search/9).
 
 ## Issues / Bugs
 
@@ -196,7 +194,7 @@ with us on the [Sourcegraph Community Slack group](https://about.sourcegraph.com
 - [Code of Conduct](https://handbook.sourcegraph.com/company-info-and-process/community/code_of_conduct/)
 - [Developing Sourcegraph guide](https://docs.sourcegraph.com/dev)
 - [Developing the web clients](https://docs.sourcegraph.com/dev/background-information/web)
-- [Feedback / Feature Request](https://github.com/sourcegraph/sourcegraph/discussions/34821)
+- [Feedback / Feature Request](https://community.sourcegraph.com/c/code-search/9)
 - [Issue Tracker](https://github.com/sourcegraph/sourcegraph/labels/vscode-extension)
 - [Report a bug](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,vscode-extension&title=VSCode+Bug+report:+&projects=Integrations%20Project%20Board)
 - [Troubleshooting docs](https://docs.sourcegraph.com/admin/how-to/troubleshoot-sg-extension#vs-code-extension)

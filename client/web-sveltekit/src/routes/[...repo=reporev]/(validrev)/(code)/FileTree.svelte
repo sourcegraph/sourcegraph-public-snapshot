@@ -87,7 +87,7 @@
         }
         nodesCopy.add(path)
 
-        $treeState = { focused: path, selected: path, expandedNodes: nodesCopy }
+        $treeState = { focused: path, selected: path, expandedNodes: nodesCopy, disableScope: false }
     }
 
     // Since context is only set once when the component is created
@@ -164,18 +164,20 @@
     div {
         overflow: auto;
 
-        :global([data-treeitem][aria-selected]) > :global([data-treeitem-label]) {
+        :global([data-treeitem]) > :global([data-treeitem-label]) {
             cursor: pointer;
 
             &:hover {
-                background-color: var(--color-bg-3);
+                background-color: var(--secondary-4);
             }
         }
 
         :global([data-treeitem][aria-selected='true']) > :global([data-treeitem-label]) {
             --tree-node-expand-icon-color: var(--body-bg);
-            background-color: var(--primary);
+            --file-icon-color: var(--body-bg);
+            --tree-node-label-color: var(--body-bg);
 
+            background-color: var(--primary);
             &:hover {
                 background-color: var(--primary);
             }
@@ -183,8 +185,6 @@
     }
 
     a {
-        text-overflow: ellipsis;
-        overflow: hidden;
         white-space: nowrap;
         color: inherit;
         text-decoration: none;

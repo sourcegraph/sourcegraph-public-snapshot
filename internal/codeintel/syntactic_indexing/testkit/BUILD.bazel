@@ -12,7 +12,7 @@ go_library(
         "//internal/api",
         "//internal/codeintel/syntactic_indexing/jobstore",
         "//internal/database",
-        "//internal/uploadstore",
+        "//internal/object",
         "//lib/errors",
         "//lib/iterator",
         "@com_github_keegancsmith_sqlf//:sqlf",

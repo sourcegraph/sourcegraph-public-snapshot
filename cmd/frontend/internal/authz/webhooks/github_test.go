@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -273,7 +273,9 @@ func TestGitHubWebhooks(t *testing.T) {
 			req := newReq(t, webhookTest.eventType, webhookTest.event)
 
 			responseRecorder := httptest.NewRecorder()
-			hook.ServeHTTP(responseRecorder, req)
+			go func() {
+				hook.ServeHTTP(responseRecorder, req)
+			}()
 			waitUntil(t, webhookCalled)
 		})
 	}

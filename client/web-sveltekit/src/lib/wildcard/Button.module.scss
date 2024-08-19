@@ -408,6 +408,10 @@
         position: relative;
         flex: 1 1 auto;
     }
+
+    &.btn-block {
+        display: flex;
+    }
 }
 
 .btn-group {

@@ -10,10 +10,14 @@ import inspect from 'vite-plugin-inspect'
 import type { UserConfig as VitestUserConfig } from 'vitest'
 
 import graphqlCodegen from './dev/vite-graphql-codegen'
+import { sgProxy } from './dev/vite-sg-proxy'
 
 const BAZEL = !!process.env.BAZEL
 
 export default defineConfig(({ mode }) => {
+    // Test mode is used by vitest and we don't want to run the proxy in that case.
+    const DISABLE_PROXY = mode === 'test' || !!process.env.SK_DISABLE_PROXY
+
     // Using & VitestUserConfig shouldn't be necessary but without it `svelte-check` complains when run
     // in bazel. It's not clear what needs to be done to make it work without it, just like it does
     // locally.
@@ -41,6 +45,13 @@ export default defineConfig(({ mode }) => {
             // Generates typescript types for gql-tags and .gql files
             graphqlCodegen(),
             inspect(),
+            // This plugin proxies requests to resources that are not handled by the SvelteKit app
+            // to a real Sourcegraph instance.
+            // It also extracts the JS context object from the origin server and injects it into the local HTML page.
+            !DISABLE_PROXY &&
+                sgProxy({
+                    target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.sourcegraph.com',
+                }),
         ],
         build: {
             sourcemap: true,
@@ -78,21 +89,6 @@ export default defineConfig(({ mode }) => {
             // our existing caddy setup (which proxies requests to a specific port).
             port: process.env.SK_PORT ? +process.env.SK_PORT : undefined,
             strictPort: !!process.env.SK_PORT,
-            proxy: {
-                // Proxy requests to specific endpoints to a real Sourcegraph
-                // instance.
-                '^(/sign-(in|out)|/.assets|/-|/.api|/.auth|/search/stream|/users|/notebooks|/insights|/batch-changes|/contexts)|/-/(raw|own|code-graph|batch-changes|settings)(/|$)':
-                    {
-                        target: process.env.SOURCEGRAPH_API_URL || 'https://sourcegraph.sourcegraph.com',
-                        changeOrigin: true,
-                        secure: false,
-                        headers: {
-                            // This needs to be set to make the cody sidebar work, which doesn't use the web graphql client work.
-                            // todo(fkling): Figure out how the React app makes this work without this header.
-                            'X-Requested-With': 'Sourcegraph',
-                        },
-                    },
-            },
         },
 
         resolve: {

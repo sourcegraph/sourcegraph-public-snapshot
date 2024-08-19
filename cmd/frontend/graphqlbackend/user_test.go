@@ -213,66 +213,63 @@ func TestUser_Email(t *testing.T) {
 
 func TestUser_LatestSettings(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
-		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.SettingsFunc.SetDefaultReturn(dbmocks.NewMockSettingsStore())
+	users := dbmocks.NewMockUserStore()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.SettingsFunc.SetDefaultReturn(dbmocks.NewMockSettingsStore())
 
-		dotcom.MockSourcegraphDotComMode(t, true)
-
-		tests := []struct {
-			name       string
-			ctx        context.Context
-			shouldFail bool
-			setup      func()
-		}{
-			{
-				name:       "unauthenticated",
-				ctx:        context.Background(),
-				shouldFail: true,
-				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-				},
+	tests := []struct {
+		name     string
+		ctx      context.Context
+		isDotcom bool
+		wantErr  string
+		setup    func()
+	}{
+		{
+			name:    "unauthenticated",
+			ctx:     context.Background(),
+			wantErr: auth.ErrMustBeSiteAdminOrSameUser.Error(),
+			setup: func() {
+				users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 			},
-			{
-				name:       "another user",
-				ctx:        actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				shouldFail: true,
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id}, nil
-					})
-				},
+		},
+		{
+			name:    "another user",
+			ctx:     actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+			wantErr: auth.ErrMustBeSiteAdminOrSameUser.Error(),
+			setup: func() {
+				users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					return &types.User{ID: id}, nil
+				})
 			},
-			{
-				name:       "site admin",
-				ctx:        actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				shouldFail: false,
-				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
-						return &types.User{ID: id, SiteAdmin: true}, nil
-					})
-				},
+		},
+		{
+			name: "site admin",
+			ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+			setup: func() {
+				users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					return &types.User{ID: id, SiteAdmin: true}, nil
+				})
 			},
-		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				test.setup()
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			test.setup()
+			dotcom.MockSourcegraphDotComMode(t, test.isDotcom)
 
-				_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).LatestSettings(test.ctx)
+			_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).LatestSettings(test.ctx)
 
-				if test.shouldFail {
-					got := fmt.Sprintf("%v", err)
-					want := "must be authenticated as the authorized user or site admin"
-					assert.Equal(t, want, got)
-				} else {
-					if err != nil {
-						t.Errorf("unexpected error: %s", err)
-					}
+			if test.wantErr != "" {
+				if err.Error() != test.wantErr {
+					t.Errorf("got error %q, want %q", err, test.wantErr)
 				}
-			})
-		}
-	})
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %s", err)
+				}
+			}
+		})
+	}
 }
 
 func TestUser_ViewerCanAdminister(t *testing.T) {
@@ -384,7 +381,7 @@ func TestUpdateUser(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).UpdateUser(context.Background(),
 			&updateUserArgs{
 				User: "VXNlcjox",
 			},
@@ -404,7 +401,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(ctx,
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     MarshalUserID(1),
 				Username: strptr("about"),
@@ -431,7 +428,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(ctx,
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     "VXNlcjox",
 				Username: strptr("alice"),
@@ -603,7 +600,7 @@ func TestUpdateUser(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).UpdateUser(
 					test.ctx,
 					&updateUserArgs{
 						User: MarshalUserID(1),
@@ -641,7 +638,7 @@ func TestUpdateUser(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).UpdateUser(
 					actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 					&updateUserArgs{
 						User:      MarshalUserID(2),
@@ -887,7 +884,7 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).SetUserCompletionsQuota(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t), nil).SetUserCompletionsQuota(context.Background(),
 			SetUserCompletionsQuotaArgs{
 				User:  MarshalUserID(1),
 				Quota: nil,
@@ -962,7 +959,7 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		schemaResolver := newSchemaResolver(db, gitserver.NewTestClient(t))
+		schemaResolver := newSchemaResolver(db, gitserver.NewTestClient(t), nil)
 		result, err := schemaResolver.SetUserCodeCompletionsQuota(context.Background(),
 			SetUserCodeCompletionsQuotaArgs{
 				User:  MarshalUserID(1),

@@ -8,14 +8,11 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/appliance",
-        "//internal/appliance/config",
         "//internal/releaseregistry",
         "//lib/errors",
         "@com_github_life4_genesis//slices",
         "@com_github_sourcegraph_log//:log",
         "@io_k8s_api//apps/v1:apps",
-        "@io_k8s_api//core/v1:core",
-        "@io_k8s_apimachinery//pkg/api/errors",
         "@io_k8s_apimachinery//pkg/types",
         "@io_k8s_sigs_controller_runtime//pkg/client",
     ],
@@ -24,6 +21,7 @@ go_library(
 go_test(
     name = "selfupdate_test",
     srcs = ["selfupdate_test.go"],
+    data = glob(["testdata/**"]),
     embed = [":selfupdate"],
     deps = [
         "//internal/releaseregistry",

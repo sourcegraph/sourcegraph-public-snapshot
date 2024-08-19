@@ -16,20 +16,21 @@ import (
 	zoektProto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	samssdk "github.com/sourcegraph/sourcegraph-accounts-sdk-go"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/clientconfig"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/enterpriseportal"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/llmapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/modelconfig"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/ssc"
-	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	confProto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -38,6 +39,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/modelconfig/types"
 	"github.com/sourcegraph/sourcegraph/internal/sams"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
@@ -115,7 +117,7 @@ func NewHandler(
 		WriteErrBody: env.InsecureDev,
 	})
 
-	m.PathPrefix("/registry").Methods("GET").Handler(jsonHandler(frontendregistry.HandleRegistry))
+	m.PathPrefix("/registry").Methods("GET").Handler(jsonHandler(registry.HandleRegistry))
 	m.PathPrefix("/scim/v2").Methods("GET", "POST", "PUT", "PATCH", "DELETE").Handler(handlers.SCIMHandler)
 	m.Path("/graphql").Methods("POST").Handler(jsonHandler(serveGraphQL(logger, schema, rateLimiter, false)))
 
@@ -160,7 +162,7 @@ func NewHandler(
 	m.Path("/scip/upload").Methods("POST").Handler(handlers.NewCodeIntelUploadHandler(true))
 	m.Path("/scip/upload").Methods("HEAD").Handler(noopHandler)
 	m.Path("/compute/stream").Methods("GET", "POST").Handler(handlers.NewComputeStreamHandler())
-	m.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/stream/{Path:.*}").Methods("GET").Handler(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream")))
+	m.Path("/blame/" + routevar.Repo + routevar.RepoRevSuffix + "/-/stream/{Path:.*}").Methods("GET").Handler(handleStreamBlame(logger, db, gitserver.NewClient("http.blamestream")))
 	// Set up the src-cli version cache handler (this will effectively be a
 	// no-op anywhere other than dot-com).
 	m.Path("/src-cli/versions/{rest:.*}").Methods("GET", "POST").Handler(releasecache.NewHandler(logger))
@@ -265,7 +267,7 @@ func NewHandler(
 						enterpriseportal.SAMSConfig{
 							ClientID:     dotcomConf.SamsClientID,
 							ClientSecret: dotcomConf.SamsClientSecret,
-							Scopes:       enterpriseportal.ReadScopes(), // WIP: enable write access to prod later
+							Scopes:       append(enterpriseportal.ReadScopes(), enterpriseportal.WriteScopes()...),
 							ConnConfig: samssdk.ConnConfig{
 								ExternalURL: dotcomConf.SamsServer,
 							},
@@ -319,6 +321,9 @@ func NewHandler(
 	repo := m.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
 	repo.Path("/shield").Methods("GET").Handler(jsonHandler(serveRepoShield()))
 	repo.Path("/refresh").Methods("POST").Handler(jsonHandler(serveRepoRefresh(db)))
+
+	llm := m.PathPrefix("/llm/").Subrouter()
+	llmapi.RegisterHandlers(llm, m, func() (*types.ModelConfiguration, error) { return modelconfig.Get().Get() })
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())
@@ -435,8 +440,8 @@ func (h *ErrorHandler) Handle(w http.ResponseWriter, r *http.Request, status int
 	// No need to log, as SetRequestErrorCause is consumed and logged.
 }
 
-func JsonMiddleware(errorHandler *ErrorHandler) func(func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return func(h func(http.ResponseWriter, *http.Request) error) http.Handler {
+func JsonMiddleware(errorHandler *ErrorHandler) handlerutil.HandlerWithErrorMiddleware {
+	return func(h handlerutil.HandlerWithErrorReturnFunc) http.Handler {
 		return handlerutil.HandlerWithErrorReturn{
 			Handler: func(w http.ResponseWriter, r *http.Request) error {
 				w.Header().Set("Content-Type", "application/json")

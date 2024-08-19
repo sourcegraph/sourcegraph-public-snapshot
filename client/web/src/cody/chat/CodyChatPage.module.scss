@@ -1,0 +1,26 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.root {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0 !important;
+    width: 100%;
+}
+
+.page-header {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.chat-container {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.chat {
+    flex-grow: 1;
+    [role='tabpanel'] {
+        overflow: auto;
+    }
+}

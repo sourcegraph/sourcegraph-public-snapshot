@@ -126,7 +126,7 @@ export const onClickOutside: Action<
     }
 }
 
-interface PopoverOptions {
+export interface PopoverOptions {
     /**
      * The placement of the popover relative to the reference element.
      */
@@ -146,6 +146,11 @@ interface PopoverOptions {
      * The middleware is always enabled.
      */
     flip?: FlipOptions
+    /**
+     * A callback to set the available width of the popover. The default behavior is
+     * to set the elements `maxWidth` and `maxHeight` style properties.
+     */
+    onSize?: (element: HTMLElement, size: { availableWidth: number; availableHeight: number }) => void
 }
 
 /**
@@ -166,10 +171,15 @@ export const popover: Action<HTMLElement, { reference: Element; options: Popover
             shift(options.shift),
             flip(options.flip),
             size({
-                apply({ availableWidth, availableHeight }) {
+                apply(dimensions) {
+                    if (options.onSize) {
+                        options.onSize(popover, dimensions)
+                        return
+                    }
+
                     Object.assign(popover.style, {
-                        maxWidth: `${availableWidth}px`,
-                        maxHeight: `${availableHeight}px`,
+                        maxWidth: `${dimensions.availableWidth}px`,
+                        maxHeight: `${dimensions.availableHeight}px`,
                     })
                 },
             })

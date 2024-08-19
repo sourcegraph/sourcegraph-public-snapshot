@@ -49,6 +49,52 @@ type SubRepoPermissions struct {
 	Paths []string
 }
 
+// SubRepoPermissionsWithIPs denotes access control rules within a repository's
+// contents.
+type SubRepoPermissionsWithIPs struct {
+	Paths []PathWithIP
+}
+
+// PathWithIP denotes a rule associated with the given file path and range of IP addresses that
+// this rule applies to.
+//
+// Rules are expressed as Glob syntaxes:
+//
+//	pattern:
+//	    { term }
+//
+//	term:
+//	    `*`         matches any sequence of non-separator characters
+//	    `**`        matches any sequence of characters
+//	    `?`         matches any single non-separator character
+//	    `[` [ `!` ] { character-range } `]`
+//	                character class (must be non-empty)
+//	    `{` pattern-list `}`
+//	                pattern alternatives
+//	    c           matches character c (c != `*`, `**`, `?`, `\`, `[`, `{`, `}`)
+//	    `\` c       matches character c
+//
+//	character-range:
+//	    c           matches character c (c != `\\`, `-`, `]`)
+//	    `\` c       matches character c
+//	    lo `-` hi   matches character c for lo <= c <= hi
+//
+//	pattern-list:
+//	    pattern { `,` pattern }
+//	                comma-separated (without spaces) patterns
+//
+// This Glob syntax is currently from github.com/gobwas/glob:
+// https://sourcegraph.com/github.com/gobwas/glob@e7a84e9525fe90abcda167b604e483cc959ad4aa/-/blob/glob.go?L39:6
+//
+// We use a third party library for double-wildcard support, which the standard
+// library does not provide.
+//
+// Paths are relative to the root of the repo.
+type PathWithIP struct {
+	Path string
+	IP   string
+}
+
 // ExternalUserPermissions is a collection of accessible repository/project IDs
 // (on the code host). It contains exact IDs, as well as prefixes to both include
 // and exclude IDs.
@@ -63,7 +109,7 @@ type ExternalUserPermissions struct {
 	// SubRepoPermissions denotes sub-repository content access control rules where
 	// relevant. If no corresponding entry for an Exacts repo exists in SubRepoPermissions,
 	// it can be safely assumed that access to the entire repo is available.
-	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissions
+	SubRepoPermissions map[extsvc.RepoID]*SubRepoPermissionsWithIPs
 }
 
 // FetchPermsOptions declares options when performing permissions sync.
@@ -84,21 +130,12 @@ type FetchPermsOptions struct {
 // In most cases, an authz provider represents a code host, because it is the source of truth for
 // repository permissions.
 type Provider interface {
-	// FetchAccount returns the external account that identifies the user to this authz provider,
-	// taking as input the current list of external accounts associated with the
-	// user. Implementations should always recompute the returned account (rather than returning an
-	// element of `current` if it has the correct ServiceID and ServiceType).
-	//
-	// Implementations should use only the `user` and `current` parameters to compute the returned
-	// external account. Specifically, they should not try to get the currently authenticated user
-	// from the context parameter.
+	// FetchAccount returns the external account that identifies the user to this authz provider.
+	// Implementations should always recompute the returned account.
 	//
 	// The `user` argument should always be non-nil. If no external account can be computed for the
 	// provided user, implementations should return nil, nil.
-	//
-	// The `verifiedEmails` should only contain a list of verified emails that is
-	// associated to the `user`.
-	FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (mine *extsvc.Account, err error)
+	FetchAccount(ctx context.Context, user *types.User) (mine *extsvc.Account, err error)
 
 	// FetchUserPerms returns a collection of accessible repository/project IDs (on
 	// code host) that the given account has read access on the code host. The

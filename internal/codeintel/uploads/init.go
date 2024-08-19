@@ -3,7 +3,7 @@ package uploads
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/codegraph"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/backfiller"
@@ -11,13 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/expirer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/janitor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/processor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	uploadsstore "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/object"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 )
 
 func NewService(
@@ -27,13 +26,12 @@ func NewService(
 	gitserverClient gitserver.Client,
 ) *Service {
 	store := uploadsstore.New(scopedContext("uploadsstore", observationCtx), db)
-	repoStore := backend.NewRepos(scopedContext("repos", observationCtx).Logger, db, gitserverClient)
 	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
 
 	svc := newService(
 		scopedContext("service", observationCtx),
 		store,
-		repoStore,
+		db.Repos(),
 		lsifStore,
 		gitserverClient,
 	)
@@ -53,7 +51,7 @@ func NewUploadProcessorJob(
 	observationCtx *observation.Context,
 	uploadSvc *Service,
 	db database.DB,
-	uploadStore uploadstore.Store,
+	uploadStore object.Storage,
 	workerConcurrency int,
 	workerBudget int64,
 	workerPollInterval time.Duration,
@@ -67,7 +65,7 @@ func NewUploadProcessorJob(
 	return background.NewUploadProcessorJob(
 		scopedContext("processor", observationCtx),
 		uploadSvc.store,
-		uploadSvc.lsifstore,
+		uploadSvc.codeGraphDataStore,
 		uploadSvc.repoStore,
 		uploadSvc.gitserverClient,
 		db,
@@ -96,7 +94,7 @@ func NewJanitor(
 	return background.NewJanitor(
 		scopedContext("janitor", observationCtx),
 		uploadSvc.store,
-		uploadSvc.lsifstore,
+		uploadSvc.codeGraphDataStore,
 		gitserverClient,
 		JanitorConfigInst,
 	)

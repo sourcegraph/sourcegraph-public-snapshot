@@ -86,8 +86,8 @@ sg start --commands frontend gitserver
 				Usage: "Print details about the selected commandset",
 			},
 			&cli.BoolFlag{
-				Name:  "sgtail",
-				Usage: "Connects to running sgtail instance",
+				Name:  "tail",
+				Usage: "Connects to a running sg tail instance",
 			},
 			&cli.BoolFlag{
 				Name:  "profile",
@@ -206,9 +206,9 @@ func startExec(ctx *cli.Context) error {
 		return errors.New("no concurrent sg start with same arguments allowed")
 	}
 
-	if ctx.Bool("sgtail") {
+	if ctx.Bool("tail") {
 		if err := run.OpenUnixSocket(); err != nil {
-			return errors.Wrapf(err, "Did you forget to run sgtail first?")
+			return errors.Wrapf(err, "Did you forget to run sg tail first?")
 		}
 	}
 
@@ -345,6 +345,10 @@ func (args StartArgs) toCommands(conf *sgconf.Config) (*Commands, error) {
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: extracting commandset failed %q :(", err))
 			return nil, flag.ErrHelp
+		}
+		if set.IsDeprecated() {
+			std.Out.WriteLine(output.Styledf(output.StyleBold, set.Deprecated))
+			return nil, errors.Newf("commandset %q is deprecated", args.CommandSet)
 		}
 
 		return commandSetToCommands(conf, set)

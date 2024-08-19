@@ -106,6 +106,8 @@ var SourcegraphDockerImagesTestDeps = []string{"server", "executor"}
 var DeploySourcegraphDockerImages = []string{
 	"alpine-3.14",
 	"postgres-12-alpine",
+	"appliance",
+	"appliance-frontend",
 	"blobstore",
 	"caddy",
 	"cadvisor",

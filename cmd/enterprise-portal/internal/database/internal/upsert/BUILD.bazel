@@ -8,7 +8,7 @@ go_library(
     visibility = ["//cmd/enterprise-portal:__subpackages__"],
     deps = [
         "@com_github_jackc_pgx_v5//:pgx",
-        "@com_github_jackc_pgx_v5//pgxpool",
+        "@com_github_jackc_pgx_v5//pgconn",
     ],
 )
 

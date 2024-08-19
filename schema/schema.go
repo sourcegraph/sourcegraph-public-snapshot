@@ -158,15 +158,16 @@ type AuthProviderCommon struct {
 	Order int `json:"order,omitempty"`
 }
 type AuthProviders struct {
-	AzureDevOps    *AzureDevOpsAuthProvider
-	Bitbucketcloud *BitbucketCloudAuthProvider
-	Builtin        *BuiltinAuthProvider
-	Gerrit         *GerritAuthProvider
-	Github         *GitHubAuthProvider
-	Gitlab         *GitLabAuthProvider
-	HttpHeader     *HTTPHeaderAuthProvider
-	Openidconnect  *OpenIDConnectAuthProvider
-	Saml           *SAMLAuthProvider
+	AzureDevOps     *AzureDevOpsAuthProvider
+	Bitbucketcloud  *BitbucketCloudAuthProvider
+	Bitbucketserver *BitbucketServerAuthProvider
+	Builtin         *BuiltinAuthProvider
+	Gerrit          *GerritAuthProvider
+	Github          *GitHubAuthProvider
+	Gitlab          *GitLabAuthProvider
+	HttpHeader      *HTTPHeaderAuthProvider
+	Openidconnect   *OpenIDConnectAuthProvider
+	Saml            *SAMLAuthProvider
 }
 
 func (v AuthProviders) MarshalJSON() ([]byte, error) {
@@ -175,6 +176,9 @@ func (v AuthProviders) MarshalJSON() ([]byte, error) {
 	}
 	if v.Bitbucketcloud != nil {
 		return json.Marshal(v.Bitbucketcloud)
+	}
+	if v.Bitbucketserver != nil {
+		return json.Marshal(v.Bitbucketserver)
 	}
 	if v.Builtin != nil {
 		return json.Marshal(v.Builtin)
@@ -211,6 +215,8 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.AzureDevOps)
 	case "bitbucketcloud":
 		return json.Unmarshal(data, &v.Bitbucketcloud)
+	case "bitbucketserver":
+		return json.Unmarshal(data, &v.Bitbucketserver)
 	case "builtin":
 		return json.Unmarshal(data, &v.Builtin)
 	case "gerrit":
@@ -226,7 +232,7 @@ func (v *AuthProviders) UnmarshalJSON(data []byte) error {
 	case "saml":
 		return json.Unmarshal(data, &v.Saml)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"azureDevOps", "bitbucketcloud", "builtin", "gerrit", "github", "gitlab", "http-header", "openidconnect", "saml"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"azureDevOps", "bitbucketcloud", "bitbucketserver", "builtin", "gerrit", "github", "gitlab", "http-header", "openidconnect", "saml"})
 }
 
 // AzureDevOpsAuthProvider description: Azure auth provider for dev.azure.com
@@ -405,12 +411,31 @@ type BitbucketCloudRateLimit struct {
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
+// BitbucketServerAuthProvider description: Configures the Bitbucket Server OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Server instance: https://confluence.atlassian.com/bitbucketserver0720/configure-an-incoming-link-1116282013.html. The application should have the repository read permission and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/bitbucketserver/callback".
+type BitbucketServerAuthProvider struct {
+	// AllowSignup description: Allows new visitors to sign up for accounts via Bitbucket Server OAuth. If false, users signing in via Bitbucket Server must have an existing Sourcegraph account, which will be linked to their Bitbucket Server identity after sign-in.
+	AllowSignup bool `json:"allowSignup,omitempty"`
+	// ClientID description: The ID of the Bitbucket OAuth app.
+	ClientID string `json:"clientID"`
+	// ClientSecret description: The Client Secret of the Bitbucket OAuth app.
+	ClientSecret  string  `json:"clientSecret"`
+	DisplayName   string  `json:"displayName,omitempty"`
+	DisplayPrefix *string `json:"displayPrefix,omitempty"`
+	Hidden        bool    `json:"hidden,omitempty"`
+	NoSignIn      bool    `json:"noSignIn,omitempty"`
+	Order         int     `json:"order,omitempty"`
+	Type          string  `json:"type"`
+	// Url description: URL of the Bitbucket Server instance.
+	Url string `json:"url,omitempty"`
+}
+
 // BitbucketServerAuthorization description: If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.
 type BitbucketServerAuthorization struct {
 	// IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the Bitbucket Server / Bitbucket Data Center identity to use for a given Sourcegraph user. When 'username' is used, Sourcegraph assumes usernames are identical in Sourcegraph and Bitbucket Server / Bitbucket Data Center accounts and `auth.enableUsernameChanges` must be set to false for security reasons.
-	IdentityProvider BitbucketServerIdentityProvider `json:"identityProvider"`
+	IdentityProvider *BitbucketServerIdentityProvider `json:"identityProvider,omitempty"`
 	// Oauth description: OAuth configuration specified when creating the Bitbucket Server / Bitbucket Data Center Application Link with incoming authentication. Two Legged OAuth with 'ExecuteAs=admin' must be enabled as well as user impersonation.
-	Oauth BitbucketServerOAuth `json:"oauth"`
+	Oauth  *BitbucketServerOAuth `json:"oauth,omitempty"`
+	Oauth2 bool                  `json:"oauth2,omitempty"`
 }
 
 // BitbucketServerConnection description: Configuration for a connection to Bitbucket Server / Bitbucket Data Center.
@@ -605,6 +630,58 @@ type ChangesetTemplate struct {
 
 // ClientSideModelConfig description: No client-side model configuration is currently available.
 type ClientSideModelConfig struct {
+	Openaicompatible *ClientSideModelConfigOpenAICompatible `json:"openaicompatible,omitempty"`
+}
+
+// ClientSideModelConfigOpenAICompatible description: Advanced configuration options that are only respected if the model is provided by an openaicompatible provider.
+type ClientSideModelConfigOpenAICompatible struct {
+	AutoCompleteMultilineMaxTokens  int     `json:"autoCompleteMultilineMaxTokens,omitempty"`
+	AutoCompleteSinglelineMaxTokens int     `json:"autoCompleteSinglelineMaxTokens,omitempty"`
+	AutoCompleteTemperature         float64 `json:"autoCompleteTemperature,omitempty"`
+	AutoCompleteTopK                float64 `json:"autoCompleteTopK,omitempty"`
+	AutoCompleteTopP                float64 `json:"autoCompleteTopP,omitempty"`
+	// AutocompleteMultilineTimeout description: How long the client should wait for autocomplete results to come back (milliseconds), before giving up and not displaying an autocomplete result at all.
+	//
+	// This applies on multi-line completions, which are based on intent-detection when e.g. a code block is being completed, e.g. 'func parseURL(url string) {<completion>'
+	//
+	// Note: similar to hidden Cody client config option 'cody.autocomplete.advanced.timeout.multiline' If user has configured that, it will be respected instead of this.
+	AutocompleteMultilineTimeout int `json:"autocompleteMultilineTimeout,omitempty"`
+	// AutocompleteSinglelineTimeout description: How long the client should wait for autocomplete results to come back (milliseconds), before giving up and not displaying an autocomplete result at all.
+	//
+	// This applies on single-line completions, e.g. 'var i = <completion>'
+	//
+	// Note: similar to hidden Cody client config option 'cody.autocomplete.advanced.timeout.singleline' If user has configured that, it will be respected instead of this.
+	AutocompleteSinglelineTimeout int `json:"autocompleteSinglelineTimeout,omitempty"`
+	ChatMaxTokens                 int `json:"chatMaxTokens,omitempty"`
+	// ChatPreInstruction description: Custom instruction to be included at the start of all chat messages
+	// when using this model, e.g. 'Answer all questions in Spanish.'
+	//
+	// Note: similar to Cody client config option 'cody.chat.preInstruction'; if user has configured that it will be used instead of this.
+	ChatPreInstruction string  `json:"chatPreInstruction,omitempty"`
+	ChatTemperature    float64 `json:"chatTemperature,omitempty"`
+	ChatTopK           float64 `json:"chatTopK,omitempty"`
+	ChatTopP           float64 `json:"chatTopP,omitempty"`
+	// ContextSizeHintPrefixCharacters description: A hint the client should use when producing context to send to the LLM.
+	// The maximum length of the document prefix (text before the cursor) to include, in characters.
+	ContextSizeHintPrefixCharacters *int `json:"contextSizeHintPrefixCharacters,omitempty"`
+	// ContextSizeHintSuffixCharacters description: A hint the client should use when producing context to send to the LLM.
+	// The maximum length of the document suffix (text after the cursor) to include, in characters.
+	ContextSizeHintSuffixCharacters *int `json:"contextSizeHintSuffixCharacters,omitempty"`
+	// ContextSizeHintTotalCharacters description: A hint the client should use when producing context to send to the LLM.
+	// The maximum length of all context (prefix + suffix + snippets), in characters.
+	ContextSizeHintTotalCharacters *int `json:"contextSizeHintTotalCharacters,omitempty"`
+	EditMaxTokens                  int  `json:"editMaxTokens,omitempty"`
+	// EditPostInstruction description: Custom instruction to be included at the end of all edit commands
+	// when using this model, e.g. 'Write all unit tests with Jest instead of detected framework.'
+	//
+	// Note: similar to Cody client config option 'cody.edit.preInstruction'; if user has configured that it will be respected instead of this.
+	EditPostInstruction string  `json:"editPostInstruction,omitempty"`
+	EditTemperature     float64 `json:"editTemperature,omitempty"`
+	EditTopK            float64 `json:"editTopK,omitempty"`
+	EditTopP            float64 `json:"editTopP,omitempty"`
+	// EndOfText description: End of text identifier used by the model.
+	EndOfText     string   `json:"endOfText,omitempty"`
+	StopSequences []string `json:"stopSequences,omitempty"`
 }
 
 // ClientSideProviderConfig description: No client-side provider configuration is currently available.
@@ -1227,15 +1304,6 @@ type ExportUsageTelemetry struct {
 	// TopicProjectName description: GCP project name containing the usage data pubsub topic
 	TopicProjectName string `json:"topicProjectName,omitempty"`
 }
-type ExternalIdentity struct {
-	// AuthProviderID description: The value of the `configID` field of the targeted authentication provider.
-	AuthProviderID string `json:"authProviderID"`
-	// AuthProviderType description: The `type` field of the targeted authentication provider.
-	AuthProviderType string `json:"authProviderType"`
-	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
-	GitlabProvider string `json:"gitlabProvider"`
-	Type           string `json:"type"`
-}
 
 // FileFilters description: Filters that allow you to specify which files in a repository should get embedded.
 type FileFilters struct {
@@ -1249,8 +1317,8 @@ type FileFilters struct {
 
 // FusionClient description: Configuration for the experimental p4-fusion client
 type FusionClient struct {
-	// Enabled description: Enable the p4-fusion client for cloning and fetching repos
-	Enabled bool `json:"enabled"`
+	// Enabled description: DEPRECATED. p4-fusion is always enabled.
+	Enabled bool `json:"enabled,omitempty"`
 	// FsyncEnable description:  Enable fsync() while writing objects to disk to ensure they get written to permanent storage immediately instead of being cached. This is to mitigate data loss in events of hardware failure.
 	FsyncEnable bool `json:"fsyncEnable,omitempty"`
 	// IncludeBinaries description: Whether to include binary files
@@ -1263,6 +1331,8 @@ type FusionClient struct {
 	NetworkThreads int `json:"networkThreads,omitempty"`
 	// NetworkThreadsFetch description: The number of threads in the threadpool for running network calls when performing fetches. Defaults to the number of logical CPUs.
 	NetworkThreadsFetch int `json:"networkThreadsFetch,omitempty"`
+	// NoConvertLabels description: Disable Perforce label to git tag conversion.
+	NoConvertLabels bool `json:"noConvertLabels,omitempty"`
 	// PrintBatch description: The p4 print batch size
 	PrintBatch int `json:"printBatch,omitempty"`
 	// Refresh description: How many times a connection should be reused before it is refreshed
@@ -1306,6 +1376,12 @@ type GerritConnection struct {
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
 	Projects []string `json:"projects,omitempty"`
+	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Gerrit repository. In the pattern, the variable "{host}" is replaced with the Gerrit host (such as gerrit.example.com), and "{name}" is replaced with the Gerrit repository's name (such as "myrepo").
+	//
+	// For example, if your Gerrit URL is https://gerrit.example.com and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "{host}/{name}" would mean that a Gerrit repository at https://gerrit.example.com/myrepo is available on Sourcegraph at https://src.example.com/gerrit.example.com/myrepo.
+	//
+	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
+	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
 	// Url description: URL of a Gerrit instance, such as https://gerrit.example.com.
 	Url string `json:"url"`
 	// Username description: A username for authentication with the Gerrit code host.
@@ -1541,7 +1617,7 @@ type GitLabConnection struct {
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this code host. If different code hosts generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Token description: A GitLab access token with "api" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type "external", this token should also have "sudo" scope.
+	// Token description: A GitLab access token with "api" scope. Can be a personal access token (PAT) or an OAuth token. If you are enabling permissions with identity provider type "username", this token should also have "sudo" scope.
 	Token string `json:"token"`
 	// TokenOauthExpiry description: The OAuth token expiry (Unix timestamp in seconds)
 	TokenOauthExpiry int `json:"token.oauth.expiry,omitempty"`
@@ -1655,7 +1731,6 @@ type Header struct {
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
 	Username *UsernameIdentity
-	External *ExternalIdentity
 }
 
 func (v IdentityProvider) MarshalJSON() ([]byte, error) {
@@ -1664,9 +1739,6 @@ func (v IdentityProvider) MarshalJSON() ([]byte, error) {
 	}
 	if v.Username != nil {
 		return json.Marshal(v.Username)
-	}
-	if v.External != nil {
-		return json.Marshal(v.External)
 	}
 	return nil, errors.New("tagged union type must have exactly 1 non-nil field value")
 }
@@ -1678,14 +1750,12 @@ func (v *IdentityProvider) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	switch d.DiscriminantProperty {
-	case "external":
-		return json.Unmarshal(data, &v.External)
 	case "oauth":
 		return json.Unmarshal(data, &v.Oauth)
 	case "username":
 		return json.Unmarshal(data, &v.Username)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username", "external"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"oauth", "username"})
 }
 
 type ImportChangesets struct {
@@ -1699,8 +1769,12 @@ type ImportChangesets struct {
 type IntentDetectionAPI struct {
 	// Default description: Default URL for intent detection API
 	Default *BackendAPIConfig `json:"default,omitempty"`
+	// Edit description: Default URL for intent detection API
+	Edit *BackendAPIConfig `json:"edit,omitempty"`
 	// Extra description: Array of additional intent detection API configs
 	Extra []*BackendAPIConfig `json:"extra,omitempty"`
+	// Search description: Default URL for intent detection API
+	Search *BackendAPIConfig `json:"search,omitempty"`
 }
 
 // JVMPackagesConnection description: Configuration for a connection to a JVM packages repository.
@@ -2007,6 +2081,10 @@ type OnboardingTask struct {
 type OnboardingTourConfiguration struct {
 	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
 	Tasks           []*OnboardingTask `json:"tasks"`
+}
+type OpenAICompatibleEndpoint struct {
+	AccessToken string `json:"accessToken,omitempty"`
+	Url         string `json:"url"`
 }
 type OpenCodeGraphAnnotation struct {
 	Item  OpenCodeGraphItemRef `json:"item"`
@@ -2522,6 +2600,24 @@ type Selector struct {
 	// Use `**/` before the glob to match in any parent directory. Use `/**` after the glob to match any files under a directory. Leading slashes are stripped from the path before being matched against the glob.
 	Path string `json:"path,omitempty"`
 }
+type SelfHostedModel struct {
+	// ApiVersion description: API version
+	ApiVersion string `json:"apiVersion,omitempty"`
+	// Model description: Which default model configuration to use. Sourcegraph provides default model configuration for select models. Arbitrary models can be configured in 'modelOverrides'
+	Model    string                   `json:"model,omitempty"`
+	Override *SelfHostedModelOverride `json:"override,omitempty"`
+	// Provider description: provider ID
+	Provider string `json:"provider"`
+}
+
+// SelfHostedModelOverride description: Properties to override in the default model configuration
+type SelfHostedModelOverride struct {
+	ClientSideConfig *ClientSideModelConfigOpenAICompatible `json:"clientSideConfig,omitempty"`
+	ContextWindow    *ContextWindow                         `json:"contextWindow,omitempty"`
+	// DisplayName description: Display name
+	DisplayName      string                                 `json:"displayName,omitempty"`
+	ServerSideConfig *ServerSideModelConfigOpenAICompatible `json:"serverSideConfig,omitempty"`
+}
 
 // Sentry description: Configuration for Sentry
 type Sentry struct {
@@ -2534,12 +2630,16 @@ type Sentry struct {
 }
 type ServerSideModelConfig struct {
 	AwsBedrockProvisionedThroughput *ServerSideModelConfigAwsBedrockProvisionedThroughput
+	Openaicompatible                *ServerSideModelConfigOpenAICompatible
 	Unused                          *DoNotUsePhonyDiscriminantType
 }
 
 func (v ServerSideModelConfig) MarshalJSON() ([]byte, error) {
 	if v.AwsBedrockProvisionedThroughput != nil {
 		return json.Marshal(v.AwsBedrockProvisionedThroughput)
+	}
+	if v.Openaicompatible != nil {
+		return json.Marshal(v.Openaicompatible)
 	}
 	if v.Unused != nil {
 		return json.Marshal(v.Unused)
@@ -2556,16 +2656,25 @@ func (v *ServerSideModelConfig) UnmarshalJSON(data []byte) error {
 	switch d.DiscriminantProperty {
 	case "awsBedrockProvisionedThroughput":
 		return json.Unmarshal(data, &v.AwsBedrockProvisionedThroughput)
+	case "openaicompatible":
+		return json.Unmarshal(data, &v.Openaicompatible)
 	case "unused":
 		return json.Unmarshal(data, &v.Unused)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrockProvisionedThroughput", "unused"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrockProvisionedThroughput", "openaicompatible", "unused"})
 }
 
 type ServerSideModelConfigAwsBedrockProvisionedThroughput struct {
 	// Arn description: The 'provisioned throughput ARN' to use when sending requests to AWS Bedrock
 	Arn  string `json:"arn"`
 	Type string `json:"type"`
+}
+
+// ServerSideModelConfigOpenAICompatible description: Configuration that is only respected if the model is provided by an openaicompatible provider.
+type ServerSideModelConfigOpenAICompatible struct {
+	// ApiModel description: The literal string value of the 'model' field that will be sent to the /chat/completions API, for example. If set, Sourcegraph treats this as an opaque string and sends it directly to the API, inferring no information from it. By default, the configured model name is sent.
+	ApiModel string `json:"apiModel,omitempty"`
+	Type     string `json:"type"`
 }
 type ServerSideProviderConfig struct {
 	AwsBedrock       *ServerSideProviderConfigAWSBedrock
@@ -2574,6 +2683,7 @@ type ServerSideProviderConfig struct {
 	Fireworks        *ServerSideProviderConfigFireworksProvider
 	Google           *ServerSideProviderConfigGoogleProvider
 	Openai           *ServerSideProviderConfigOpenAIProvider
+	HuggingfaceTgi   *ServerSideProviderConfigHuggingfaceTGIProvider
 	Openaicompatible *ServerSideProviderConfigOpenAICompatibleProvider
 	Sourcegraph      *ServerSideProviderConfigSourcegraphProvider
 	Unused           *DoNotUsePhonyDiscriminantType
@@ -2597,6 +2707,9 @@ func (v ServerSideProviderConfig) MarshalJSON() ([]byte, error) {
 	}
 	if v.Openai != nil {
 		return json.Marshal(v.Openai)
+	}
+	if v.HuggingfaceTgi != nil {
+		return json.Marshal(v.HuggingfaceTgi)
 	}
 	if v.Openaicompatible != nil {
 		return json.Marshal(v.Openaicompatible)
@@ -2627,6 +2740,8 @@ func (v *ServerSideProviderConfig) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, &v.Fireworks)
 	case "google":
 		return json.Unmarshal(data, &v.Google)
+	case "huggingface-tgi":
+		return json.Unmarshal(data, &v.HuggingfaceTgi)
 	case "openai":
 		return json.Unmarshal(data, &v.Openai)
 	case "openaicompatible":
@@ -2636,7 +2751,7 @@ func (v *ServerSideProviderConfig) UnmarshalJSON(data []byte) error {
 	case "unused":
 		return json.Unmarshal(data, &v.Unused)
 	}
-	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "openaicompatible", "sourcegraph", "unused"})
+	return fmt.Errorf("tagged union type must have a %q property whose value is one of %s", "type", []string{"awsBedrock", "azureOpenAI", "anthropic", "fireworks", "google", "openai", "huggingface-tgi", "openaicompatible", "sourcegraph", "unused"})
 }
 
 type ServerSideProviderConfigAWSBedrock struct {
@@ -2674,10 +2789,17 @@ type ServerSideProviderConfigGoogleProvider struct {
 	Endpoint    string `json:"endpoint"`
 	Type        string `json:"type"`
 }
+type ServerSideProviderConfigHuggingfaceTGIProvider struct {
+	// EnableVerboseLogs description: Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.
+	EnableVerboseLogs bool                        `json:"enableVerboseLogs,omitempty"`
+	Endpoints         []*OpenAICompatibleEndpoint `json:"endpoints"`
+	Type              string                      `json:"type"`
+}
 type ServerSideProviderConfigOpenAICompatibleProvider struct {
-	AccessToken string `json:"accessToken"`
-	Endpoint    string `json:"endpoint"`
-	Type        string `json:"type"`
+	// EnableVerboseLogs description: Whether to enable verbose logging of requests. When enabled, grep for 'OpenAICompatible' in the frontend container logs to see the requests Cody makes to the endpoint.
+	EnableVerboseLogs bool                        `json:"enableVerboseLogs,omitempty"`
+	Endpoints         []*OpenAICompatibleEndpoint `json:"endpoints"`
+	Type              string                      `json:"type"`
 }
 type ServerSideProviderConfigOpenAIProvider struct {
 	AccessToken string `json:"accessToken"`
@@ -2856,8 +2978,6 @@ type SettingsExperimentalFeatures struct {
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyFileResultSyntaxHighlighting *bool `json:"enableLazyFileResultSyntaxHighlighting,omitempty"`
-	// EnablePreciseOccurrences description: Enable the new precise occurrences API, which can provide more accurate hovers for some languages.
-	EnablePreciseOccurrences bool `json:"enablePreciseOccurrences,omitempty"`
 	// EnableSearchFilePrefetch description: Pre-fetch plaintext file revisions from search results on hover/focus.
 	EnableSearchFilePrefetch *bool `json:"enableSearchFilePrefetch,omitempty"`
 	// EnableSidebarFilePrefetch description: Pre-fetch plaintext file revisions from sidebar on hover/focus.
@@ -2880,8 +3000,6 @@ type SettingsExperimentalFeatures struct {
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
 	// KeywordSearch description: DEPRECATED: this setting is no longer used. To disable keyword search, set `search.defaultPatternType: standard` instead.
 	KeywordSearch bool `json:"keywordSearch,omitempty"`
-	// NewCodyWeb description: Enables new experimental Cody Web UI
-	NewCodyWeb *bool `json:"newCodyWeb,omitempty"`
 	// NewSearchNavigationUI description: Enables new experimental search UI navigation
 	NewSearchNavigationUI *bool `json:"newSearchNavigationUI,omitempty"`
 	// NewSearchResultFiltersPanel description: Enables new experimental search results filters panel
@@ -2940,7 +3058,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeMonitoringWebHooks")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
-	delete(m, "enablePreciseOccurrences")
 	delete(m, "enableSearchFilePrefetch")
 	delete(m, "enableSidebarFilePrefetch")
 	delete(m, "fuzzyFinder")
@@ -2952,7 +3069,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "fuzzyFinderSymbols")
 	delete(m, "goCodeCheckerTemplates")
 	delete(m, "keywordSearch")
-	delete(m, "newCodyWeb")
 	delete(m, "newSearchNavigationUI")
 	delete(m, "newSearchResultFiltersPanel")
 	delete(m, "newSearchResultsUI")
@@ -3051,8 +3167,6 @@ type SiteConfiguration struct {
 	AuthUserOrgMap map[string][]string `json:"auth.userOrgMap,omitempty"`
 	// AuthzEnforceForSiteAdmins description: When true, site admins will only be able to see private code they have access to via our authz system.
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
-	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
-	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
 	// BatchChangesAutoDeleteBranch description: Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.
 	BatchChangesAutoDeleteBranch bool `json:"batchChanges.autoDeleteBranch,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
@@ -3346,7 +3460,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.unlockAccountLinkSigningKey")
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
-	delete(m, "authz.refreshInterval")
 	delete(m, "batchChanges.autoDeleteBranch")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")
@@ -3487,19 +3600,21 @@ type SiteModelConfiguration struct {
 	// Specifying the same model both here and in 'modelOverrides' is not allowed.
 	ModelOverridesRecommendedSettings []string `json:"modelOverridesRecommendedSettings,omitempty"`
 	// ProviderOverrides description: Configures model providers. Here you can override how Cody connects to model providers and e.g. bring your own API keys or self-hosted models.
-	ProviderOverrides []*ProviderOverride     `json:"providerOverrides,omitempty"`
-	Sourcegraph       *SourcegraphModelConfig `json:"sourcegraph,omitempty"`
+	ProviderOverrides []*ProviderOverride `json:"providerOverrides,omitempty"`
+	// SelfHostedModels description: Add models to the list of models Cody is aware of, but let Sourcegraph provide default configuration for the model. Only available for select models, generic models can be configured in 'modelOverrides'.
+	//
+	// Specifying the same model both here and in 'modelOverrides' is not allowed.
+	SelfHostedModels []*SelfHostedModel      `json:"selfHostedModels,omitempty"`
+	Sourcegraph      *SourcegraphModelConfig `json:"sourcegraph,omitempty"`
 }
 
 // SourcegraphModelConfig description: If null, Cody will not use Sourcegraph's servers for model discovery.
 type SourcegraphModelConfig struct {
 	// AccessToken description: The Cody gateway access token to use. If null, an access token will be automatically generated based on the product license.
 	AccessToken *string `json:"accessToken,omitempty"`
-	// Endpoint description: The Cody gateway URL to use for making LLM requests and discovering new LLM models. If null, the production URL for Cody gateway will be used.
+	// Endpoint description: The Cody gateway URL to use for making LLM requests. If null, the production URL for Cody gateway will be used.
 	Endpoint     *string       `json:"endpoint,omitempty"`
 	ModelFilters *ModelFilters `json:"modelFilters,omitempty"`
-	// PollingInterval description: The frequency at which Cody will poll Sourcegraph's servers for an updated list of models. e.g. '6h', '1d', or 'never'
-	PollingInterval *string `json:"pollingInterval,omitempty"`
 }
 
 // SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.

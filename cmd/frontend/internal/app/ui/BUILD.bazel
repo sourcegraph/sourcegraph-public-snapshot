@@ -24,7 +24,6 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
         "//cmd/frontend/hubspot",
         "//cmd/frontend/hubspot/hubspotutil",
@@ -32,6 +31,7 @@ go_library(
         "//cmd/frontend/internal/app/jscontext",
         "//cmd/frontend/internal/app/ui/router",
         "//cmd/frontend/internal/app/ui/sveltekit",
+        "//cmd/frontend/internal/backend",
         "//cmd/frontend/internal/githubapp",
         "//cmd/frontend/internal/handlerutil",
         "//cmd/frontend/internal/routevar",
@@ -85,9 +85,8 @@ go_test(
     embed = [":ui"],
     tags = [TAG_SEARCHSUITE],
     deps = [
-        "//cmd/frontend/backend",
-        "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/ui/router",
+        "//cmd/frontend/internal/backend",
         "//internal/api",
         "//internal/conf",
         "//internal/database",

@@ -23,6 +23,6 @@ You can also watch [this video](https://drive.google.com/file/d/1DXjjf1YXr8Od8vG
 
 The [`sg` label](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aopen+label%3Asg+sort%3Aupdated-desc) tracks features and improvements for `sg` that we want to make.
 
-Have feedback or ideas? Feel free to create an issue or [open a discussion](https://github.com/sourcegraph/sourcegraph/discussions/categories/developer-experience)! Sourcegraph teammates can also leave a message in [#dev-experience](https://sourcegraph.slack.com/archives/C01N83PS4TU).
+Have feedback or ideas? Feel free to [join our community](https://community.sourcegraph.com)! Sourcegraph teammates can also leave a message in [#discuss-dev-infra](https://sourcegraph.slack.com/archives/C04MYFW01NV).
 
 Inspired and want to contribute? Head on over to [contributing to `sg`](index.md#contributing-to-sg)!

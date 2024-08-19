@@ -19,9 +19,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/session"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -122,8 +122,7 @@ func newOIDCIDServer(t *testing.T, code string, oidcProvider *schema.OpenIDConne
 
 func TestMiddleware(t *testing.T) {
 	logger := logtest.Scoped(t)
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 	defer licensing.TestingSkipFeatureChecks()()
 
 	mockGetProviderValue = &Provider{
@@ -167,10 +166,6 @@ func TestMiddleware(t *testing.T) {
 		return nil
 	})
 
-	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
-		t.Fatal(err)
-	}
-
 	validState := (&AuthnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "/redirect", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 	MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {
 		if rawIDToken != "test_id_token_f4bdefbd77f" {
@@ -213,7 +208,7 @@ func TestMiddleware(t *testing.T) {
 	}
 
 	t.Run("unauthenticated homepage visit, sign-out cookie present -> sg sign-in", func(t *testing.T) {
-		cookie := &http.Cookie{Name: auth.SignOutCookie, Value: "true"}
+		cookie := &http.Cookie{Name: session.SignOutCookie, Value: "true"}
 
 		resp := doRequest("GET", "http://example.com/", "", "", []*http.Cookie{cookie}, false)
 		if want := http.StatusOK; resp.StatusCode != want {
@@ -327,8 +322,7 @@ func TestMiddleware(t *testing.T) {
 
 func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	logger := logtest.Scoped(t)
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+	session.ResetMockSessionStore(t)
 
 	defer licensing.TestingSkipFeatureChecks()()
 
@@ -349,10 +343,6 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 	defer oidcIDServer.Close()
 	defer func() { auth.MockGetAndSaveUser = nil }()
 	mockGetProviderValue.config.Issuer = oidcIDServer.URL
-
-	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
-		t.Fatal(err)
-	}
 
 	state := (&AuthnState{CSRFToken: "THE_CSRF_TOKEN", Redirect: "http://evil.com", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 	MockVerifyIDToken = func(rawIDToken string) *oidc.IDToken {

@@ -15,27 +15,42 @@ func TestExperimentalPhraseBoost(t *testing.T) {
 			Init(input, SearchTypeKeyword))
 		require.NoError(t, err)
 
-		plan = MapPlan(plan, ExperimentalPhraseBoost)
+		plan = MapPlan(plan, func(basic Basic) Basic {
+			return ExperimentalPhraseBoost(input, basic)
+		})
 
 		return plan.ToQ().String()
 	}
 
 	// expect phrase query
 	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("foo bar bas", SearchTypeKeyword))
-	autogold.Expect(`(or "foo bar bas" (and "foo" "bar" "bas"))`).Equal(t, test("(foo and bar) and bas", SearchTypeKeyword))
+	autogold.Expect(`(or "(foo and bar) and bas" (and "foo" "bar" "bas"))`).Equal(t, test("(foo and bar) and bas", SearchTypeKeyword))
 	autogold.Expect(`(or "* int func(" (and "*" "int" "func("))`).Equal(t, test("* int func(", SearchTypeKeyword))
-	autogold.Expect(`(or "foo bar bas qux" (and "foo bar" "bas" "qux"))`).Equal(t, test(`"foo bar" bas qux`, SearchTypeKeyword))
+	autogold.Expect(`(or "\"foo bar\" bas qux" (and "foo bar" "bas" "qux"))`).Equal(t, test(`"foo bar" bas qux`, SearchTypeKeyword))
+	autogold.Expect(`(or "foo 'bar bas' qux" (and "foo" "bar bas" "qux"))`).Equal(t, test(`foo 'bar bas' qux`, SearchTypeKeyword))
+	autogold.Expect(`(and "type:file" (or "foo 'bar bas' qux" (and "foo" "bar bas" "qux")))`).Equal(t, test(`type:file foo 'bar bas' qux`, SearchTypeKeyword))
 
 	// expect no phrase query
 	autogold.Expect(`"foo bar bas"`).Equal(t, test("/foo bar bas/", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" "bar" "ba.*")`).Equal(t, test("foo bar /ba.*/", SearchTypeKeyword))
 	autogold.Expect(`"foo"`).Equal(t, test("foo", SearchTypeKeyword))
-	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo bar", SearchTypeKeyword))
-	autogold.Expect(`(and "foo" "bar")`).Equal(t, test("foo and bar", SearchTypeKeyword))
+	autogold.Expect(`(or "foo and bar" (and "foo" "bar"))`).Equal(t, test("foo and bar", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" (not "bar"))`).Equal(t, test("foo not bar", SearchTypeKeyword))
 	autogold.Expect(`(and "foo" "bar" (not "bas") "quz")`).Equal(t, test("foo bar not bas quz", SearchTypeKeyword))
 	autogold.Expect(`(or "foo" "bar" "bas")`).Equal(t, test("foo or bar or bas", SearchTypeKeyword))
 	autogold.Expect(`(or (and "foo" "bar") (and "quz" "biz"))`).Equal(t, test("foo and bar or (quz and biz)", SearchTypeKeyword))
+	autogold.Expect(`(and "type:repo" "sourcegraph")`).Equal(t, test("type:repo 'sourcegraph'", SearchTypeKeyword))
+	autogold.Expect(`(and "type:diff" "//" "varargs")`).Equal(t, test("type:diff // varargs", SearchTypeKeyword))
+
+	// cases that came up in user feedback
+	autogold.Expect(`(and "repo:golang/go" (or "// The vararg opts parameter can include functions to configure the" (and "//" "The" "vararg" "opts" "parameter" "can" "include" "functions" "to" "configure" "the")))`).Equal(t, test("repo:golang/go // The vararg opts parameter can include functions to configure the", SearchTypeKeyword))
+	autogold.Expect(`(and "context:global" (or "invalid modelID;" (and "invalid" "modelID;")))`).Equal(t, test("context:global invalid modelID;", SearchTypeKeyword))
+	autogold.Expect(`(and "context:global" (or "return \"various\";" (and "return" "\"various\";")))`).Equal(t, test("context:global return \"various\";", SearchTypeKeyword))
+	autogold.Expect(`(and "repo:golang/go" (or "test server" (and "test" "server")))`).Equal(t, test("repo:golang/go test server", SearchTypeKeyword))
+	autogold.Expect(`(and "repo:sourcegraph/cody@main" (or "the models and other" (and "the" "models" "other")))`).Equal(t, test("repo:sourcegraph/cody@main the models and other ", SearchTypeKeyword))
+	autogold.Expect(`(and "repo:sourcegraph/cody@main" (or "'sourcegraph'" "sourcegraph"))`).Equal(t, test("repo:sourcegraph/cody@main 'sourcegraph'", SearchTypeKeyword))
+	autogold.Expect(`(and "repo:sourcegraph/zoekt" (or "\"some string\"" "some string"))`).Equal(t, test("repo:sourcegraph/zoekt \"some string\"", SearchTypeKeyword))
+
 }
 
 func TestSubstituteAliases(t *testing.T) {
@@ -216,10 +231,6 @@ func TestConcat(t *testing.T) {
 
 	t.Run("", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeStandard)))
-	})
-
-	t.Run("", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`alsace /bourgogne/ bordeaux`, SearchTypeLucky)))
 	})
 
 	t.Run("", func(t *testing.T) {

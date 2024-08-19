@@ -1,0 +1,21 @@
+{
+  "name": "sourcegraph-rest-api",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "compile": "tsp compile ."
+  },
+  "peerDependencies": {
+    "@typespec/compiler": "0.59.0",
+    "@typespec/http": "0.59.0",
+    "@typespec/rest": "0.59.0",
+    "@typespec/openapi3": "0.59.0"
+  },
+  "devDependencies": {
+    "@typespec/compiler": "0.59.0",
+    "@typespec/http": "0.59.0",
+    "@typespec/rest": "0.59.0",
+    "@typespec/openapi3": "0.59.0"
+  },
+  "private": true
+}
