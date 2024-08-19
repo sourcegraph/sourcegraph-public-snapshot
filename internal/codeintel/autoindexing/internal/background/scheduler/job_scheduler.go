@@ -190,7 +190,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := b.indexEnqueuer.QueueAutoIndexJobs(ctx, repositoryID, commit, "", false, false); err != nil {
+			if _, err := b.indexEnqueuer.QueueAutoIndexJobs(ctx, repositoryID, string(commit), "", false, false); err != nil {
 				if errors.HasType[*gitdomain.RevisionNotFoundError](err) {
 					continue
 				}

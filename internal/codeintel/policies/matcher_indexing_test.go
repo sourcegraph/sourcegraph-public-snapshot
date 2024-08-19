@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -17,7 +18,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 	mainGitserverClient := testUploadExpirerMockGitserverClient("main", now)
 	developGitserverClient := testUploadExpirerMockGitserverClient("develop", now)
 
-	runTest := func(t *testing.T, gitserverClient gitserver.Client, policies []policiesshared.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
+	runTest := func(t *testing.T, gitserverClient gitserver.Client, policies []policiesshared.ConfigurationPolicy, expectedPolicyMatches map[api.CommitID][]PolicyMatch) {
 		t.Helper()
 		policyMatches, err := NewMatcher(gitserverClient, IndexingExtractor, false, true).CommitsDescribedByPolicy(context.Background(), 50, "r50", policies, now)
 		if err != nil {
@@ -46,7 +47,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			// N.B. tag v2.2.2 does not match filter
 			// N.B. tag v1.2.2 does not fall within policy duration
 			"deadbeef04": {PolicyMatch{Name: "v1.2.3", PolicyID: &policyID, PolicyDuration: &testDuration}},
@@ -63,7 +64,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			// N.B. branch zw/* does not match this filter
 			// N.B. xy/feature-y does not fall within policy duration
 			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
@@ -81,7 +82,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			// N.B. branch zw/* does not match this filter
 			// N.B. xy/feature-y does not fall within policy duration
 			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
@@ -122,7 +123,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			"deadbeef01": {
 				PolicyMatch{Name: "develop", PolicyID: &policyID1, PolicyDuration: &testDuration1},
 				PolicyMatch{Name: "develop", PolicyID: &policyID2, PolicyDuration: &testDuration2},
@@ -158,7 +159,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			"deadbeef04": {PolicyMatch{Name: "deadbeef04", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
@@ -173,7 +174,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			"deadbeef00": {PolicyMatch{Name: "HEAD", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
@@ -188,7 +189,7 @@ func TestCommitsDescribedByPolicyForIndexing(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			// N.B. deadbeef05 does not fall within policy duration
 		})
 	})

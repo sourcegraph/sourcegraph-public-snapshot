@@ -151,7 +151,7 @@ func testUploadExpirerMockGitserverClient(defaultBranchName string, now time.Tim
 	return gitserverClient
 }
 
-func hydrateCommittedAt(expectedPolicyMatches map[string][]PolicyMatch, now time.Time) {
+func hydrateCommittedAt(expectedPolicyMatches map[api.CommitID][]PolicyMatch, now time.Time) {
 	for commit, matches := range expectedPolicyMatches {
 		for i, match := range matches {
 			committedAt := testCommitDateFor(commit, now)
@@ -161,7 +161,7 @@ func hydrateCommittedAt(expectedPolicyMatches map[string][]PolicyMatch, now time
 	}
 }
 
-func testCommitDateFor(commit string, now time.Time) time.Time {
+func testCommitDateFor(commit api.CommitID, now time.Time) time.Time {
 	switch commit {
 	case "deadbeef00":
 		return now.Add(-time.Hour * 2)

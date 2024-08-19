@@ -244,7 +244,7 @@ func (s *Service) GetPreviewGitObjectFilter(
 		for _, policyMatch := range policyMatches {
 			gitObjects = append(gitObjects, GitObject{
 				Name:        policyMatch.Name,
-				Rev:         commit,
+				Rev:         string(commit),
 				CommittedAt: policyMatch.CommittedAt,
 			})
 		}
@@ -301,7 +301,7 @@ func (s *Service) getCommitsVisibleToUpload(ctx context.Context, upload shared.U
 func (s *Service) populateMatchingCommits(
 	visibleCommits []string,
 	upload shared.Upload,
-	matchingPolicies map[string][]PolicyMatch,
+	matchingPolicies map[api.CommitID][]PolicyMatch,
 	policies []policiesshared.ConfigurationPolicy,
 	now time.Time,
 ) ([]policiesshared.RetentionPolicyMatchCandidate, map[int]int) {
@@ -314,7 +314,7 @@ func (s *Service) populateMatchingCommits(
 	// and a visible commit, we ensure an entry for that policy is only added for the upload's commit. This makes the logic in checking
 	// the visible commits a bit simpler, as we don't have to check if policy X has already been added for a visible commit in the case
 	// that the upload's commit is not first in the list.
-	if policyMatches, ok := matchingPolicies[upload.Commit]; ok {
+	if policyMatches, ok := matchingPolicies[api.CommitID(upload.Commit)]; ok {
 		for _, policyMatch := range policyMatches {
 			if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
 				policyID := -1
@@ -334,7 +334,7 @@ func (s *Service) populateMatchingCommits(
 		if commit == upload.Commit {
 			continue
 		}
-		if policyMatches, ok := matchingPolicies[commit]; ok {
+		if policyMatches, ok := matchingPolicies[api.CommitID(commit)]; ok {
 			for _, policyMatch := range policyMatches {
 				if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
 					policyID := -1

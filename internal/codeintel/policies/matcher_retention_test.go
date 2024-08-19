@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -17,7 +18,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 	mainGitserverClient := testUploadExpirerMockGitserverClient("main", now)
 	developGitserverClient := testUploadExpirerMockGitserverClient("develop", now)
 
-	runTest := func(t *testing.T, gitserverClient *gitserver.MockClient, policies []policiesshared.ConfigurationPolicy, expectedPolicyMatches map[string][]PolicyMatch) {
+	runTest := func(t *testing.T, gitserverClient *gitserver.MockClient, policies []policiesshared.ConfigurationPolicy, expectedPolicyMatches map[api.CommitID][]PolicyMatch) {
 		policyMatches, err := NewMatcher(gitserverClient, RetentionExtractor, true, false).CommitsDescribedByPolicy(context.Background(), 50, "r50", policies, now)
 		if err != nil {
 			t.Fatalf("unexpected error finding matches: %s", err)
@@ -51,7 +52,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			// N.B. tag v2.2.2 does not match filter
 			"deadbeef04": {PolicyMatch{Name: "v1.2.3", PolicyID: &policyID, PolicyDuration: &testDuration}},
 			"deadbeef05": {PolicyMatch{Name: "v1.2.2", PolicyID: &policyID, PolicyDuration: &testDuration}},
@@ -68,7 +69,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			// N.B. branch zw/* does not match this filter
 			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
 			"deadbeef09": {PolicyMatch{Name: "xy/feature-y", PolicyID: &policyID, PolicyDuration: &testDuration}},
@@ -86,7 +87,7 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			// N.B. branch zw/* does not match this filter
 			"deadbeef07": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
 			"deadbeef08": {PolicyMatch{Name: "xy/feature-x", PolicyID: &policyID, PolicyDuration: &testDuration}},
@@ -104,12 +105,12 @@ func TestCommitsDescribedByPolicyForRetention(t *testing.T) {
 			},
 		}
 
-		runTest(t, mainGitserverClient, policies, map[string][]PolicyMatch{
+		runTest(t, mainGitserverClient, policies, map[api.CommitID][]PolicyMatch{
 			"deadbeef04": {PolicyMatch{Name: "deadbeef04", PolicyID: &policyID, PolicyDuration: &testDuration}},
 		})
 	})
 	t.Run("matches implicit tip of default branch policy", func(t *testing.T) {
-		runTest(t, developGitserverClient, nil, map[string][]PolicyMatch{
+		runTest(t, developGitserverClient, nil, map[api.CommitID][]PolicyMatch{
 			"deadbeef01": {{Name: "develop", PolicyID: nil, PolicyDuration: nil}},
 		})
 	})

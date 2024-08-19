@@ -222,7 +222,7 @@ func setupMockUploadService(now time.Time) *storemocks.MockStore {
 }
 
 func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
-	policyMatches := map[int]map[string][]policies.PolicyMatch{
+	policyMatches := map[int]map[api.CommitID][]policies.PolicyMatch{
 		50: {
 			"deadbeef01": {{PolicyDuration: days(1)}}, // 1 = 1
 			"deadbeef02": {{PolicyDuration: days(9)}}, // 9 > 2 (protected)
@@ -254,7 +254,7 @@ func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, repoName api.RepoName, policies []policiesshared.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, repoName api.RepoName, policies []policiesshared.ConfigurationPolicy, now time.Time, _ ...string) (map[api.CommitID][]policies.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 

@@ -1,8 +1,12 @@
 package policies
 
-import "sort"
+import (
+	"sort"
 
-func sortPolicyMatchesMap(policyMatches map[string][]PolicyMatch) {
+	"github.com/sourcegraph/sourcegraph/internal/api"
+)
+
+func sortPolicyMatchesMap(policyMatches map[api.CommitID][]PolicyMatch) {
 	for _, policyMatches := range policyMatches {
 		sortPolicyMatches(policyMatches)
 	}

@@ -143,7 +143,7 @@ func (s *expirer) handleRepository(ctx context.Context, repositoryID int, cfg *C
 
 // buildCommitMap will iterate the complete set of configuration policies that apply to a particular
 // repository and build a map from commits to the policies that apply to them.
-func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg *Config, now time.Time) (map[string][]policies.PolicyMatch, error) {
+func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg *Config, now time.Time) (map[api.CommitID][]policies.PolicyMatch, error) {
 	var (
 		t        = true
 		offset   int
@@ -182,7 +182,7 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg *Con
 
 func (s *expirer) handleUploads(
 	ctx context.Context,
-	commitMap map[string][]policies.PolicyMatch,
+	commitMap map[api.CommitID][]policies.PolicyMatch,
 	uploads []shared.Upload,
 	cfg *Config,
 	metrics *ExpirationMetrics,
@@ -238,7 +238,7 @@ func (s *expirer) handleUploads(
 
 func (s *expirer) isUploadProtectedByPolicy(
 	ctx context.Context,
-	commitMap map[string][]policies.PolicyMatch,
+	commitMap map[api.CommitID][]policies.PolicyMatch,
 	upload shared.Upload,
 	cfg *Config,
 	metrics *ExpirationMetrics,
@@ -268,7 +268,7 @@ func (s *expirer) isUploadProtectedByPolicy(
 		metrics.NumCommitsScanned.Add(float64(len(commits)))
 
 		for _, commit := range commits {
-			if policyMatches, ok := commitMap[commit]; ok {
+			if policyMatches, ok := commitMap[api.CommitID(commit)]; ok {
 				for _, policyMatch := range policyMatches {
 					if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
 						return true, nil
