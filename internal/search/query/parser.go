@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -766,7 +767,7 @@ func (p *parser) parseQuoted(delimiter rune) (string, bool) {
 	return value, true
 }
 
-// parseStringQuotes parses "..." or '...' syntax and returns a Patter node.
+// parseStringQuotes parses "..." or '...' syntax and returns a Pattern node.
 // Returns whether parsing succeeds.
 func (p *parser) parseStringQuotes() (Pattern, bool) {
 	start := p.pos
@@ -779,7 +780,7 @@ func (p *parser) parseStringQuotes() (Pattern, bool) {
 
 	if p.match(SQUOTE) {
 		if v, ok := p.parseQuoted('\''); ok {
-			return newPattern(v, Literal|Quoted, newRange(start, p.pos)), true
+			return newPattern(v, Literal|Quoted|SingleQuoted, newRange(start, p.pos)), true
 		}
 	}
 
@@ -815,19 +816,21 @@ func (p *parser) parseRegexpQuotes() (Pattern, bool) {
 // with a recognized quoting delimiter but does not close it, an error is
 // returned.
 func (p *parser) ParseFieldValue(field string) (string, labels, error) {
-	delimited := func(delimiter rune) (string, labels, error) {
-		value, advance, err := ScanDelimited(p.buf[p.pos:], true, delimiter)
+	if p.match(SQUOTE) {
+		value, advance, err := ScanDelimited(p.buf[p.pos:], true, '\'')
+		if err != nil {
+			return "", None, err
+		}
+		p.pos += advance
+		return value, Quoted | SingleQuoted, nil
+	}
+	if p.match(DQUOTE) {
+		value, advance, err := ScanDelimited(p.buf[p.pos:], true, '"')
 		if err != nil {
 			return "", None, err
 		}
 		p.pos += advance
 		return value, Quoted, nil
-	}
-	if p.match(SQUOTE) {
-		return delimited('\'')
-	}
-	if p.match(DQUOTE) {
-		return delimited('"')
 	}
 
 	value, advance, ok := ScanPredicate(field, p.buf[p.pos:], DefaultPredicateRegistry)

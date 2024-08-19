@@ -10,6 +10,8 @@ const (
 	Literal labels = 1 << iota
 	Regexp
 	Quoted
+	// SingleQuoted will be set (in addition to Quoted) when the pattern was wrapped in single quotes '...'
+	SingleQuoted
 	HeuristicParensAsPatterns
 	HeuristicDanglingParens
 	HeuristicHoisted

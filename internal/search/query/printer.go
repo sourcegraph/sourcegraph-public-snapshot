@@ -14,7 +14,7 @@ func stringHumanPattern(nodes []Node) string {
 		case Pattern:
 			v := n.Value
 			if n.Annotation.Labels.IsSet(Quoted) {
-				v = strconv.Quote(v)
+				v = quoteValue(v, n.Annotation.Labels.IsSet(SingleQuoted))
 			}
 			if n.Annotation.Labels.IsSet(Regexp) {
 				v = Delimit(v, '/')
@@ -56,7 +56,7 @@ func stringHumanParameters(parameters []Parameter) string {
 	for _, p := range parameters {
 		v := p.Value
 		if p.Annotation.Labels.IsSet(Quoted) {
-			v = strconv.Quote(v)
+			v = quoteValue(v, p.Annotation.Labels.IsSet(SingleQuoted))
 		}
 		field := p.Field
 		if p.Annotation.Labels.IsSet(IsAlias) {
@@ -82,6 +82,14 @@ func stringHumanParameters(parameters []Parameter) string {
 		}
 	}
 	return strings.Join(result, " ")
+}
+
+func quoteValue(v string, single bool) string {
+	if single {
+		return fmt.Sprintf("'%s'", v)
+	} else {
+		return strconv.Quote(v)
+	}
 }
 
 // StringHuman creates a valid query string from a parsed query. It is used in

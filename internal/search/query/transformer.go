@@ -675,9 +675,8 @@ func ToBasicQuery(nodes []Node) (Basic, error) {
 }
 
 // ExperimentalPhraseBoost is transformation on basic queries that appends a
-// phrase query to the original query but only if the original query consists of
-// a single top-level AND expression. The purpose is to improve ranking of exact
-// matches by adding a phrase query for the entire query string.
+// phrase query to the original query. The purpose is to improve ranking of
+// exact matches by adding a phrase query for the entire query string.
 //
 // Example:
 //
@@ -695,40 +694,46 @@ func ExperimentalPhraseBoost(originalQuery string, basic Basic) Basic {
 		}
 	}
 
-	// Check if the pattern is a single top-level AND expression with no negated or regexp clauses.
+	// Check if the pattern does not contain negated or regexp clauses, and is either
+	// * a quoted expression like '...'
+	// * a single top-level AND expression
+	var phrase string
 	switch p := basic.Pattern.(type) {
 	case Pattern:
 		if !p.Annotation.Labels.IsSet(Quoted) || p.Negated || p.Annotation.Labels.IsSet(Regexp) {
 			return basic
 		}
+		phrase = quoteValue(p.Value, p.Annotation.Labels.IsSet(SingleQuoted))
 	case Operator:
 		if p.Kind != And {
 			return basic
 		}
 		for _, child := range p.Operands {
-			if c, isPattern := child.(Pattern); !isPattern || c.Negated || c.Annotation.Labels.IsSet(Regexp) {
+			c, isPattern := child.(Pattern)
+			if !isPattern || c.Negated || c.Annotation.Labels.IsSet(Regexp) {
 				return basic
 			}
+
+			value := c.Value
+			if c.Annotation.Labels.IsSet(Quoted) {
+				value = quoteValue(value, c.Annotation.Labels.IsSet(SingleQuoted))
+			}
+			phrase += value + " "
 		}
-	default:
+	}
+
+	// Conservative check: if the rewritten query no longer appears in the original query, then
+	// don't apply the transformation.
+	phrase = strings.TrimSpace(phrase)
+	if !strings.Contains(originalQuery, phrase) {
 		return basic
 	}
 
-	// Remove predicates from the original query to keep just the pattern string.
-	terms := strings.Fields(originalQuery)
-	filteredTerms := make([]string, 0)
-	for _, term := range terms {
-		if !strings.Contains(term, ":") {
-			filteredTerms = append(filteredTerms, term)
-		}
-	}
-
-	query := strings.Join(filteredTerms, " ")
 	basic.Pattern = Operator{
 		Kind: Or,
 		Operands: []Node{
 			Pattern{
-				Value:      query,
+				Value:      phrase,
 				Annotation: Annotation{Labels: Boost | Literal | Standard},
 			},
 			basic.Pattern,
