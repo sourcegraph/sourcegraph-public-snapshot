@@ -9,12 +9,13 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/conc/pool"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/sensitivemetadataallowlist"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/lib/telemetrygateway/v1"
@@ -31,39 +32,37 @@ var counterV1Events = promauto.NewCounterVec(prometheus.CounterOpts{
 // queue, translating the message into the existing event_logs format on a
 // best-effort basis.
 type Store struct {
+	logger      log.Logger
 	exportQueue database.TelemetryEventsExportQueueStore
 	eventLogs   database.EventLogStore
 }
 
 var _ telemetry.EventsStore = (*Store)(nil)
 
-func NewStore(exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) *Store {
-	return &Store{exportQueue, eventLogs}
+func NewStore(logger log.Logger, exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) *Store {
+	return &Store{logger, exportQueue, eventLogs}
 }
 
 func (s *Store) StoreEvents(ctx context.Context, events []*telemetrygatewayv1.Event) error {
-	// Write to both stores at the same time.
-	wg := pool.New().WithErrors()
-	wg.Go(func() error {
-		if err := s.exportQueue.QueueForExport(ctx, events); err != nil {
-			return errors.Wrap(err, "bulk inserting telemetry events")
-		}
-		return nil
-	})
+	// Write to both stores at the same time. V1 store is not critical to
+	// block on so we do not wait for it.
 	if !shouldDisableV1(ctx) {
-		wg.Go(func() error {
+		go func(ctx context.Context) {
 			//lint:ignore SA1019 we translate the new format into the existing store for local reference.
 			err := s.eventLogs.BulkInsert(ctx, toEventLogs(time.Now, events))
 			counterV1Events.
 				WithLabelValues(strconv.FormatBool(err != nil)).
 				Add(float64(len(events)))
+
 			if err != nil {
-				return errors.Wrap(err, "bulk inserting events logs")
+				trace.Logger(ctx, s.logger).Warn("failed to record telemetry events to legacy store", log.Int("events", len(events)), log.Error(err))
 			}
-			return nil
-		})
+		}(context.WithoutCancel(ctx)) // runs in background so do not propogate cancel
 	}
-	return wg.Wait()
+	if err := s.exportQueue.QueueForExport(ctx, events); err != nil {
+		return errors.Wrap(err, "bulk inserting telemetry events")
+	}
+	return nil
 }
 
 // toEventLogs is the mechanism translating the new exportable telemetry events

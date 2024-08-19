@@ -16,16 +16,19 @@ import (
 // New creates a default EventRecorder for Telemetry V2, which exports recorded
 // events to Sourcegraph's Telemetry Gateway service.
 //
-// The current defaults tee events to both the legacy event_logs table, as well
-// as the new Telemetry Gateway export queue.
-func New(db database.DB) *telemetry.EventRecorder {
+// The current defaults tee events to both the legacy event_logs table, as
+// well as the new Telemetry Gateway export queue. The writes to the legacy
+// store as best effort.
+func New(logger log.Logger, db database.DB) *telemetry.EventRecorder {
 	if db == nil {
 		// Let panic happen later, when events are actually recorded - useful in
 		// some tests to avoid having to mock out the database where a recorder
 		// is created but never in the test's coverage.
 		return telemetry.NewEventRecorder(nil)
 	}
-	return telemetry.NewEventRecorder(telemetrystore.New(db.TelemetryEventsExportQueue(), db.EventLogs()))
+	return telemetry.NewEventRecorder(telemetrystore.New(
+		logger.Scoped("telemetry"),
+		db.TelemetryEventsExportQueue(), db.EventLogs()))
 }
 
 // New creates a default BestEffortEventRecorder for Telemetry V2, which exports
@@ -35,7 +38,6 @@ func New(db database.DB) *telemetry.EventRecorder {
 // The current defaults tee events to both the legacy event_logs table, as well
 // as the new Telemetry Gateway export queue.
 func NewBestEffort(logger log.Logger, db database.DB) *telemetry.BestEffortEventRecorder {
-	return telemetry.NewBestEffortEventRecorder(
-		logger.Scoped("telemetry"),
-		New(db))
+	logger = logger.Scoped("telemetry")
+	return telemetry.NewBestEffortEventRecorder(logger, New(logger, db))
 }

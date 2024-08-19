@@ -9,5 +9,6 @@ go_library(
         "//internal/database",
         "//internal/telemetry",
         "//internal/telemetry/telemetrystore/teestore",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

@@ -402,9 +402,9 @@ func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ 
 	return json.Marshal(repoMetadataUsage)
 }
 
-func getLLMUsageData(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+func getLLMUsageData(ctx context.Context, logger log.Logger, db database.DB) (_ json.RawMessage, err error) {
 	Manager := tokenusage.NewManager()
-	err = storeTokenUsageinDbBeforeRedisSync(ctx, db)
+	err = storeTokenUsageinDbBeforeRedisSync(ctx, logger, db)
 	if err != nil {
 		return nil, err
 	}
@@ -416,8 +416,8 @@ func getLLMUsageData(ctx context.Context, db database.DB) (_ json.RawMessage, er
 }
 
 // Stores in postgres right before the reset of the tokens to zero
-func storeTokenUsageinDbBeforeRedisSync(ctx context.Context, db database.DB) error {
-	recorder := telemetryrecorder.New(db)
+func storeTokenUsageinDbBeforeRedisSync(ctx context.Context, logger log.Logger, db database.DB) error {
+	recorder := telemetryrecorder.New(logger, db)
 	tokenManager := tokenusage.NewManager()
 	tokenUsageData, err := tokenManager.FetchTokenUsageDataForAnalysis()
 	if err != nil {
@@ -708,7 +708,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if err != nil {
 		logFunc("repoMetadataUsage failed", log.Error(err))
 	}
-	r.LlmUsage, err = getLLMUsageData(ctx, db)
+	r.LlmUsage, err = getLLMUsageData(ctx, scopedLog, db)
 	if err != nil {
 		logFunc("getLLMUsageData failed", log.Error(err))
 	}

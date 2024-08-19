@@ -85,7 +85,7 @@ func getOrCreateUser(
 		Data:     extsvc.NewUnencryptedData(serializedUser),
 	}
 
-	recorder := telemetryrecorder.New(db)
+	recorder := telemetryrecorder.New(logger, db)
 	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, logger, db, recorder, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        login,

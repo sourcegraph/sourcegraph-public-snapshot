@@ -1,6 +1,7 @@
 package telemetrystore
 
 import (
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetrystore/teestore"
@@ -11,6 +12,6 @@ import (
 //
 // The current default tees events to both the legacy event_logs table, as well
 // as the new Telemetry Gateway export queue.
-func New(exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) telemetry.EventsStore {
-	return teestore.NewStore(exportQueue, eventLogs)
+func New(logger log.Logger, exportQueue database.TelemetryEventsExportQueueStore, eventLogs database.EventLogStore) telemetry.EventsStore {
+	return teestore.NewStore(logger, exportQueue, eventLogs)
 }

@@ -15,12 +15,13 @@ go_library(
         "//internal/featureflag",
         "//internal/telemetry",
         "//internal/telemetry/sensitivemetadataallowlist",
+        "//internal/trace",
         "//lib/errors",
         "//lib/pointers",
         "//lib/telemetrygateway/v1:telemetrygateway",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
-        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
