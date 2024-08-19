@@ -25,32 +25,35 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
-func TestErrStatusNotOK(t *testing.T) {
-	tokenManager := tokenusage.NewManager()
-	mockClient := NewClient(&mockDoer{
+var compRequest = types.CompletionRequest{
+	Feature: types.CompletionsFeatureChat,
+	Version: types.CompletionsVersionLegacy,
+	ModelConfigInfo: types.ModelConfigInfo{
+		Provider: modelconfigSDK.Provider{
+			ID: modelconfigSDK.ProviderID("xxx-provider-id-xxx"),
+		},
+		Model: modelconfigSDK.Model{
+			ModelRef: modelconfigSDK.ModelRef("provider::apiversion::test-model"),
+		},
+	},
+	Parameters: types.CompletionRequestParameters{
+		RequestedModel: "xxx-requested-model-xxx",
+	},
+}
+
+func NewMockClient(statusCode int, response string) types.CompletionsClient {
+	return NewClient(&mockDoer{
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{
-				StatusCode: http.StatusTooManyRequests,
-				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
+				StatusCode: statusCode,
+				Body:       io.NopCloser(bytes.NewReader([]byte(response))),
 			}, nil
 		},
-	}, "", "", *tokenManager)
+	}, "", "", *tokenusage.NewManager())
+}
 
-	compRequest := types.CompletionRequest{
-		Feature: types.CompletionsFeatureChat,
-		Version: types.CompletionsVersionLegacy,
-		ModelConfigInfo: types.ModelConfigInfo{
-			Provider: modelconfigSDK.Provider{
-				ID: modelconfigSDK.ProviderID("xxx-provider-id-xxx"),
-			},
-			Model: modelconfigSDK.Model{
-				ModelRef: modelconfigSDK.ModelRef("provider::apiversion::test-model"),
-			},
-		},
-		Parameters: types.CompletionRequestParameters{
-			RequestedModel: "xxx-requested-model-xxx",
-		},
-	}
+func TestErrStatusNotOK(t *testing.T) {
+	mockClient := NewMockClient(http.StatusTooManyRequests, "oh no, please slow down!")
 
 	t.Run("Complete", func(t *testing.T) {
 		logger := log.Scoped("completions")
@@ -73,4 +76,37 @@ func TestErrStatusNotOK(t *testing.T) {
 		_, ok := types.IsErrStatusNotOK(err)
 		assert.True(t, ok)
 	})
+}
+
+func TestNonStreamingResponseParsing(t *testing.T) {
+	mockClient := NewMockClient(http.StatusOK, `{
+  "id": "chatcmpl-9wEJ9hnLdPcCLrfdZLrRPGOz48Pmo",
+  "object": "chat.completion",
+  "created": 1723665051,
+  "model": "gpt-4o-mini-2024-07-18",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "yes",
+        "refusal": null
+      },
+      "logprobs": null,
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 15,
+    "completion_tokens": 1,
+    "total_tokens": 16
+  },
+  "system_fingerprint": "fp_48196bc67a"
+}`)
+	logger := log.Scoped("completions")
+	resp, err := mockClient.Complete(context.Background(), logger, compRequest)
+	require.NoError(t, err)
+	assert.NotNil(t, resp)
+	autogold.Expect(&types.CompletionResponse{Completion: "yes", StopReason: "stop"}).Equal(t, resp)
+
 }
