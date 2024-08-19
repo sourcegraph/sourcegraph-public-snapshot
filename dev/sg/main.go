@@ -465,10 +465,15 @@ func warnSkippedInDev(flag cli.Flag) cli.Flag {
 func printSkippedInDevWarning() {
 	names := []string{}
 	for _, f := range skippedInDevFlags {
-		// Safe because it's not possible for a flag to not have name.
-		names = append(names, f.Names()[0])
+		// If the user has already configured it, do not warn about it
+		if !f.IsSet() {
+			// Safe because it's not possible for a flag to not have name.
+			names = append(names, f.Names()[0])
+		}
 	}
-	std.Out.WriteWarningf("Running sg with a dev build, following flags have different default value unless explictly set: %s", strings.Join(names, ", "))
+	if len(names) > 0 {
+		std.Out.WriteWarningf("Running sg with a dev build, following flags have different default value unless explictly set: %s", strings.Join(names, ", "))
+	}
 }
 
 func exists(file string) bool {
