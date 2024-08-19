@@ -14,6 +14,7 @@ go_library(
         "iface.go",
         "multiversion.go",
         "run_oobmigrations.go",
+        "tenant.go",
         "undo.go",
         "up.go",
         "upgrade.go",
@@ -21,10 +22,15 @@ go_library(
         "util.go",
         "validate.go",
     ],
+    embedsrcs = [
+        "tenant_down.sql",
+        "tenant_up.sql",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
+        "//internal/database/basestore",
         "//internal/database/migration/definition",
         "//internal/database/migration/drift",
         "//internal/database/migration/multiversion",

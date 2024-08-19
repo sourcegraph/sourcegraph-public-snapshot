@@ -129,6 +129,7 @@ var (
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
 	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, true, schemaFactories...)
 	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
+	tenantCommand   = cliutil.EnforceTenant("sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
 		Name:        "leaves",
@@ -175,8 +176,9 @@ var (
 	}
 
 	migrationCommand = &cli.Command{
-		Name:  "migration",
-		Usage: "Modifies and runs database migrations",
+		Name:    "migration",
+		Aliases: []string{"migrate"},
+		Usage:   "Modifies and runs database migrations",
 		UsageText: `
 # Migrate local default database up all the way
 sg migration up
@@ -207,6 +209,7 @@ sg migration squash
 			squashAllCommand,
 			visualizeCommand,
 			rewriteCommand,
+			tenantCommand,
 		},
 	}
 )
