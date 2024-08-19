@@ -175,8 +175,9 @@ var (
 	}
 
 	migrationCommand = &cli.Command{
-		Name:  "migration",
-		Usage: "Modifies and runs database migrations",
+		Name:    "migration",
+		Aliases: []string{"migrate"},
+		Usage:   "Modifies and runs database migrations",
 		UsageText: `
 # Migrate local default database up all the way
 sg migration up
