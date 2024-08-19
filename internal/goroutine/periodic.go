@@ -260,10 +260,7 @@ func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
 	handlerCtx, cancel := context.WithCancel(r.ctx)
 	defer cancel()
 
-	go func() {
-		<-monitorCtx.Done()
-		cancel()
-	}()
+	context.AfterFunc(monitorCtx, cancel)
 
 	select {
 	// Initial delay sleep - might be a zero-duration value if it wasn't set,

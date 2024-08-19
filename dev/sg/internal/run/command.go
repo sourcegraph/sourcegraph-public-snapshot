@@ -427,10 +427,9 @@ func (sc *startedCmd) getOutputWriter(ctx context.Context, opts *outputOptions, 
 			})
 			_ = w.CloseWithError(err)
 		}()
-		go func() {
-			<-ctx.Done()
+		context.AfterFunc(ctx, func() {
 			_ = w.CloseWithError(ctx.Err())
-		}()
+		})
 		writers = append(writers, w)
 	}
 

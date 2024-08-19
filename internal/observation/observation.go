@@ -177,10 +177,9 @@ type FinishFunc func(count float64, args Args)
 // be used for continuing an observation beyond the lifetime of a function if that function
 // returns more units of work that you want to observe as part of the original function.
 func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
-	go func() {
-		<-ctx.Done()
+	context.AfterFunc(ctx, func() {
 		f(count, args)
-	}()
+	})
 }
 
 // ErrCollector represents multiple errors and additional log fields that arose from those errors.

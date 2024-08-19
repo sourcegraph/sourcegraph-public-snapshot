@@ -47,10 +47,9 @@ func newOutputPipe(ctx context.Context, name string, out *output.Output, start <
 		})
 		_ = w.CloseWithError(err)
 	}()
-	go func() {
-		<-ctx.Done()
+	context.AfterFunc(ctx, func() {
 		_ = w.CloseWithError(ctx.Err())
-	}()
+	})
 
 	return w
 }
