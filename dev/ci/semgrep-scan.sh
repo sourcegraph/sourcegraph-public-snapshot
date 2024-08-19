@@ -26,6 +26,8 @@ is_code_scanning_enabled() {
     CODE_SCANNING_ENABLED="false"
   elif echo "$error" | grep -q "Not Found"; then
     CODE_SCANNING_ENABLED="false"
+  elif echo "$error" | grep -q "not authorized"; then
+    CODE_SCANNING_ENABLED="false"
   else
     CODE_SCANNING_ENABLED="true"
   fi
