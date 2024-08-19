@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -56,7 +56,7 @@ func TestErrStatusNotOK(t *testing.T) {
 	mockClient := NewMockClient(http.StatusTooManyRequests, "oh no, please slow down!")
 
 	t.Run("Complete", func(t *testing.T) {
-		logger := log.Scoped("completions")
+		logger := logtest.Scoped(t)
 		resp, err := mockClient.Complete(context.Background(), logger, compRequest)
 		require.Error(t, err)
 		assert.Nil(t, resp)
@@ -67,7 +67,7 @@ func TestErrStatusNotOK(t *testing.T) {
 	})
 
 	t.Run("Stream", func(t *testing.T) {
-		logger := log.Scoped("completions")
+		logger := logtest.Scoped(t)
 		sendEventFn := func(event types.CompletionResponse) error { return nil }
 		err := mockClient.Stream(context.Background(), logger, compRequest, sendEventFn)
 		require.Error(t, err)
@@ -103,7 +103,7 @@ func TestNonStreamingResponseParsing(t *testing.T) {
   },
   "system_fingerprint": "fp_48196bc67a"
 }`)
-	logger := log.Scoped("completions")
+	logger := logtest.Scoped(t)
 	resp, err := mockClient.Complete(context.Background(), logger, compRequest)
 	require.NoError(t, err)
 	assert.NotNil(t, resp)
