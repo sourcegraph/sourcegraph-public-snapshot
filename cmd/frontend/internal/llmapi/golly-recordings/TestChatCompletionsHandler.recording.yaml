@@ -160,3 +160,29 @@ recordings:
     headers:
     - key: Content-Type
       value: text/plain; charset=utf-8
+- hash: 94b132c1d5c4a93c9d8f71a01b7b01b2118f16e67747fb028b71a46887f78c4a
+  request:
+    recording_date: "2024-08-14T23:16:24+02:00"
+    url: https://sourcegraph.com/.api/completions/stream?api-version=1&client-name=openai-rest-api&client-version=6.0.0
+    method: POST
+    headers:
+    - key: Content-Type
+      value: application/json
+    - key: Authorization
+      value: token REDACTED_51c20f884ac371e6e12fe635336ac83af942ddc816c96d99dd3e49b3f8dfeb26
+    body: |
+      Fast: false
+      logprobs: null
+      maxTokensToSample: 16
+      messages:
+      - speaker: human
+        text: Hello
+      model: anthropic::unknown::claude-gpt
+      stream: false
+  response:
+    status_code: 400
+    body: |
+      the requested chat model is not available ("anthropic::unknown::claude-gpt", onProTier=true)
+    headers:
+    - key: Content-Type
+      value: text/plain; charset=utf-8

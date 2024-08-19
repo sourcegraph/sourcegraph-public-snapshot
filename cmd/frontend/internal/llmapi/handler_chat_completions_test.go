@@ -57,8 +57,17 @@ func TestChatCompletionsHandler(t *testing.T) {
 		// For now, we reject requests when the model is not using the new ModelRef format.
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 
-		// Assert that we give a helpful error message nudging the user to use modelref instead of the old syntax.
-		assert.Equal(t, "model anthropic/claude-3-haiku-20240307 is not supported (similar to anthropic::unknown::claude-3-haiku-20240307)\n", rr.Body.String())
+		assert.Equal(t, "requested model 'anthropic/claude-3-haiku-20240307' failed validation: modelRef syntax error. Expected format '${ProviderID}::${APIVersionID}::${ModelID}'. To fix this problem, send a request to `GET /.api/llm/models` to see the list of supported models.\n", rr.Body.String())
+	})
+
+	t.Run("/.api/llm/chat/completions (400 model is invalid model)", func(t *testing.T) {
+		rr := c.chatCompletions(t, `{
+			    "model": "anthropic::unknown::claude-gpt",
+			    "messages": [{"role": "user", "content": "Hello"}]
+			}`)
+		// For now, we reject requests when the model is not using the new ModelRef format.
+		assert.Equal(t, http.StatusInternalServerError, rr.Code) // Should be 400 Bad Request, see CODY-3318
+		assert.Equal(t, "failed to forward request to apiHandler: handler returned unexpected status code: got 400 want 200, response body: the requested chat model is not available (\"anthropic::unknown::claude-gpt\", onProTier=true)\n", rr.Body.String())
 	})
 
 	t.Run("/.api/llm/chat/completions (200 OK)", func(t *testing.T) {
