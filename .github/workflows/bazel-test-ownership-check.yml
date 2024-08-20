@@ -82,5 +82,5 @@ jobs:
   report_failure:
     needs: [checks]
     if: ${{ failure() && needs.checks.outputs.below-threshold != 'true' }}
-    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    uses: sourcegraph/workflows/.github/workflows/report-job-failure.yml@main
     secrets: inherit
