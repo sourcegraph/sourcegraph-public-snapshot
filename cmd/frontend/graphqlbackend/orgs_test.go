@@ -3,6 +3,8 @@ package graphqlbackend
 import (
 	"testing"
 
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -18,6 +20,10 @@ func TestOrgs(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgsFunc.SetDefaultReturn(orgs)
+
+	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 	RunTests(t, []*Test{
 		{
@@ -47,4 +53,5 @@ func TestOrgs(t *testing.T) {
 			`,
 		},
 	})
+	mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 }

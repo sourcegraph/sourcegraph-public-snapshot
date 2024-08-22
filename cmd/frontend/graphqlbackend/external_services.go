@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -80,22 +79,20 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-
-		arg := struct {
-			Kind        string
-			DisplayName string
-			Namespace   *graphql.ID
-		}{
-			Kind:        args.Input.Kind,
-			DisplayName: args.Input.DisplayName,
-			Namespace:   args.Input.Namespace,
-		}
-		// Log action of Code Host Connection being added
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
+	arg := struct {
+		Kind        string
+		DisplayName string
+		Namespace   *graphql.ID
+	}{
+		Kind:        args.Input.Kind,
+		DisplayName: args.Input.DisplayName,
+		Namespace:   args.Input.Namespace,
 	}
+	// Log action of Code Host Connection being added
+	if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionAdded, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		r.logger.Warn("Error logging security event", log.Error(err))
+	}
+
 	// Now, schedule the external service for syncing immediately.
 	s := repos.NewStore(r.logger, r.db)
 	err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
@@ -196,26 +193,24 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		logger.Warn("Failed to get new redacted config", log.Error(err))
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-		arg := struct {
-			ID           graphql.ID
-			DisplayName  *string
-			UpdaterID    *int32
-			PrevConfig   string
-			LatestConfig *string
-		}{
-			ID:           args.Input.ID,
-			DisplayName:  args.Input.DisplayName,
-			UpdaterID:    &userID,
-			PrevConfig:   prevConfig,
-			LatestConfig: &latestConfig,
-		}
-		// Log action of Code Host Connection being updated
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
-
+	arg := struct {
+		ID           graphql.ID
+		DisplayName  *string
+		UpdaterID    *int32
+		PrevConfig   string
+		LatestConfig *string
+	}{
+		ID:           args.Input.ID,
+		DisplayName:  args.Input.DisplayName,
+		UpdaterID:    &userID,
+		PrevConfig:   prevConfig,
+		LatestConfig: &latestConfig,
 	}
+	// Log action of Code Host Connection being updated
+	if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionUpdated, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arg); err != nil {
+		r.logger.Warn("Error logging security event", log.Error(err))
+	}
+
 	// Now, schedule the external service for syncing immediately.
 	s := repos.NewStore(r.logger, r.db)
 	err = s.EnqueueSingleSyncJob(ctx, es.ID)
@@ -344,19 +339,18 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 		}
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("auditlog-expansion", false) {
-		arguments := struct {
-			GraphQLID         graphql.ID `json:"GraphQL ID"`
-			ExternalServiceID int64      `json:"External Service ID"`
-		}{
-			GraphQLID:         args.ExternalService,
-			ExternalServiceID: id,
-		}
-		// Log action of Code Host Connection being deleted
-		if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arguments); err != nil {
-			r.logger.Warn("Error logging security event", log.Error(err))
-		}
+	arguments := struct {
+		GraphQLID         graphql.ID `json:"GraphQL ID"`
+		ExternalServiceID int64      `json:"External Service ID"`
+	}{
+		GraphQLID:         args.ExternalService,
+		ExternalServiceID: id,
 	}
+	// Log action of Code Host Connection being deleted
+	if err := r.db.SecurityEventLogs().LogSecurityEvent(ctx, database.SecurityEventNameCodeHostConnectionDeleted, "", uint32(actor.FromContext(ctx).UID), "", "BACKEND", arguments); err != nil {
+		r.logger.Warn("Error logging security event", log.Error(err))
+	}
+
 	return &EmptyResponse{}, nil
 }
 

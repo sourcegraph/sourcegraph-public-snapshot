@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	mockrequire "github.com/derision-test/go-mockgen/v2/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -68,6 +69,9 @@ func TestAddExternalService(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.HandleFunc.SetDefaultReturn(&handle{db})
+	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 	RunTests(t, []*Test{
 		{
@@ -96,6 +100,7 @@ func TestAddExternalService(t *testing.T) {
 		`,
 		},
 	})
+	mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 }
 
 func TestUpdateExternalService(t *testing.T) {
@@ -203,6 +208,10 @@ func TestUpdateExternalService(t *testing.T) {
 	es := backend.NewStrictMockExternalServicesService()
 	es.ValidateConnectionFunc.SetDefaultReturn(nil)
 
+	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+
 	mockExternalServicesService = es
 	t.Cleanup(func() { mockExternalServicesService = nil })
 
@@ -231,6 +240,7 @@ func TestUpdateExternalService(t *testing.T) {
 		`,
 		Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 	})
+	mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 }
 
 func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusion(t *testing.T) {
@@ -566,6 +576,9 @@ func TestDeleteExternalService(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+	securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
 	RunTests(t, []*Test{
 		{
@@ -587,6 +600,7 @@ func TestDeleteExternalService(t *testing.T) {
 			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
 		},
 	})
+	mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 }
 
 func TestExternalServicesResolver(t *testing.T) {

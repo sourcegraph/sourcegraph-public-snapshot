@@ -253,6 +253,10 @@ func TestSetUserEmailVerified(t *testing.T) {
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
 			db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
+			securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
+			securityLogEvents.LogSecurityEventFunc.SetDefaultReturn(nil)
+			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
+
 			RunTests(t, test.gqlTests(db))
 
 			if test.expectCalledGrantPendingPermissions {
@@ -260,6 +264,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			} else {
 				mockrequire.NotCalled(t, authz.GrantPendingPermissionsFunc)
 			}
+			mockrequire.Called(t, securityLogEvents.LogSecurityEventFunc)
 		})
 	}
 }
