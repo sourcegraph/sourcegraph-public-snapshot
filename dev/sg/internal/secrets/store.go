@@ -38,6 +38,9 @@ type secretManagerClient interface {
 
 // Store holds secrets regardless on their form, as long as they are marshallable in JSON.
 type Store struct {
+	// All methods reading/writing from Store must claim this lock.
+	mux sync.Mutex
+
 	filepath string
 	// persistedData holds secrets that should be persisted to filepath.
 	persistedData map[string]json.RawMessage
@@ -154,6 +157,9 @@ func LoadFromFile(filepath string) (*Store, error) {
 
 // Write serializes the store content in the given writer.
 func (s *Store) Write(w io.Writer) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	enc := json.NewEncoder(w)
 	return enc.Encode(s.persistedData)
 }
@@ -170,6 +176,9 @@ func (s *Store) SaveFile() error {
 
 // Put stores serialized data in memory.
 func (s *Store) Put(key string, data any) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	b, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -180,7 +189,9 @@ func (s *Store) Put(key string, data any) error {
 
 // PutAndSave saves automatically after calling Put.
 func (s *Store) PutAndSave(key string, data any) error {
+	s.mux.Lock()
 	err := s.Put(key, data)
+	s.mux.Unlock() // call explicitly here since s.SaveFile might lock as well
 	if err != nil {
 		return err
 	}
@@ -189,6 +200,9 @@ func (s *Store) PutAndSave(key string, data any) error {
 
 // Get fetches a value from memory and uses the given target to deserialize it.
 func (s *Store) Get(key string, target any) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	if v, ok := s.persistedData[key]; ok {
 		return json.Unmarshal(v, target)
 	}
@@ -261,6 +275,8 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 	}
 
 	// Return and persist the fetched secret
+	s.mux.Lock()
+	defer s.mux.Unlock()
 	value.Fetched = time.Now()
 	s.externalData[secret.id()] = value
 	return value.Value, nil
@@ -268,6 +284,9 @@ func (s *Store) GetExternal(ctx context.Context, secret ExternalSecret, fallback
 
 // Remove deletes a value from memory.
 func (s *Store) Remove(key string) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	if _, exists := s.persistedData[key]; exists {
 		delete(s.persistedData, key)
 		return nil
@@ -277,6 +296,9 @@ func (s *Store) Remove(key string) error {
 
 // Keys returns out all keys
 func (s *Store) Keys() []string {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
 	keys := make([]string, 0, len(s.persistedData))
 	for key := range s.persistedData {
 		keys = append(keys, key)
