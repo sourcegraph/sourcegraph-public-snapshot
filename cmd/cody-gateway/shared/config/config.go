@@ -102,6 +102,11 @@ type AnthropicConfig struct {
 	FlaggingConfig FlaggingConfig
 }
 
+type FireworksDirectRouteConfig struct {
+	// direct route token for deepseek model
+	DeepSeekCoderV2LiteBaseAccessToken string
+}
+
 type FireworksConfig struct {
 	// Non-prefixed model names
 	AllowedModels                          []string
@@ -109,6 +114,7 @@ type FireworksConfig struct {
 	StarcoderCommunitySingleTenantPercent  int
 	StarcoderEnterpriseSingleTenantPercent int
 	FlaggingConfig                         FlaggingConfig
+	DirectRouteConfig                      FireworksDirectRouteConfig
 }
 
 type OpenAIConfig struct {
@@ -307,6 +313,7 @@ func (c *Config) Load() {
 	}
 	c.Fireworks.StarcoderCommunitySingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_COMMUNITY_SINGLE_TENANT_PERCENT", "0", "The percentage of community traffic for Starcoder to be redirected to the single-tenant deployment.")
 	c.Fireworks.StarcoderEnterpriseSingleTenantPercent = c.GetPercent("CODY_GATEWAY_FIREWORKS_STARCODER_ENTERPRISE_SINGLE_TENANT_PERCENT", "100", "The percentage of Enterprise traffic for Starcoder to be redirected to the single-tenant deployment.")
+	c.Fireworks.DirectRouteConfig = c.GetFireworksDirectRouteConfig()
 
 	// Configurations for Google Gemini models.
 	c.Google.AccessToken = c.GetOptional("CODY_GATEWAY_GOOGLE_ACCESS_TOKEN", "The Google AI Studio access token to be used.")
@@ -423,6 +430,12 @@ func (c *Config) loadFlaggingConfig(cfg *FlaggingConfig, envVarPrefix string) {
 	cfg.ResponseTokenBlockingLimit = c.GetInt(envVarPrefix+"RESPONSE_TOKEN_BLOCKING_LIMIT", "4000", "Maximum number of completion tokens to allow without blocking.")
 
 	cfg.FlaggedModelNames = maybeLoadLowercaseSlice("FLAGGED_MODEL_NAMES", "LLM models that will always lead to the request getting flagged.")
+}
+
+func (c *Config) GetFireworksDirectRouteConfig() FireworksDirectRouteConfig {
+	return FireworksDirectRouteConfig{
+		DeepSeekCoderV2LiteBaseAccessToken: c.Get("CODY_GATEWAY_FIREWORKS_DIRECT_ROUTE_DEEPSEEK_CODER_V2_LITE_BASE_ACCESS_TOKEN", "", "DeepseekCoderV2LiteBaseAccessToken"),
+	}
 }
 
 // splitMaybe splits the provided string on commas, but returns nil if given the empty string.

@@ -209,7 +209,7 @@ func (a *AnthropicMessagesHandlerMethods) getRequestMetadata(body anthropicMessa
 	}
 }
 
-func (a *AnthropicMessagesHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request) {
+func (a *AnthropicMessagesHandlerMethods) transformRequest(downstreamRequest, upstreamRequest *http.Request, _ *anthropicMessagesRequest) {
 	upstreamRequest.Header.Set("Content-Type", "application/json")
 	upstreamRequest.Header.Set("X-API-Key", a.config.AccessToken)
 	upstreamRequest.Header.Set("anthropic-version", "2023-06-01")
