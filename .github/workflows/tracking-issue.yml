@@ -14,5 +14,5 @@ jobs:
   report_failure:
     needs: sync-tracking-issues
     if: ${{ failure() }}
-    uses: sourcegraph/sourcegraph/.github/workflows/report-job-failure.yml@main
+    uses: sourcegraph/workflows/.github/workflows/report-job-failure.yml@main
     secrets: inherit
