@@ -2266,7 +2266,7 @@ type PerforceConnection struct {
 	P4Client string `json:"p4.client,omitempty"`
 	// P4Passwd description: The ticket value for the user (P4PASSWD). You can get this by running `p4 login -p` or `p4 login -pa`. It should look like `6211C5E719EDE6925855039E8F5CC3D2`.
 	P4Passwd string `json:"p4.passwd"`
-	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT).
+	// P4Port description: The Perforce Server address to be used for p4 CLI (P4PORT). It's recommended to specify the protocol prefix (e.g. tcp: or ssl:) as part of the address.
 	P4Port string `json:"p4.port"`
 	// P4User description: The user to be authenticated for p4 CLI (P4USER).
 	P4User string `json:"p4.user"`

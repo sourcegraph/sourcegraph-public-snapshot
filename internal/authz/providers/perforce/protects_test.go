@@ -234,7 +234,8 @@ func TestScanFullRepoPermissions(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 
-	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	p, err := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	require.NoError(t, err)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/",
 		"//depot/training/",
@@ -317,7 +318,8 @@ func TestScanIPPermissions(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 
-	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	p, err := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	require.NoError(t, err)
 	p.depots = []extsvc.RepoID{
 		"//depot/src/",
 		"//depot/project1/",
@@ -411,7 +413,8 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 
-	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	p, err := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	require.NoError(t, err)
 	p.depots = []extsvc.RepoID{
 		"//depot/main/base/",
 	}
@@ -735,7 +738,8 @@ read    group   Dev1    *   //depot/main/.../*.go
 
 			db := dbmocks.NewMockDB()
 
-			p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+			p, err := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+			require.NoError(t, err)
 			p.depots = []extsvc.RepoID{
 				extsvc.RepoID(tc.depot),
 			}
@@ -798,7 +802,8 @@ func TestFullScanWildcardDepotMatching(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 
-	p := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	p, err := NewProvider(logger, db, gitserver.NewStrictMockClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	require.NoError(t, err)
 	p.depots = []extsvc.RepoID{
 		"//depot/654/deploy/base/",
 	}
@@ -948,7 +953,8 @@ func TestScanAllUsers(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 
-	p := NewProvider(logger, db, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	p, err := NewProvider(logger, db, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+	require.NoError(t, err)
 	p.cachedGroupMembers = map[string][]string{
 		"dev": {"user1", "user2"},
 	}

@@ -9,9 +9,9 @@
   "required": ["p4.port", "p4.user", "p4.passwd"],
   "properties": {
     "p4.port": {
-      "description": "The Perforce Server address to be used for p4 CLI (P4PORT).",
+      "description": "The Perforce Server address to be used for p4 CLI (P4PORT). It's recommended to specify the protocol prefix (e.g. tcp: or ssl:) as part of the address.",
       "type": "string",
-      "examples": ["ssl:111.222.333.444:1666"]
+      "examples": ["ssl:111.222.333.444:1666", "tcp:111.222.333.444:1666"]
     },
     "p4.user": {
       "description": "The user to be authenticated for p4 CLI (P4USER).",
