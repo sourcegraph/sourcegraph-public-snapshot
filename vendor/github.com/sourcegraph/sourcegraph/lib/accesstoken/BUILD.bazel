@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "accesstoken",
+    srcs = ["personal_access_token.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/accesstoken",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_test(
+    name = "accesstoken_test",
+    srcs = ["personal_access_token_test.go"],
+    embed = [":accesstoken"],
+)

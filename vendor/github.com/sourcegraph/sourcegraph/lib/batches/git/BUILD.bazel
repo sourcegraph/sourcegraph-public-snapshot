@@ -1,0 +1,23 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "git",
+    srcs = [
+        "changes.go",
+        "refs.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/git",
+    tags = [TAG_SEARCHSUITE],
+    visibility = ["//visibility:public"],
+    deps = ["@com_github_sourcegraph_go_diff//diff"],
+)
+
+go_test(
+    name = "git_test",
+    timeout = "short",
+    srcs = ["changes_test.go"],
+    embed = [":git"],
+    tags = [TAG_SEARCHSUITE],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

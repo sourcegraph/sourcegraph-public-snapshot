@@ -1,0 +1,14 @@
+build:download_all --build_runfile_links
+build:download_all --noexperimental_inmemory_jdeps_files
+build:download_all --noexperimental_inmemory_dotd_files
+build:download_all --experimental_remote_download_outputs=all
+
+build:disable_caches --config=download_all # This is necessary because toplevel is unsafe to set if there's no cache.
+build:disable_caches --remote_http_cache=
+build:disable_caches --remote_cache=
+build:disable_caches --repository_cache=
+build:disable_caches --disk_cache=
+build:disable_caches --remote_accept_cached=false
+build:disable_caches --config=disable_remote_upload
+
+build:disable_remote_upload --remote_upload_local_results=false

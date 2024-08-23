@@ -1,0 +1,8 @@
+# Reference: https://docs.buf.build/configuration/v1/buf-yaml
+version: v1
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT

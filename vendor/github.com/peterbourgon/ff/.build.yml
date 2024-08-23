@@ -1,0 +1,15 @@
+image: debian/stable
+packages:
+    - wget
+sources:
+    - https://github.com/peterbourgon/ff
+tasks:
+    - go_toolchain: |
+        go_version="$(wget -q -O- https://golang.org/VERSION?m=text)"
+        wget -q https://dl.google.com/go/$go_version.linux-amd64.tar.gz
+        sudo tar -C /usr/local -xzf $go_version.linux-amd64.tar.gz
+        sudo ln -s /usr/local/go/bin/go /usr/bin/go
+        go env
+    - test: |
+        cd ff
+        go test -race -v ./...

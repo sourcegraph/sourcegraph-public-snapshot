@@ -1,0 +1,126 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//language/proto/gen:def.bzl", "known_imports")
+
+# gazelle:exclude testdata
+
+known_imports(
+    name = "known_imports",
+    src = "proto.csv",
+    out = "known_imports.go",
+    key = 0,
+    package = "proto",
+    value = 1,
+    var = "knownImports",
+)
+
+known_imports(
+    name = "known_proto_imports",
+    src = "proto.csv",
+    out = "known_proto_imports.go",
+    key = 0,
+    package = "proto",
+    value = 3,
+    var = "knownProtoImports",
+)
+
+known_imports(
+    name = "known_go_imports",
+    src = "proto.csv",
+    out = "known_go_imports.go",
+    key = 2,
+    package = "proto",
+    value = 3,
+    var = "knownGoProtoImports",
+)
+
+go_library(
+    name = "proto",
+    srcs = [
+        "config.go",
+        "constants.go",
+        "fileinfo.go",
+        "fix.go",
+        "generate.go",
+        "kinds.go",
+        "known_go_imports.go",
+        "known_imports.go",
+        "known_proto_imports.go",
+        "lang.go",
+        "package.go",
+        "resolve.go",
+    ],
+    importpath = "github.com/bazelbuild/bazel-gazelle/language/proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//config",
+        "//label",
+        "//language",
+        "//pathtools",
+        "//repo",
+        "//resolve",
+        "//rule",
+    ],
+)
+
+go_test(
+    name = "proto_test",
+    srcs = [
+        "config_test.go",
+        "fileinfo_test.go",
+        "generate_test.go",
+        "resolve_test.go",
+    ],
+    data = glob(
+        ["testdata/**"],
+        # Empty when distributed.
+        allow_empty = True,
+    ),
+    embed = [":proto"],
+    deps = [
+        "//config",
+        "//label",
+        "//language",
+        "//merger",
+        "//repo",
+        "//resolve",
+        "//rule",
+        "//testtools",
+        "//walk",
+        "@com_github_bazelbuild_buildtools//build",
+    ],
+)
+
+exports_files(["proto.csv"])
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "config.go",
+        "config_test.go",
+        "constants.go",
+        "fileinfo.go",
+        "fileinfo_test.go",
+        "fix.go",
+        "generate.go",
+        "generate_test.go",
+        "kinds.go",
+        "known_go_imports.go",
+        "known_imports.go",
+        "known_proto_imports.go",
+        "lang.go",
+        "package.go",
+        "proto.csv",
+        "resolve.go",
+        "resolve_test.go",
+        "//language/proto/gen:all_files",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":proto",
+    visibility = ["//visibility:public"],
+)

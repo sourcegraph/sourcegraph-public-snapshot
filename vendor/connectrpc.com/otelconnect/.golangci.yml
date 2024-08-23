@@ -1,0 +1,77 @@
+run:
+  skip-dirs-use-default: false
+linters-settings:
+  dupl:
+    threshold: 200
+  errcheck:
+    check-type-assertions: true
+  exhaustruct:
+    include:
+      # No zero values for param structs.
+      - 'connectrpc\.com/otelconnect\..*[pP]arams'
+  forbidigo:
+    forbid:
+      - '^fmt\.Print'
+      - '^log\.'
+      - '^print$'
+      - '^println$'
+      - '^panic$'
+  importas:
+    no-unaliased: true
+    alias:
+      - pkg: connectrpc.com/connect
+        alias: connect
+      - pkg: connectrpc.com/otelconnect/internal/gen/observability/ping/v1
+        alias: pingv1
+  godox:
+    # TODO, OPT, etc. comments are fine to commit. Use FIXME comments for
+    # temporary hacks, and use godox to prevent committing them.
+    keywords: [FIXME]
+  varnamelen:
+    ignore-decls:
+      - T any
+      - i int
+      - wg sync.WaitGroup
+linters:
+  enable-all: true
+  disable:
+    - cyclop            # covered by gocyclo
+    - deadcode          # abandoned
+    - depguard          # requires customization to use non-stdlib
+    - exhaustivestruct  # replaced by exhaustruct
+    - funlen            # rely on code review to limit function length
+    - gocognit          # dubious "cognitive overhead" quantification
+    - gofumpt           # prefer standard gofmt
+    - goimports         # rely on gci instead
+    - golint            # deprecated by Go team
+    - gomnd             # some unnamed constants are okay
+    - ifshort           # deprecated by author
+    - interfacer        # deprecated by author
+    - ireturn           # "accept interfaces, return structs" isn't ironclad
+    - lll               # don't want hard limits for line length
+    - maintidx          # covered by gocyclo
+    - maligned          # readability trumps efficient struct packing
+    - nlreturn          # generous whitespace violates house style
+    - nonamedreturns    # named returns are fine; it's *bare* returns that are bad
+    - nosnakecase       # deprecated in https://github.com/golangci/golangci-lint/pull/3065
+    - scopelint         # deprecated by author
+    - structcheck       # abandoned
+    - testpackage       # internal tests are fine
+    - varcheck          # abandoned
+    - wrapcheck         # don't _always_ need to wrap errors
+    - wsl               # generous whitespace violates house style
+    - inamedparam       # convention is not followed
+issues:
+  exclude:
+    # Don't ban use of fmt.Errorf to create new errors, but the remaining
+    # checks from err113 are useful.
+    - "err113: do not define dynamic errors.*"
+
+  exclude-rules:
+    # If-else is clearer than switch here.
+    - linters: [gocritic]
+      path: trace.go
+    # interceptor_test tests a lot of data structure equality so naturally there are
+    # a lot of duplications
+    - path: interceptor_test.go
+      linters: [dupl]

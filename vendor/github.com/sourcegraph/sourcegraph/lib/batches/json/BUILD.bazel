@@ -1,0 +1,23 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "json",
+    srcs = ["validate.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/json",
+    tags = [TAG_SEARCHSUITE],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/batches/jsonschema",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "json_test",
+    timeout = "short",
+    srcs = ["validate_test.go"],
+    embed = [":json"],
+    tags = [TAG_SEARCHSUITE],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

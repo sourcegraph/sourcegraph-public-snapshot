@@ -1,0 +1,58 @@
+type: receiverhelper
+
+status:
+  class: receiver
+  not_component: true
+  stability:
+    beta: [traces, metrics, logs]
+  distributions: [core, contrib]
+
+telemetry:
+  metrics:
+    receiver_accepted_spans:
+      enabled: true
+      description: Number of spans successfully pushed into the pipeline.
+      unit: 1
+      sum:
+        value_type: int
+        monotonic: true
+
+    receiver_refused_spans:
+      enabled: true
+      description: Number of spans that could not be pushed into the pipeline.
+      unit: 1
+      sum:
+        value_type: int
+        monotonic: true
+
+    receiver_accepted_metric_points:
+      enabled: true
+      description: Number of metric points successfully pushed into the pipeline.
+      unit: 1
+      sum:
+        value_type: int
+        monotonic: true
+
+    receiver_refused_metric_points:
+      enabled: true
+      description: Number of metric points that could not be pushed into the pipeline.
+      unit: 1
+      sum:
+        value_type: int
+        monotonic: true
+
+    receiver_accepted_log_records:
+      enabled: true
+      description: Number of log records successfully pushed into the pipeline.
+      unit: 1
+      sum:
+        value_type: int
+        monotonic: true
+
+    receiver_refused_log_records:
+      enabled: true
+      description: Number of log records that could not be pushed into the pipeline.
+      unit: 1
+      sum:
+        value_type: int
+        monotonic: true

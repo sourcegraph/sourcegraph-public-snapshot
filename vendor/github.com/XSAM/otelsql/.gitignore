@@ -1,0 +1,11 @@
+.DS_Store
+Thumbs.db
+
+.tools/
+.idea/
+.vscode/
+*.iml
+*.so
+coverage.*
+bin/
+vendor/

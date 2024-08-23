@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "runtime",
+    srcs = [
+        "config.go",
+        "contract.go",
+        "job.go",
+        "sanitycheck.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime",
+    tags = [TAG_INFRA_CORESERVICES],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/background",
+        "//lib/managedservicesplatform/runtime/contract",
+        "//lib/managedservicesplatform/runtime/internal/opentelemetry",
+        "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_profiler//:profiler",
+    ],
+)

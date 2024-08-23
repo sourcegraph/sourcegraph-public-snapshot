@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "images",
+    srcs = ["images.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/ci/images",
+    tags = [TAG_INFRA_DEVINFRA],
+    visibility = ["//visibility:public"],
+)

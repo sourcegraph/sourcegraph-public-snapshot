@@ -1,0 +1,34 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "overridable",
+    srcs = [
+        "bool.go",
+        "bool_or_string.go",
+        "overridable.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/overridable",
+    tags = [TAG_SEARCHSUITE],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
+    ],
+)
+
+go_test(
+    name = "overridable_test",
+    timeout = "short",
+    srcs = [
+        "bool_or_string_test.go",
+        "bool_test.go",
+        "overridable_test.go",
+    ],
+    embed = [":overridable"],
+    tags = [TAG_SEARCHSUITE],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+    ],
+)

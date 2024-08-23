@@ -1,0 +1,71 @@
+# Change Log
+All notable changes to this project will be documented in this file.
+This project adheres to [Semantic Versioning](http://semver.org/).
+
+## [3.1.1] - 2022-04-05
+### Fix
+- Upgrade redigo dependency version to solve security warning
+- Improve code fixing linter warnings
+
+## [3.1.0] - 2022-04-04
+### Added
+- Implement ConnWithContext interface
+
+## [3.0.1] - 2020-12-17
+### Fix
+- Use a valid redigo dependency
+
+## [3.0.0] - 2020-11-16
+### Fix
+- Refactoring to solve race conditions
+
+## [2.4.0] - 2020-06-08
+### Added
+- Dynamic handle Redis arguments with the command handle feature
+
+## [2.3.0] - 2020-02-19
+### Added
+- `ExpectPanic` to support expectations of panics instead of responses or errors
+
+## [2.2.1] - 2019-11-17
+### Added
+- `FlushSkippableMock` should allow `Flush` to continue its processing when the mock return a nil
+
+## [2.2.0] - 2019-02-02
+### Added
+- ExpectStringSlice to simplify expecting a slice of strings
+
+### Fix
+- `Do` command with `nil` argument panics `implementsFuzzy`
+- `Flush` should process the queue of `Send` commands
+- `Conn` should satisfy `redis.Conn` and `redis.ConnWithTimeout`
+- Typos
+
+### Changed
+- Using `gomodule/redigo` instead of `garyburd/redigo`
+
+## [2.1.0] - 2017-07-20
+### Added
+- New ExpectSlice helper method
+- Detect if all expectations were met with AllCommandsCalled method
+
+### Fix
+- Reset stats on Clear call
+- Documentation grammar problems
+- Safety check while acessing responses
+
+## [2.0.0] - 2016-05-24
+### Added
+- Fuzzy matching for redigomock command arguments
+- Make commands a property of a connection object, which allows to run tests in parallel
+- Commands calls counters, which allows to identify unused mocked commands (thanks to @rylnd)
+
+### Changed
+- Improve error message adding argument suggestions
+
+## [1.0.0] - 2015-04-23
+### Added
+- Support to mock commands taking into account the arguments or not
+- Support to mock PubSub using a wait Go channel
+- Support to multiple (sequentially returned) responses for single command
+- Support to mock scripts

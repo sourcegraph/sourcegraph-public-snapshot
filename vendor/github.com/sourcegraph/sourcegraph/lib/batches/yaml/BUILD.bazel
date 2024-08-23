@@ -1,0 +1,25 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "yaml",
+    srcs = ["validate.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/yaml",
+    tags = [TAG_SEARCHSUITE],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/batches/jsonschema",
+        "//lib/errors",
+        "@com_github_ghodss_yaml//:yaml",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)
+
+go_test(
+    name = "yaml_test",
+    timeout = "short",
+    srcs = ["validate_test.go"],
+    embed = [":yaml"],
+    tags = [TAG_SEARCHSUITE],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

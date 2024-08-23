@@ -1,0 +1,7 @@
+language: go
+
+dist: bionic
+
+go:
+ - "1.13.4"
+ - "1.12.13"

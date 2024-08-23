@@ -1,0 +1,508 @@
+syntax = "proto3";
+
+package zoekt.webserver.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "zoekt/webserver/v1/query.proto";
+
+option go_package = "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1";
+
+service WebserverService {
+  rpc Search(SearchRequest) returns (SearchResponse) {}
+
+  rpc StreamSearch(StreamSearchRequest) returns (stream StreamSearchResponse) {}
+
+  // List lists repositories. The query `q` can only contain
+  // query.Repo atoms.
+  rpc List(ListRequest) returns (ListResponse) {}
+}
+
+message SearchRequest {
+  Q query = 1;
+  SearchOptions opts = 2;
+}
+
+message SearchResponse {
+  reserved 4, 5;
+  reserved "repo_urls", "line_fragments";
+
+  Stats stats = 1;
+  Progress progress = 2;
+
+  repeated FileMatch files = 3;
+}
+
+message StreamSearchRequest {
+  reserved 1 to 2;
+  SearchRequest request = 3;
+}
+
+message StreamSearchResponse {
+  reserved 1 to 5;
+  SearchResponse response_chunk = 6;
+}
+
+message SearchOptions {
+  // Return an upper-bound estimate of eligible documents in
+  // stats.ShardFilesConsidered.
+  bool estimate_doc_count = 1;
+
+  // Return the whole file.
+  bool whole = 2;
+
+  // Maximum number of matches: skip all processing an index
+  // shard after we found this many non-overlapping matches.
+  int64 shard_max_match_count = 3;
+
+  // Maximum number of matches: stop looking for more matches
+  // once we have this many matches across shards.
+  int64 total_max_match_count = 4;
+
+  // Maximum number of matches: skip processing documents for a repository in
+  // a shard once we have found ShardRepoMaxMatchCount.
+  //
+  // A compound shard may contain multiple repositories. This will most often
+  // be set to 1 to find all repositories containing a result.
+  int64 shard_repo_max_match_count = 5;
+
+  // Abort the search after this much time has passed.
+  google.protobuf.Duration max_wall_time = 6;
+
+  // FlushWallTime if non-zero will stop streaming behaviour at first and
+  // instead will collate and sort results. At FlushWallTime the results will
+  // be sent and then the behaviour will revert to the normal streaming.
+  google.protobuf.Duration flush_wall_time = 7;
+
+  // Truncates the number of documents (i.e. files) after collating and
+  // sorting the results.
+  int64 max_doc_display_count = 8;
+
+  // Truncates the number of matchs after collating and sorting the results.
+  int64 max_match_display_count = 16;
+
+  // If set to a number greater than zero then up to this many number
+  // of context lines will be added before and after each matched line.
+  // Note that the included context lines might contain matches and
+  // it's up to the consumer of the result to remove those lines.
+  int64 num_context_lines = 9;
+
+  // If true, ChunkMatches will be returned in each FileMatch rather than LineMatches
+  // EXPERIMENTAL: the behavior of this flag may be changed in future versions.
+  bool chunk_matches = 10;
+
+  // EXPERIMENTAL. If true, document ranks are used as additional input for
+  // sorting matches.
+  bool use_document_ranks = 11;
+
+  // EXPERIMENTAL. When UseDocumentRanks is enabled, this can be optionally set to adjust
+  // their weight in the file match score. If the value is <= 0.0, the default weight value
+  // will be used. This option is temporary and is only exposed for testing/ tuning purposes.
+  double document_ranks_weight = 12;
+
+  // Trace turns on opentracing for this request if true and if the Jaeger address was provided as
+  // a command-line flag
+  bool trace = 13;
+
+  // If set, the search results will contain debug information for scoring.
+  bool debug_score = 14;
+
+  // EXPERIMENTAL. If true, use text search scoring instead of the default scoring formula.
+  // Currently, this treats each match in a file as a term and computes an approximation to BM25.
+  // When enabled, all other scoring signals are ignored, including document ranks.
+  bool use_bm25_scoring = 15;
+}
+
+message ListRequest {
+  Q query = 1;
+  ListOptions opts = 2;
+}
+
+message ListOptions {
+  reserved 16;
+
+  enum RepoListField {
+    reserved 2;
+
+    REPO_LIST_FIELD_UNKNOWN_UNSPECIFIED = 0;
+    REPO_LIST_FIELD_REPOS = 1;
+    REPO_LIST_FIELD_REPOS_MAP = 3;
+  }
+
+  // Field decides which field to populate in RepoList response.
+  RepoListField field = 1;
+}
+
+message ListResponse {
+  reserved 5;
+
+  // Returned when ListOptions.Field is RepoListFieldRepos.
+  repeated RepoListEntry repos = 1;
+
+  // ReposMap is set when ListOptions.Field is RepoListFieldReposMap.
+  map<uint32, MinimalRepoListEntry> repos_map = 2;
+
+  int64 crashes = 3;
+
+  // Stats response to a List request.
+  // This is the aggregate RepoStats of all repos matching the input query.
+  RepoStats stats = 4;
+}
+
+message RepoListEntry {
+  Repository repository = 1;
+  IndexMetadata index_metadata = 2;
+  RepoStats stats = 3;
+}
+
+message Repository {
+  // Sourcegraph's repository ID
+  uint32 id = 1;
+
+  // The repository name
+  string name = 2;
+
+  // The repository URL.
+  string url = 3;
+
+  // The physical source where this repo came from, eg. full
+  // path to the zip filename or git repository directory. This
+  // will not be exposed in the UI, but can be used to detect
+  // orphaned index shards.
+  string source = 4;
+
+  // The branches indexed in this repo.
+  repeated RepositoryBranch branches = 5;
+
+  // Nil if this is not the super project.
+  map<string, Repository> sub_repo_map = 6;
+
+  // URL template to link to the commit of a branch
+  string commit_url_template = 7;
+
+  // The repository URL for getting to a file.  Has access to
+  // {{.Version}}, {{.Path}}
+  string file_url_template = 8;
+
+  // The URL fragment to add to a file URL for line numbers. has
+  // access to {{.LineNumber}}. The fragment should include the
+  // separator, generally '#' or ';'.
+  string line_fragment_template = 9;
+
+  // Perf optimization: priority is set when we load the shard. It corresponds to
+  // the value of "priority" stored in RawConfig.
+  double priority = 10;
+
+  // All zoekt.* configuration settings.
+  map<string, string> raw_config = 11;
+
+  // Importance of the repository, bigger is more important
+  uint32 rank = 12;
+
+  // index_options is a hash of the options used to create the index for the
+  // repo.
+  string index_options = 13;
+
+  // has_symbols is true if this repository has indexed ctags
+  // output. Sourcegraph specific: This field is more appropriate for
+  // IndexMetadata. However, we store it here since the Sourcegraph frontend
+  // can read this structure but not IndexMetadata.
+  bool has_symbols = 14;
+
+  // tombstone is true if we are not allowed to search this repo.
+  bool tombstone = 15;
+
+  // latest_commit_date is the date of the latest commit among all indexed Branches.
+  // The date might be time.Time's 0-value if the repository was last indexed
+  // before this field was added.
+  google.protobuf.Timestamp latest_commit_date = 16;
+
+  // file_tombstones is a set of file paths that should be ignored across all branches
+  // in this shard.
+  repeated string file_tombstones = 17;
+}
+
+message IndexMetadata {
+  int64 index_format_version = 1;
+  int64 index_feature_version = 2;
+  int64 index_min_reader_version = 3;
+  google.protobuf.Timestamp index_time = 4;
+  bool plain_ascii = 5;
+  map<string, uint32> language_map = 6;
+  string zoekt_version = 7;
+  string id = 8;
+}
+
+message MinimalRepoListEntry {
+  bool has_symbols = 1;
+  repeated RepositoryBranch branches = 2;
+  int64 index_time_unix = 3;
+}
+
+// RepositoryBranch describes an indexed branch, which is a name
+// combined with a version.
+message RepositoryBranch {
+  string name = 1;
+  string version = 2;
+}
+
+// RepoStats is a collection of statistics for a set of repositories.
+message RepoStats {
+  // repos is used for aggregrating the number of repositories.
+  int64 repos = 1;
+
+  // shards is the total number of search shards.
+  int64 shards = 2;
+
+  // documents holds the number of documents or files.
+  int64 documents = 3;
+
+  // index_bytes is the amount of RAM used for index overhead.
+  int64 index_bytes = 4;
+
+  // content_bytes is the amount of RAM used for raw content.
+  int64 content_bytes = 5;
+
+  // Sourcegraph specific stats below. These are not as efficient to calculate
+  // as the above statistics. We experimentally measured about a 10% slower
+  // shard load time. However, we find these values very useful to track and
+  // computing them outside of load time introduces a lot of complexity.
+
+  // new_lines_count is the number of newlines "\n" that appear in the zoekt
+  // indexed documents. This is not exactly the same as line count, since it
+  // will not include lines not terminated by "\n" (eg a file with no "\n", or
+  // a final line without "\n"). Note: Zoekt deduplicates documents across
+  // branches, so if a path has the same contents on multiple branches, there
+  // is only one document for it. As such that document's newlines is only
+  // counted once. See DefaultBranchNewLinesCount and AllBranchesNewLinesCount
+  // for counts which do not deduplicate.
+  uint64 new_lines_count = 6;
+
+  // default_branch_new_lines_count is the number of newlines "\n" in the default
+  // branch.
+  uint64 default_branch_new_lines_count = 7;
+
+  // other_branches_new_lines_count is the number of newlines "\n" in all branches
+  // except the default branch.
+  uint64 other_branches_new_lines_count = 8;
+}
+
+message Stats {
+  // Amount of I/O for reading contents.
+  int64 content_bytes_loaded = 1;
+
+  // Amount of I/O for reading from index.
+  int64 index_bytes_loaded = 2;
+
+  // Number of search shards that had a crash.
+  int64 crashes = 3;
+
+  // Wall clock time for this search
+  google.protobuf.Duration duration = 4;
+
+  // Number of files containing a match.
+  int64 file_count = 5;
+
+  // Number of files in shards that we considered.
+  int64 shard_files_considered = 6;
+
+  // Files that we evaluated. Equivalent to files for which all
+  // atom matches (including negations) evaluated to true.
+  int64 files_considered = 7;
+
+  // Files for which we loaded file content to verify substring matches
+  int64 files_loaded = 8;
+
+  // Candidate files whose contents weren't examined because we
+  // gathered enough matches.
+  int64 files_skipped = 9;
+
+  // Shards that we scanned to find matches.
+  int64 shards_scanned = 10;
+
+  // Shards that we did not process because a query was canceled.
+  int64 shards_skipped = 11;
+
+  // Shards that we did not process because the query was rejected by the
+  // ngram filter indicating it had no matches.
+  int64 shards_skipped_filter = 12;
+
+  // Number of non-overlapping matches
+  int64 match_count = 13;
+
+  // Number of candidate matches as a result of searching ngrams.
+  int64 ngram_matches = 14;
+
+  // Wall clock time for queued search.
+  google.protobuf.Duration wait = 15;
+
+  // Aggregate wall clock time spent constructing and pruning the match tree.
+  // This accounts for time such as lookups in the trigram index.
+  google.protobuf.Duration match_tree_construction = 19;
+
+  // Aggregate wall clock time spent searching the match tree. This accounts
+  // for the bulk of search work done looking for matches.
+  google.protobuf.Duration match_tree_search = 20;
+
+  // Number of times regexp was called on files that we evaluated.
+  int64 regexps_considered = 16;
+
+  // FlushReason explains why results were flushed.
+  FlushReason flush_reason = 17;
+
+  // NgramLookups is the number of times we accessed an ngram in the index.
+  int64 ngram_lookups = 18;
+}
+
+enum FlushReason {
+  FLUSH_REASON_UNKNOWN_UNSPECIFIED = 0;
+  FLUSH_REASON_TIMER_EXPIRED = 1;
+  FLUSH_REASON_FINAL_FLUSH = 2;
+  FLUSH_REASON_MAX_SIZE = 3;
+}
+
+// Progress contains information about the global progress of the running search query.
+// This is used by the frontend to reorder results and emit them when stable.
+// Sourcegraph specific: this is used when querying multiple zoekt-webserver instances.
+message Progress {
+  // Priority of the shard that was searched.
+  double priority = 1;
+
+  // max_pending_priority is the maximum priority of pending result that is being searched in parallel.
+  // This is used to reorder results when the result set is known to be stable-- that is, when a result's
+  // Priority is greater than the max(MaxPendingPriority) from the latest results of each backend, it can be returned to the user.
+  //
+  // max_pending_priority decreases monotonically in each SearchResult.
+  double max_pending_priority = 2;
+}
+
+// FileMatch contains all the matches within a file.
+message FileMatch {
+  // Ranking; the higher, the better.
+  double score = 1;
+
+  // For debugging. Needs DebugScore set, but public so tests in
+  // other packages can print some diagnostics.
+  string debug = 2;
+
+  // The repository-relative path to the file.
+  // 🚨 Warning: file_name might not be a valid UTF-8 string.
+  bytes file_name = 3;
+
+  // Repository is the globally unique name of the repo of the
+  // match
+  string repository = 4;
+  repeated string branches = 5;
+
+  // One of line_matches or chunk_matches will be returned depending on whether
+  // the SearchOptions.ChunkMatches is set.
+  repeated LineMatch line_matches = 6;
+  repeated ChunkMatch chunk_matches = 7;
+
+  // repository_id is a Sourcegraph extension. This is the ID of Repository in
+  // Sourcegraph.
+  uint32 repository_id = 8;
+
+  double repository_priority = 9;
+
+  // Only set if requested
+  bytes content = 10;
+
+  // Checksum of the content.
+  bytes checksum = 11;
+
+  // Detected language of the result.
+  string language = 12;
+
+  // sub_repository_name is the globally unique name of the repo,
+  // if it came from a subrepository
+  string sub_repository_name = 13;
+
+  // sub_repository_path holds the prefix where the subrepository
+  // was mounted.
+  string sub_repository_path = 14;
+
+  // Commit SHA1 (hex) of the (sub)repo holding the file.
+  string version = 15;
+}
+
+message LineMatch {
+  bytes line = 1;
+  int64 line_start = 2;
+  int64 line_end = 3;
+  int64 line_number = 4;
+
+  // before and after are only set when SearchOptions.NumContextLines is > 0
+  bytes before = 5;
+  bytes after = 6;
+
+  // If set, this was a match on the filename.
+  bool file_name = 7;
+
+  // The higher the better. Only ranks the quality of the match
+  // within the file, does not take rank of file into account
+  double score = 8;
+  string debug_score = 9;
+
+  repeated LineFragmentMatch line_fragments = 10;
+}
+
+message LineFragmentMatch {
+  // Offset within the line, in bytes.
+  int64 line_offset = 1;
+
+  // Offset from file start, in bytes.
+  uint32 offset = 2;
+
+  // Number bytes that match.
+  int64 match_length = 3;
+
+  optional SymbolInfo symbol_info = 4;
+}
+
+message SymbolInfo {
+  string sym = 1;
+  string kind = 2;
+  string parent = 3;
+  string parent_kind = 4;
+}
+
+message ChunkMatch {
+  // A contiguous range of complete lines that fully contains Ranges.
+  bytes content = 1;
+  // The location (inclusive) of the beginning of content
+  // relative to the beginning of the file. It will always be at the
+  // beginning of a line (Column will always be 1).
+  Location content_start = 2;
+
+  // True if this match is a match on the file name, in
+  // which case Content will contain the file name.
+  bool file_name = 3;
+
+  // A set of matching ranges within this chunk. Each range is relative
+  // to the beginning of the file (not the beginning of Content).
+  repeated Range ranges = 4;
+
+  // The symbol information associated with Ranges. If it is non-nil,
+  // its length will equal that of Ranges. Any of its elements may be nil.
+  repeated SymbolInfo symbol_info = 5;
+
+  double score = 6;
+  string debug_score = 7;
+}
+
+message Range {
+  // The inclusive beginning of the range.
+  Location start = 1;
+  // The exclusive end of the range.
+  Location end = 2;
+}
+
+message Location {
+  // 0-based byte offset from the beginning of the file
+  uint32 byte_offset = 1;
+  // 1-based line number from the beginning of the file
+  uint32 line_number = 2;
+  // 1-based column number (in runes) from the beginning of line
+  uint32 column = 3;
+}

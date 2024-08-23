@@ -1,0 +1,8 @@
+type: otlp
+
+status:
+  class: receiver
+  stability:
+    stable: [traces, metrics]
+    beta: [logs]
+  distributions: [core, contrib]

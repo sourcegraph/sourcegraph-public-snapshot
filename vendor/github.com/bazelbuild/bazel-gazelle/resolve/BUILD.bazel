@@ -1,0 +1,47 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "resolve",
+    srcs = [
+        "config.go",
+        "index.go",
+    ],
+    importpath = "github.com/bazelbuild/bazel-gazelle/resolve",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//config",
+        "//label",
+        "//repo",
+        "//rule",
+    ],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "config.go",
+        "index.go",
+        "resolve_test.go",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":resolve",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "resolve_test",
+    srcs = ["resolve_test.go"],
+    embed = [":resolve"],
+    deps = [
+        "//config",
+        "//label",
+        "//rule",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

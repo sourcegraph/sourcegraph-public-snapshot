@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>Protocol Documentation</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Ubuntu:400,700,400italic"/>
+    <style>
+      body {
+        width: 60em;
+        margin: 1em auto;
+        color: #222;
+        font-family: "Ubuntu", sans-serif;
+        padding-bottom: 4em;
+      }
+
+      h1 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      h2 {
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+        margin: 1.5em 0;
+      }
+
+      h3 {
+        font-weight: normal;
+        border-bottom: 1px solid #aaa;
+        padding-bottom: 0.5ex;
+      }
+
+      a {
+        text-decoration: none;
+        color: #567e25;
+      }
+
+      table {
+        width: 100%;
+        font-size: 80%;
+        border-collapse: collapse;
+      }
+
+      thead {
+        font-weight: 700;
+        background-color: #dcdcdc;
+      }
+
+      tbody tr:nth-child(even) {
+        background-color: #fbfbfb;
+      }
+
+      td {
+        border: 1px solid #ccc;
+        padding: 0.5ex 2ex;
+      }
+
+      td p {
+        text-indent: 1em;
+        margin: 0;
+      }
+
+      td p:nth-child(1) {
+        text-indent: 0; /* No indent on first p in td */
+      }
+
+      /* Table of fields */
+      .field-table td:nth-child(1) { /* Field */
+        width: 10em;
+      }
+      .field-table td:nth-child(2) { /* Type */
+        width: 10em;
+      }
+      .field-table td:nth-child(3) { /* Label */
+        width: 6em;
+      }
+      .field-table td:nth-child(4) { /* Description */
+        width: auto;
+      }
+
+      /* Table of extensions */
+      .extension-table td:nth-child(1) { /* Extension */
+        width: 10em;
+      }
+      .extension-table td:nth-child(2) { /* Type */
+        width: 10em;
+      }
+      .extension-table td:nth-child(3) { /* Base */
+        width: 10em;
+      }
+      .extension-table td:nth-child(4) { /* Number */
+        width: 5em;
+      }
+      .extension-table td:nth-child(5) { /* Description */
+        width: auto;
+      }
+
+      /* Table of enum values. */
+      .enum-table td:nth-child(1) { /* Name */
+        width: 10em;
+      }
+      .enum-table td:nth-child(2) { /* Number */
+        width: 10em;
+      }
+      .enum-table td:nth-child(3) { /* Description */
+        width: auto;
+      }
+
+      /* Table of scalar value types. */
+      .scalar-value-types-table tr {
+        height: 3em;
+      }
+
+      /* Table of contents. */
+      #toc-container ul {
+        list-style-type: none;
+        padding-left: 1em;
+        line-height: 180%;
+        margin: 0;
+      }
+      #toc > li > a {
+        font-weight: bold;
+      }
+
+      /* File heading div */
+      .file-heading {
+        width: 100%;
+        display: table;
+        border-bottom: 1px solid #aaa;
+        margin: 4em 0 1.5em 0;
+      }
+      .file-heading h2 {
+        border: none;
+        display: table-cell;
+      }
+      .file-heading a {
+        text-align: right;
+        display: table-cell;
+      }
+
+      /* The 'M', 'E' and 'X' badges in the ToC */
+      .badge {
+        width: 1.6em;
+        height: 1.6em;
+        display: inline-block;
+
+        line-height: 1.6em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 60%;
+
+        color: #89ba48;
+        background-color: #dff0c8;
+
+        margin: 0.5ex 1em 0.5ex -1em;
+        border: 1px solid #fbfbfb;
+        border-radius: 1ex;
+      }
+    </style>
+
+    <!-- User custom CSS -->
+    <link rel="stylesheet" type="text/css" href="stylesheet.css"/>
+  </head>
+
+  <body>
+
+    <h1 id="title">Protocol Documentation</h1>
+
+    <h2>Table of Contents</h2>
+
+    <div id="toc-container">
+      <ul id="toc">
+        {{range .Files}}
+          {{$file_name := .Name}}
+          <li>
+            <a href="#{{.Name}}">{{.Name}}</a>
+            <ul>
+              {{range .Messages}}
+                <li>
+                  <a href="#{{.FullName}}"><span class="badge">M</span>{{.LongName}}</a>
+                </li>
+              {{end}}
+              {{range .Enums}}
+                <li>
+                  <a href="#{{.FullName}}"><span class="badge">E</span>{{.LongName}}</a>
+                </li>
+              {{end}}
+              {{range .Extensions}}
+                <li>
+                  <a href="#{{$file_name}}-extensions"><span class="badge">X</span>File-level Extensions</a>
+                </li>
+              {{end}}
+              {{range .Services}}
+                <li>
+                  <a href="#{{.FullName}}"><span class="badge">S</span>{{.Name}}</a>
+                </li>
+              {{end}}
+            </ul>
+          </li>
+        {{end}}
+        <li><a href="#scalar-value-types">Scalar Value Types</a></li>
+      </ul>
+    </div>
+
+    {{range .Files}}
+      {{$file_name := .Name}}
+      <div class="file-heading">
+        <h2 id="{{.Name}}">{{.Name}}</h2><a href="#title">Top</a>
+      </div>
+      {{p .Description}}
+
+      {{range .Messages}}
+        <h3 id="{{.FullName}}">{{.LongName}}</h3>
+        {{p .Description}}
+
+        {{if .HasFields}}
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              {{range .Fields}}
+                <tr>
+                  <td>{{.Name}}</td>
+                  <td><a href="#{{.FullType}}">{{.LongType}}</a></td>
+                  <td>{{.Label}}</td>
+                  <td><p>{{if (index .Options "deprecated"|default false)}}<strong>Deprecated.</strong> {{end}}{{.Description}} {{if .DefaultValue}}Default: {{.DefaultValue}}{{end}}</p></td>
+                </tr>
+              {{end}}
+            </tbody>
+          </table>
+
+          {{$message := .}}
+          {{- range .FieldOptions}}
+            {{$option := .}}
+            {{if eq . "validator.field" "validate.rules" }}
+            <h4>Validated Fields</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Field</td>
+                  <td>Validations</td>
+                </tr>
+              </thead>
+              <tbody>
+              {{range $message.FieldsWithOption .}}
+                <tr>
+                  <td>{{.Name}}</td>
+                  <td>
+                    <ul>
+                    {{range (.Option $option).Rules}}
+                      <li>{{.Name}}: {{.Value}}</li>
+                    {{end}}
+                    </ul>
+                  </td>
+                </tr>
+              {{end}}
+              </tbody>
+            </table>
+            {{else}}
+            <h4>Fields with {{.}} option</h4>
+            <table>
+              <thead>
+                <tr>
+                  <td>Name</td>
+                  <td>Option</td>
+                </tr>
+              </thead>
+              <tbody>
+              {{range $message.FieldsWithOption .}}
+                <tr>
+                  <td>{{.Name}}</td>
+                  <td><p>{{ printf "%+v" (.Option $option)}}</p></td>
+                </tr>
+              {{end}}
+              </tbody>
+            </table>
+            {{end}}
+          {{end -}}
+        {{end}}
+
+        {{if .HasExtensions}}
+          <br>
+          <table class="extension-table">
+            <thead>
+              <tr><td>Extension</td><td>Type</td><td>Base</td><td>Number</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              {{range .Extensions}}
+                <tr>
+                  <td>{{.Name}}</td>
+                  <td><a href="#{{.FullType}}">{{.LongType}}</a></td>
+                  <td><a href="#{{.ContainingFullType}}">{{.ContainingLongType}}</a></td>
+                  <td>{{.Number}}</td>
+                  <td><p>{{.Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}}</p></td>
+                </tr>
+              {{end}}
+            </tbody>
+          </table>
+        {{end}}
+      {{end}}
+
+      {{range .Enums}}
+        <h3 id="{{.FullName}}">{{.LongName}}</h3>
+        {{p .Description}}
+        <table class="enum-table">
+          <thead>
+            <tr><td>Name</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            {{range .Values}}
+              <tr>
+                <td>{{.Name}}</td>
+                <td>{{.Number}}</td>
+                <td><p>{{.Description}}</p></td>
+              </tr>
+            {{end}}
+          </tbody>
+        </table>
+      {{end}}
+
+      {{if .HasExtensions}}
+        <h3 id="{{$file_name}}-extensions">File-level Extensions</h3>
+        <table class="extension-table">
+          <thead>
+            <tr><td>Extension</td><td>Type</td><td>Base</td><td>Number</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            {{range .Extensions}}
+              <tr>
+                <td>{{.Name}}</td>
+                <td><a href="#{{.FullType}}">{{.LongType}}</a></td>
+                <td><a href="#{{.ContainingFullType}}">{{.ContainingLongType}}</a></td>
+                <td>{{.Number}}</td>
+                <td><p>{{.Description}}{{if .DefaultValue}} Default: {{.DefaultValue}}{{end}}</p></td>
+              </tr>
+            {{end}}
+          </tbody>
+        </table>
+      {{end}}
+
+      {{range .Services}}
+        <h3 id="{{.FullName}}">{{.Name}}</h3>
+        {{p .Description}}
+        <table class="enum-table">
+          <thead>
+            <tr><td>Method Name</td><td>Request Type</td><td>Response Type</td><td>Description</td></tr>
+          </thead>
+          <tbody>
+            {{range .Methods}}
+              <tr>
+                <td>{{.Name}}</td>
+                <td><a href="#{{.RequestFullType}}">{{.RequestLongType}}</a>{{if .RequestStreaming}} stream{{end}}</td>
+                <td><a href="#{{.ResponseFullType}}">{{.ResponseLongType}}</a>{{if .ResponseStreaming}} stream{{end}}</td>
+                <td><p>{{.Description}}</p></td>
+              </tr>
+            {{end}}
+          </tbody>
+        </table>
+
+        {{$service := .}}
+        {{- range .MethodOptions}}
+          {{$option := .}}
+          {{if eq . "google.api.http"}}
+          <h4>Methods with HTTP bindings</h4>
+          <table>
+            <thead>
+              <tr>
+                <td>Method Name</td>
+                <td>Method</td>
+                <td>Pattern</td>
+                <td>Body</td>
+              </tr>
+            </thead>
+            <tbody>
+            {{range $service.MethodsWithOption .}}
+              {{$name := .Name}}
+              {{range (.Option $option).Rules}}
+              <tr>
+                <td>{{$name}}</td>
+                <td>{{.Method}}</td>
+                <td>{{.Pattern}}</td>
+                <td>{{.Body}}</td>
+              </tr>
+              {{end}}
+            {{end}}
+            </tbody>
+          </table>
+          {{else}}
+          <h4>Methods with {{.}} option</h4>
+          <table>
+            <thead>
+              <tr>
+                <td>Method Name</td>
+                <td>Option</td>
+              </tr>
+            </thead>
+            <tbody>
+            {{range $service.MethodsWithOption .}}
+              <tr>
+                <td>{{.Name}}</td>
+                <td><p>{{ printf "%+v" (.Option $option)}}</p></td>
+              </tr>
+            {{end}}
+            </tbody>
+          </table>
+          {{end}}
+        {{end -}}
+      {{end}}
+    {{end}}
+
+    <h2 id="scalar-value-types">Scalar Value Types</h2>
+    <table class="scalar-value-types-table">
+      <thead>
+        <tr><td>.proto Type</td><td>Notes</td><td>C++</td><td>Java</td><td>Python</td><td>Go</td><td>C#</td><td>PHP</td><td>Ruby</td></tr>
+      </thead>
+      <tbody>
+        {{range .Scalars}}
+          <tr id="{{.ProtoType}}">
+            <td>{{.ProtoType}}</td>
+            <td>{{.Notes}}</td>
+            <td>{{.CppType}}</td>
+            <td>{{.JavaType}}</td>
+            <td>{{.PythonType}}</td>
+            <td>{{.GoType}}</td>
+            <td>{{.CSharp}}</td>
+            <td>{{.PhpType}}</td>
+            <td>{{.RubyType}}</td>
+          </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </body>
+</html>
+

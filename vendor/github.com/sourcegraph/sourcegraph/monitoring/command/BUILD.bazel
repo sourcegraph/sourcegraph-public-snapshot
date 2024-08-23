@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "command",
+    srcs = ["generate.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/monitoring/command",
+    tags = [TAG_INFRA_DEVINFRA],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/cliutil/completions",
+        "//lib/errors",
+        "//monitoring/definitions",
+        "//monitoring/monitoring",
+        "@com_github_hashicorp_hcl//hcl/strconv",
+        "@com_github_prometheus_prometheus//model/labels",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_urfave_cli_v2//:cli",
+    ],
+)

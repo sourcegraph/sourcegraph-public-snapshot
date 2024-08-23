@@ -1,0 +1,23 @@
+{
+  "$schema": "./json_schemas/ServiceConfig.json",
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "configuration_service.v1.IndexedSearchConfigurationService"
+        }
+      ],
+
+      "retryPolicy": {
+        "maxAttempts": 4,
+        "initialBackoff": "1s",
+        "maxBackoff": "30s",
+        "backoffMultiplier": 2,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "ABORTED"
+        ]
+      }
+    }
+  ]
+}

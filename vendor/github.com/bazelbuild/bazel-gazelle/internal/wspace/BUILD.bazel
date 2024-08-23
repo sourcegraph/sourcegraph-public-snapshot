@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "wspace",
+    srcs = ["finder.go"],
+    importpath = "github.com/bazelbuild/bazel-gazelle/internal/wspace",
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "wspace_test",
+    size = "small",
+    srcs = ["finder_test.go"],
+    embed = [":wspace"],
+)
+
+filegroup(
+    name = "all_files",
+    testonly = True,
+    srcs = [
+        "BUILD.bazel",
+        "finder.go",
+        "finder_test.go",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":wspace",
+    visibility = ["//:__subpackages__"],
+)

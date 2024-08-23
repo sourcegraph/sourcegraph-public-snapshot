@@ -1,0 +1,63 @@
+# gazelle:exclude parse.y.go
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load(":build_defs.bzl", "go_yacc")
+
+go_yacc(
+    src = "parse.y",
+    out = "parse.y.baz.go",
+)
+
+go_library(
+    name = "build",
+    srcs = [
+        "lex.go",
+        "parse.y.baz.go",  # keep
+        "print.go",
+        "quote.go",
+        "rewrite.go",
+        "rule.go",
+        "syntax.go",
+        "utils.go",
+        "walk.go",
+    ],
+    importpath = "github.com/bazelbuild/buildtools/build",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//tables",
+    ],
+)
+
+go_test(
+    name = "build_test",
+    size = "small",
+    srcs = [
+        "checkfile_test.go",
+        "lex_test.go",
+        "parse_test.go",
+        "print_test.go",
+        "quote_test.go",
+        "rewrite_test.go",
+        "rule_test.go",
+        "walk_test.go",
+    ],
+    data = glob(["testdata/*"]) + [
+        # parse.y.go is checked in to satisfy the Go community
+        # https://github.com/bazelbuild/buildtools/issues/14
+        # this test ensures it doesn't get stale.
+        "parse.y.baz.go",
+        "parse.y.go",
+        "rewrite_test_files/original_formatted.star",
+        "rewrite_test_files/original.star",
+    ],
+    embed = [":build"],
+    deps = [
+        "//tables",
+        "//testutils",
+    ],
+)
+
+alias(
+    name = "go_default_library",
+    actual = ":build",
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,11 @@
+# Reference: https://docs.buf.build/configuration/v1/buf-gen-yaml
+version: v1
+plugins:
+  - plugin: buf.build/protocolbuffers/go:v1.34.1
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/connectrpc/go:v1.16.2
+    out: .
+    opt:
+      - paths=source_relative

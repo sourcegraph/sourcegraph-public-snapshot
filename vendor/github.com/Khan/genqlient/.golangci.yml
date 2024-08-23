@@ -1,0 +1,115 @@
+# For the full list of configuration options, see
+# https://github.com/golangci/golangci-lint#config-file
+
+# See more about these linters at https://golangci-lint.run/usage/linters/
+linters:
+  fast: false
+  disable-all: true
+  enable:
+    # golangci enables these by default.
+    - deadcode
+    - errcheck
+    - gofumpt  # (replaces gofmt)
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    # golangci disables these by default, but we use them.
+    - bodyclose
+    - depguard
+    - durationcheck
+    - errorlint
+    - exportloopref
+    - gocritic
+    - nakedret
+    - stylecheck
+    - unconvert
+    - unparam
+    - whitespace
+    - forbidigo
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true  # check for a := b.(T)
+
+  errorlint:
+    errorf: false   # it's valid to use %v instead of %w
+
+  govet:
+    check-shadowing: true
+    enable-all: true
+
+  # We have a ton of test-only packages; but make sure we keep prod deps small.
+  depguard:
+    list-type: whitelist
+    packages:
+      - github.com/Khan/genqlient
+      - github.com/vektah/gqlparser/v2
+      - golang.org/x/tools
+      - gopkg.in/yaml.v2
+      - github.com/alexflint/go-arg
+
+  forbidigo:
+    forbid:
+      - '^print(|f|ln)$'
+      - '^fmt\.Print(|f|ln)$'
+
+
+  gocritic:
+    # Which checks should be enabled:
+    # See https://go-critic.github.io/overview#checks-overview
+    # and https://github.com/go-critic/go-critic#usage -> section "Tags".
+    # To check which checks are enabled: `GL_DEBUG=gocritic golangci-lint run`
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+
+    disabled-checks:
+      - builtinShadow
+      - commentedOutCode
+      - importShadow
+      - paramTypeCombine
+      - unnamedResult
+      - ifElseChain
+      - sloppyReassign
+      - typeDefFirst
+
+    settings: # settings passed to gocritic
+      captLocal: # must be valid enabled check name
+        paramsOnly: true
+
+
+issues:
+  exclude-rules:
+    # Test-only deps are not restricted.
+    - linters:
+        - depguard
+      path: _test\.go$|^internal/testutil/|^internal/integration/
+
+    # Ok to use fmt.Print in the examples, and in the CLI entrypoint.
+    - linters:
+        - forbidigo
+      path: ^example/|^generate/main\.go$
+
+    - linters:
+        - errcheck
+      path: _test\.go$
+      # Unchecked type-asserts are ok in tests -- a panic will be plenty clear.
+      # An error message with no function name means an unchecked type-assert.
+      text: "^Error return value is not checked$"
+
+    # Don't error if a test setup function always takes the same arguments.
+    - linters:
+        - unparam
+      path: _test\.go$
+
+    - linters:
+        - govet
+      # Only a big deal for runtime code.
+      path: ^generate/|^example/
+      text: "^fieldalignment: struct with \\d+ pointer bytes could be \\d+$"

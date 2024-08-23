@@ -1,0 +1,10 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "execution",
+    srcs = ["results.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/execution",
+    tags = [TAG_SEARCHSUITE],
+    visibility = ["//visibility:public"],
+    deps = ["//lib/batches/git"],
+)

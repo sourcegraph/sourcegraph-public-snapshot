@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "writer",
+    srcs = [
+        "emitter.go",
+        "emitter_documentation.go",
+        "writer.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/writer",
+    tags = [TAG_PLATFORM_GRAPH],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/codeintel/lsif/protocol",
+        "@com_github_json_iterator_go//:go",
+    ],
+)

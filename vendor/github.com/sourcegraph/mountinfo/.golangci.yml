@@ -1,0 +1,48 @@
+# See explanation of linters at https://golangci-lint.run/usage/linters/
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - forbidigo
+    - gocritic
+    - goimports
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unused
+    - unparam
+    - exportloopref
+
+linters-settings:
+  depguard:
+    list-type: denylist
+    include-go-root: true
+    packages-with-error-message:
+      # Deprecated packages
+      - io/ioutil: "The ioutil package has been deprecated"
+  gocritic:
+    disabled-checks:
+      - appendAssign # Too many false positives
+      - assignOp # Maybe worth adding, but likely not worth the noise
+      - commentFormatting # No strong benefit
+      - deprecatedComment # Unnecessary
+      - exitAfterDefer # Only occurs in auxiliary tools
+      - ifElseChain # Noisy for not much gain
+      - singleCaseSwitch # Noisy for not much gain
+  govet:
+    disable:
+      - composites
+
+issues:
+  exclude-rules:
+    # Exclude bodyclose lint from tests because leaking connections in tests
+    # is a non-issue, and checking that adds unnecessary noise
+    - path: _test\.go
+      linters:
+        - bodyclose
+
+run:
+  timeout: 5m

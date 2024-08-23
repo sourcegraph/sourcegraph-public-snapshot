@@ -1,0 +1,48 @@
+project_name: protoc-gen-doc
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/protoc-gen-doc
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+dockers:
+  - image_templates:
+      - pseudomuto/{{.ProjectName}}:latest
+      - pseudomuto/{{.ProjectName}}:{{.Version}}
+      - pseudomuto/{{.ProjectName}}:{{.Major}}
+      - pseudomuto/{{.ProjectName}}:{{.Major}}.{{.Minor}}
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--platform=linux/amd64"
+    extra_files:
+      - LICENSE.md
+      - README.md
+      - script/entrypoint.sh
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'

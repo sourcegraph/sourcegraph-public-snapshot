@@ -1,0 +1,40 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "template",
+    srcs = [
+        "partial_eval.go",
+        "template.go",
+        "templating.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/template",
+    tags = [TAG_SEARCHSUITE],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//lib/batches/execution",
+        "//lib/batches/git",
+        "//lib/errors",
+        "@com_github_gobwas_glob//:glob",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)
+
+go_test(
+    name = "template_test",
+    timeout = "short",
+    srcs = [
+        "main_test.go",
+        "partial_eval_test.go",
+        "templating_test.go",
+    ],
+    embed = [":template"],
+    tags = [TAG_SEARCHSUITE],
+    deps = [
+        "//lib/batches/execution",
+        "//lib/batches/git",
+        "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
+        "@in_gopkg_yaml_v3//:yaml_v3",
+    ],
+)

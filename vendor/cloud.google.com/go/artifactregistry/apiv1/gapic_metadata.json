@@ -1,0 +1,413 @@
+{
+  "schema": "1.0",
+  "comment": "This file maps proto services/RPCs to the corresponding library clients/methods.",
+  "language": "go",
+  "protoPackage": "google.devtools.artifactregistry.v1",
+  "libraryPackage": "cloud.google.com/go/artifactregistry/apiv1",
+  "services": {
+    "ArtifactRegistry": {
+      "clients": {
+        "grpc": {
+          "libraryClient": "Client",
+          "rpcs": {
+            "BatchDeleteVersions": {
+              "methods": [
+                "BatchDeleteVersions"
+              ]
+            },
+            "CreateRepository": {
+              "methods": [
+                "CreateRepository"
+              ]
+            },
+            "CreateTag": {
+              "methods": [
+                "CreateTag"
+              ]
+            },
+            "DeletePackage": {
+              "methods": [
+                "DeletePackage"
+              ]
+            },
+            "DeleteRepository": {
+              "methods": [
+                "DeleteRepository"
+              ]
+            },
+            "DeleteTag": {
+              "methods": [
+                "DeleteTag"
+              ]
+            },
+            "DeleteVersion": {
+              "methods": [
+                "DeleteVersion"
+              ]
+            },
+            "GetDockerImage": {
+              "methods": [
+                "GetDockerImage"
+              ]
+            },
+            "GetFile": {
+              "methods": [
+                "GetFile"
+              ]
+            },
+            "GetIamPolicy": {
+              "methods": [
+                "GetIamPolicy"
+              ]
+            },
+            "GetLocation": {
+              "methods": [
+                "GetLocation"
+              ]
+            },
+            "GetMavenArtifact": {
+              "methods": [
+                "GetMavenArtifact"
+              ]
+            },
+            "GetNpmPackage": {
+              "methods": [
+                "GetNpmPackage"
+              ]
+            },
+            "GetOperation": {
+              "methods": [
+                "GetOperation"
+              ]
+            },
+            "GetPackage": {
+              "methods": [
+                "GetPackage"
+              ]
+            },
+            "GetProjectSettings": {
+              "methods": [
+                "GetProjectSettings"
+              ]
+            },
+            "GetPythonPackage": {
+              "methods": [
+                "GetPythonPackage"
+              ]
+            },
+            "GetRepository": {
+              "methods": [
+                "GetRepository"
+              ]
+            },
+            "GetTag": {
+              "methods": [
+                "GetTag"
+              ]
+            },
+            "GetVPCSCConfig": {
+              "methods": [
+                "GetVPCSCConfig"
+              ]
+            },
+            "GetVersion": {
+              "methods": [
+                "GetVersion"
+              ]
+            },
+            "ImportAptArtifacts": {
+              "methods": [
+                "ImportAptArtifacts"
+              ]
+            },
+            "ImportYumArtifacts": {
+              "methods": [
+                "ImportYumArtifacts"
+              ]
+            },
+            "ListDockerImages": {
+              "methods": [
+                "ListDockerImages"
+              ]
+            },
+            "ListFiles": {
+              "methods": [
+                "ListFiles"
+              ]
+            },
+            "ListLocations": {
+              "methods": [
+                "ListLocations"
+              ]
+            },
+            "ListMavenArtifacts": {
+              "methods": [
+                "ListMavenArtifacts"
+              ]
+            },
+            "ListNpmPackages": {
+              "methods": [
+                "ListNpmPackages"
+              ]
+            },
+            "ListPackages": {
+              "methods": [
+                "ListPackages"
+              ]
+            },
+            "ListPythonPackages": {
+              "methods": [
+                "ListPythonPackages"
+              ]
+            },
+            "ListRepositories": {
+              "methods": [
+                "ListRepositories"
+              ]
+            },
+            "ListTags": {
+              "methods": [
+                "ListTags"
+              ]
+            },
+            "ListVersions": {
+              "methods": [
+                "ListVersions"
+              ]
+            },
+            "SetIamPolicy": {
+              "methods": [
+                "SetIamPolicy"
+              ]
+            },
+            "TestIamPermissions": {
+              "methods": [
+                "TestIamPermissions"
+              ]
+            },
+            "UpdateProjectSettings": {
+              "methods": [
+                "UpdateProjectSettings"
+              ]
+            },
+            "UpdateRepository": {
+              "methods": [
+                "UpdateRepository"
+              ]
+            },
+            "UpdateTag": {
+              "methods": [
+                "UpdateTag"
+              ]
+            },
+            "UpdateVPCSCConfig": {
+              "methods": [
+                "UpdateVPCSCConfig"
+              ]
+            }
+          }
+        },
+        "rest": {
+          "libraryClient": "Client",
+          "rpcs": {
+            "BatchDeleteVersions": {
+              "methods": [
+                "BatchDeleteVersions"
+              ]
+            },
+            "CreateRepository": {
+              "methods": [
+                "CreateRepository"
+              ]
+            },
+            "CreateTag": {
+              "methods": [
+                "CreateTag"
+              ]
+            },
+            "DeletePackage": {
+              "methods": [
+                "DeletePackage"
+              ]
+            },
+            "DeleteRepository": {
+              "methods": [
+                "DeleteRepository"
+              ]
+            },
+            "DeleteTag": {
+              "methods": [
+                "DeleteTag"
+              ]
+            },
+            "DeleteVersion": {
+              "methods": [
+                "DeleteVersion"
+              ]
+            },
+            "GetDockerImage": {
+              "methods": [
+                "GetDockerImage"
+              ]
+            },
+            "GetFile": {
+              "methods": [
+                "GetFile"
+              ]
+            },
+            "GetIamPolicy": {
+              "methods": [
+                "GetIamPolicy"
+              ]
+            },
+            "GetLocation": {
+              "methods": [
+                "GetLocation"
+              ]
+            },
+            "GetMavenArtifact": {
+              "methods": [
+                "GetMavenArtifact"
+              ]
+            },
+            "GetNpmPackage": {
+              "methods": [
+                "GetNpmPackage"
+              ]
+            },
+            "GetOperation": {
+              "methods": [
+                "GetOperation"
+              ]
+            },
+            "GetPackage": {
+              "methods": [
+                "GetPackage"
+              ]
+            },
+            "GetProjectSettings": {
+              "methods": [
+                "GetProjectSettings"
+              ]
+            },
+            "GetPythonPackage": {
+              "methods": [
+                "GetPythonPackage"
+              ]
+            },
+            "GetRepository": {
+              "methods": [
+                "GetRepository"
+              ]
+            },
+            "GetTag": {
+              "methods": [
+                "GetTag"
+              ]
+            },
+            "GetVPCSCConfig": {
+              "methods": [
+                "GetVPCSCConfig"
+              ]
+            },
+            "GetVersion": {
+              "methods": [
+                "GetVersion"
+              ]
+            },
+            "ImportAptArtifacts": {
+              "methods": [
+                "ImportAptArtifacts"
+              ]
+            },
+            "ImportYumArtifacts": {
+              "methods": [
+                "ImportYumArtifacts"
+              ]
+            },
+            "ListDockerImages": {
+              "methods": [
+                "ListDockerImages"
+              ]
+            },
+            "ListFiles": {
+              "methods": [
+                "ListFiles"
+              ]
+            },
+            "ListLocations": {
+              "methods": [
+                "ListLocations"
+              ]
+            },
+            "ListMavenArtifacts": {
+              "methods": [
+                "ListMavenArtifacts"
+              ]
+            },
+            "ListNpmPackages": {
+              "methods": [
+                "ListNpmPackages"
+              ]
+            },
+            "ListPackages": {
+              "methods": [
+                "ListPackages"
+              ]
+            },
+            "ListPythonPackages": {
+              "methods": [
+                "ListPythonPackages"
+              ]
+            },
+            "ListRepositories": {
+              "methods": [
+                "ListRepositories"
+              ]
+            },
+            "ListTags": {
+              "methods": [
+                "ListTags"
+              ]
+            },
+            "ListVersions": {
+              "methods": [
+                "ListVersions"
+              ]
+            },
+            "SetIamPolicy": {
+              "methods": [
+                "SetIamPolicy"
+              ]
+            },
+            "TestIamPermissions": {
+              "methods": [
+                "TestIamPermissions"
+              ]
+            },
+            "UpdateProjectSettings": {
+              "methods": [
+                "UpdateProjectSettings"
+              ]
+            },
+            "UpdateRepository": {
+              "methods": [
+                "UpdateRepository"
+              ]
+            },
+            "UpdateTag": {
+              "methods": [
+                "UpdateTag"
+              ]
+            },
+            "UpdateVPCSCConfig": {
+              "methods": [
+                "UpdateVPCSCConfig"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

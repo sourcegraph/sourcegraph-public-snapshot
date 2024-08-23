@@ -1,0 +1,16 @@
+language: go
+
+go:
+  - 1.7.x
+  - 1.8.x
+  - 1.9.x
+
+before_install:
+  - go get github.com/golang/lint/golint
+
+before_script:
+  - go vet ./...
+  - golint ./...
+
+script:
+  - go test -v ./...

@@ -1,0 +1,20 @@
+root = true
+
+[*]
+insert_final_newline = true
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.go]
+indent_style = tab
+
+[{*.sh, *.bash}]
+indent_style = space
+indent_size = 2
+switch_case_indent = true
+
+[{*.yml,*.yaml,*.md}]
+indent_size = 2
