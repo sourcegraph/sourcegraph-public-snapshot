@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/core"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	searcher "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
@@ -274,6 +275,7 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 
 	checkerEnabled := authz.SubRepoEnabled(requestState.authChecker)
 	var a *actor.Actor
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
 	if checkerEnabled {
 		a = actor.FromContext(ctx)
 	}
@@ -295,7 +297,7 @@ func (s *Service) getUploadLocations(ctx context.Context, args RequestArgs, requ
 			uploadLocations = append(uploadLocations, adjustedLocation)
 		} else {
 			repo := api.RepoName(adjustedLocation.Upload.RepositoryName)
-			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, repo, adjustedLocation.Path.RawValue()); err != nil {
+			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, ipSource, repo, adjustedLocation.Path.RawValue()); err != nil {
 				return nil, err
 			} else if include {
 				uploadLocations = append(uploadLocations, adjustedLocation)
@@ -395,6 +397,8 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 
 	checkerEnabled := authz.SubRepoEnabled(requestState.authChecker)
 	var a *actor.Actor
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
+
 	if checkerEnabled {
 		a = actor.FromContext(ctx)
 	}
@@ -424,7 +428,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs
 			}
 
 			// sub-repo checker is enabled, proceeding with check
-			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, api.RepoName(adjustedDiagnostic.Upload.RepositoryName), adjustedDiagnostic.Path.RawValue()); err != nil {
+			if include, err := authz.FilterActorPath(ctx, requestState.authChecker, a, ipSource, api.RepoName(adjustedDiagnostic.Upload.RepositoryName), adjustedDiagnostic.Path.RawValue()); err != nil {
 				return nil, 0, err
 			} else if include {
 				diagnosticsAtUploads = append(diagnosticsAtUploads, adjustedDiagnostic)

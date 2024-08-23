@@ -22,6 +22,7 @@ go_library(
         "//internal/collections",
         "//internal/dotcom",
         "//internal/extsvc",
+        "//internal/requestclient",
         "//internal/types",
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",

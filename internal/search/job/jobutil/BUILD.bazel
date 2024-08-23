@@ -35,6 +35,7 @@ go_library(
         "//internal/gitserver/gitdomain",
         "//internal/grpc/defaults",
         "//internal/own/search",
+        "//internal/requestclient",
         "//internal/search",
         "//internal/search/alert",
         "//internal/search/codycontext",

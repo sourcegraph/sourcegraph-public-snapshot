@@ -12,6 +12,7 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/requestclient",
         "//internal/search",
         "//internal/search/result",
         "//internal/search/zoektquery",

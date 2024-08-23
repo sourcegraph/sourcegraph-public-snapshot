@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoektquery"
@@ -168,9 +169,10 @@ func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChec
 	}
 	// Filter out results from files we don't have access to:
 	act := actor.FromContext(ctx)
+	ipSource := authz.NewRequestClientIPSource(requestclient.FromContext(ctx))
 	filtered := results[:0]
 	for i, r := range results {
-		ok, err := authz.FilterActorPath(ctx, checker, act, repo, r.File.Path)
+		ok, err := authz.FilterActorPath(ctx, checker, act, ipSource, repo, r.File.Path)
 		if err != nil {
 			return nil, errors.Wrap(err, "checking permissions")
 		}

@@ -3,6 +3,7 @@ package authz
 import (
 	"context"
 	"io/fs"
+	"net/netip"
 	"strconv"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,7 +28,7 @@ type RepoContent struct {
 // function is associated with a user and repository and should not be used
 // beyond the lifetime of a single request. It exists to amortize the costs of
 // setup when checking many files in a repository.
-type FilePermissionFunc func(path string) (Perms, error)
+type FilePermissionFunc func(path string, ip netip.Addr) (Perms, error)
 
 // SubRepoPermissionChecker is the interface exposed by the SubRepoPermsClient and is
 // exposed to allow consumers to mock out the client.
@@ -35,7 +37,7 @@ type SubRepoPermissionChecker interface {
 	// content.
 	//
 	// If the userID represents an anonymous user, ErrUnauthenticated is returned.
-	Permissions(ctx context.Context, userID int32, content RepoContent) (Perms, error)
+	Permissions(ctx context.Context, userID int32, ip netip.Addr, content RepoContent) (Perms, error)
 
 	// FilePermissionsFunc returns a FilePermissionFunc for userID in repo.
 	// This function should only be used during the lifetime of a request. It
@@ -62,12 +64,12 @@ var DefaultSubRepoPermsChecker SubRepoPermissionChecker = &noopPermsChecker{}
 
 type noopPermsChecker struct{}
 
-func (*noopPermsChecker) Permissions(_ context.Context, _ int32, _ RepoContent) (Perms, error) {
+func (*noopPermsChecker) Permissions(_ context.Context, _ int32, _ netip.Addr, _ RepoContent) (Perms, error) {
 	return None, nil
 }
 
 func (*noopPermsChecker) FilePermissionsFunc(_ context.Context, _ int32, _ api.RepoName) (FilePermissionFunc, error) {
-	return func(path string) (Perms, error) {
+	return func(path string, ip netip.Addr) (Perms, error) {
 		return None, nil
 	}, nil
 }
@@ -89,7 +91,7 @@ func (*noopPermsChecker) EnabledForRepo(_ context.Context, _ api.RepoName) (bool
 //
 // If the context is unauthenticated, ErrUnauthenticated is returned. If the context is
 // internal, Read permissions is granted.
-func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, content RepoContent) (Perms, error) {
+func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.Actor, ipSource IPSource, content RepoContent) (Perms, error) {
 	// Check config here, despite checking again in the s.Permissions implementation,
 	// because we also make some permissions decisions here.
 	if doCheck, err := actorSubRepoEnabled(s, a); err != nil {
@@ -98,7 +100,12 @@ func ActorPermissions(ctx context.Context, s SubRepoPermissionChecker, a *actor.
 		return Read, nil
 	}
 
-	perms, err := s.Permissions(ctx, a.UID, content)
+	ip, err := ipSource.GetIP()
+	if err != nil {
+		return None, errors.Wrap(err, "getting the IP address for checking permissions")
+	}
+
+	perms, err := s.Permissions(ctx, a.UID, ip, content)
 	if err != nil {
 		return None, errors.Wrapf(err, "getting actor permissions for actor: %d", a.UID)
 	}
@@ -156,12 +163,16 @@ var (
 	}, []string{"any", "result"})
 )
 
-func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string, any bool) (result bool, err error) {
-	a := actor.FromContext(ctx)
+func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, ipSource IPSource, repo api.RepoName, paths []string, any bool) (result bool, err error) {
 	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
 		return false, err
 	} else if !doCheck {
 		return true, nil
+	}
+
+	ip, err := ipSource.GetIP()
+	if err != nil {
+		return false, errors.Wrap(err, "getting the IP address for checking permissions")
 	}
 
 	start := time.Now()
@@ -181,7 +192,7 @@ func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo ap
 
 	for _, p := range paths {
 		checkPathPermsCount++
-		perms, err := checkPathPerms(p)
+		perms, err := checkPathPerms(p, ip)
 		if err != nil {
 			return false, err
 		}
@@ -196,13 +207,13 @@ func canReadPaths(ctx context.Context, checker SubRepoPermissionChecker, repo ap
 }
 
 // CanReadAllPaths returns true if the actor can read all paths.
-func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string) (bool, error) {
-	return canReadPaths(ctx, checker, repo, paths, false)
+func CanReadAllPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, ipSource IPSource, repo api.RepoName, paths []string) (bool, error) {
+	return canReadPaths(ctx, checker, a, ipSource, repo, paths, false)
 }
 
 // CanReadAnyPath returns true if the actor can read any path in the list of paths.
-func CanReadAnyPath(ctx context.Context, checker SubRepoPermissionChecker, repo api.RepoName, paths []string) (bool, error) {
-	return canReadPaths(ctx, checker, repo, paths, true)
+func CanReadAnyPath(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, ipSource IPSource, repo api.RepoName, paths []string) (bool, error) {
+	return canReadPaths(ctx, checker, a, ipSource, repo, paths, true)
 }
 
 var (
@@ -218,11 +229,16 @@ var (
 
 // FilterActorPaths will filter the given list of paths for the given actor
 // returning on paths they are allowed to read.
-func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, paths []string) (_ []string, err error) {
+func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, ipSource IPSource, repo api.RepoName, paths []string) (_ []string, err error) {
 	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
 		return nil, errors.Wrap(err, "checking sub-repo permissions")
 	} else if !doCheck {
 		return paths, nil
+	}
+
+	ip, err := ipSource.GetIP()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting IP address for filtering actor paths")
 	}
 
 	start := time.Now()
@@ -240,7 +256,7 @@ func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *
 	filtered := make([]string, 0, len(paths))
 	for _, p := range paths {
 		checkPathPermsCount++
-		perms, err := checkPathPerms(p)
+		perms, err := checkPathPerms(p, ip)
 		if err != nil {
 			return nil, errors.Wrap(err, "checking sub-repo permissions")
 		}
@@ -253,25 +269,32 @@ func FilterActorPaths(ctx context.Context, checker SubRepoPermissionChecker, a *
 
 // FilterActorPath will filter the given path for the given actor
 // returning true if the path is allowed to read.
-func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, path string) (bool, error) {
+func FilterActorPath(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, ipSource IPSource, repo api.RepoName, path string) (bool, error) {
 	if !SubRepoEnabled(checker) {
 		return true, nil
 	}
-	perms, err := ActorPermissions(ctx, checker, a, RepoContent{
-		Repo: repo,
-		Path: path,
-	})
+
+	perms, err := ActorPermissions(ctx, checker, a, ipSource,
+		RepoContent{
+			Repo: repo,
+			Path: path,
+		})
 	if err != nil {
 		return false, errors.Wrap(err, "checking sub-repo permissions")
 	}
 	return perms.Include(Read), nil
 }
 
-func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fis []fs.FileInfo) (_ []fs.FileInfo, err error) {
+func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, ipSource IPSource, repo api.RepoName, fis []fs.FileInfo) (_ []fs.FileInfo, err error) {
 	if doCheck, err := actorSubRepoEnabled(checker, a); err != nil {
 		return nil, errors.Wrap(err, "checking sub-repo permissions")
 	} else if !doCheck {
 		return fis, nil
+	}
+
+	ip, err := ipSource.GetIP()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting IP address for filtering actor paths")
 	}
 
 	start := time.Now()
@@ -291,7 +314,7 @@ func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker,
 	filtered := make([]fs.FileInfo, 0, len(fis))
 	for _, fi := range fis {
 		checkPathPermsCount++
-		perms, err := checkPathPerms(fileInfoPath(fi))
+		perms, err := checkPathPerms(fileInfoPath(fi), ip)
 		if err != nil {
 			return nil, err
 		}
@@ -302,12 +325,12 @@ func FilterActorFileInfos(ctx context.Context, checker SubRepoPermissionChecker,
 	return filtered, nil
 }
 
-func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, repo api.RepoName, fi fs.FileInfo) (bool, error) {
+func FilterActorFileInfo(ctx context.Context, checker SubRepoPermissionChecker, a *actor.Actor, ipSource IPSource, repo api.RepoName, fi fs.FileInfo) (bool, error) {
 	rc := RepoContent{
 		Repo: repo,
 		Path: fileInfoPath(fi),
 	}
-	perms, err := ActorPermissions(ctx, checker, a, rc)
+	perms, err := ActorPermissions(ctx, checker, a, ipSource, rc)
 	if err != nil {
 		return false, errors.Wrap(err, "checking sub-repo permissions")
 	}
@@ -321,4 +344,32 @@ func fileInfoPath(fi fs.FileInfo) string {
 		return fi.Name() + "/"
 	}
 	return fi.Name()
+}
+
+type IPSource interface {
+	GetIP() (netip.Addr, error)
+}
+
+type clientIPSource struct {
+	client *requestclient.Client
+}
+
+func (c *clientIPSource) GetIP() (netip.Addr, error) {
+	if c.client == nil {
+		return netip.Addr{}, errors.New("client is nil")
+	}
+
+	return fakeIP, nil // TODO@ggilmore: Replace this with the real IP extraction logic from the client
+}
+
+var fakeIP = netip.MustParseAddr("127.0.0.1") // TODO@ggimore: Fake ip address used until we thread the real one through.
+
+func NewRequestClientIPSource(client *requestclient.Client) IPSource {
+	return &clientIPSource{client: client}
+}
+
+type IPSourceFunc func() (netip.Addr, error)
+
+func (f IPSourceFunc) GetIP() (netip.Addr, error) {
+	return f()
 }
