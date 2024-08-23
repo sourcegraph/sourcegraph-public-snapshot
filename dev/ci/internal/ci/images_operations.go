@@ -99,12 +99,14 @@ func bazelPushImagesCmd(c Config, isCandidate bool, opts ...bk.StepOpt) func(*bk
 	}
 	// Default registries.
 	devRegistry := images.SourcegraphDockerDevRegistry
-	prodRegistry := images.SourcegraphDockerPublishRegistry
-	additionalProdRegistry := images.SourcegraphArtifactRegistryPublicRegistry
+	prodRegistry := images.SourcegraphArtifactRegistryPublicRegistry
+	var additionalProdRegistry string
 
 	// If we're building an internal release, we push the final images to that specific registry instead.
 	// See also: release_operations.go
 	switch c.RunType {
+	case runtype.PromoteRelease:
+		additionalProdRegistry = images.SourcegraphDockerPublishRegistry
 	case runtype.InternalRelease:
 		prodRegistry = images.SourcegraphInternalReleaseRegistry
 		// we don't want to push to the public registry on internal releases, but we do want to publish the release to the cloud ephemeral registry
