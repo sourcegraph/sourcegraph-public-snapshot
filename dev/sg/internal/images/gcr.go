@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/opencontainers/go-digest"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -38,9 +39,8 @@ func (r *GCR) Org() string {
 }
 
 // Public returns if the registry is used for public purposes or not.
-// Right now, we never use GCR for public releases, so it's always false.
 func (r *GCR) Public() bool {
-	return false
+	return r.Org() == "sourcegraph-public-images"
 }
 
 // LoadToken gets the access-token to reach GCR through the environment.
@@ -76,7 +76,6 @@ func (r *GCR) fetchDigest(repo string, tag string) (digest.Digest, error) {
 		return "", err
 	}
 	return g, nil
-
 }
 
 // GetByTag returns a container repository, on that registry, for a given service at

@@ -56,8 +56,8 @@ var OpsUpdateImagesCommand = &cli.Command{
 		&cli.StringFlag{
 			Name: "registry",
 			Usage: `Sets the registry we want images to update to. If you specify "public" or "internal" as a value it will use:
-	- docker.io (public)
-	- us.gcr.io (internal)
+	- us-docker.pkg.dev/sourcegraph-public-images/sourcegraph-public-images (public)
+	- us.gcr.io/sourcegraph-dev (internal)
 	Alternatively, you can provide a custom registry of the format '<host>/<org>'.
 	`,
 			Value: "public",
@@ -194,7 +194,7 @@ func opsUpdateImages(
 			}
 			registry = gcr
 		case "public":
-			registry = images.NewDockerHub("sourcegraph", dockerUsername, dockerPassword)
+			registry = images.NewGCR("us-docker.pkg.dev", "sourcegraph-public-images/sourcegraph-public-images")
 		default:
 			parts := strings.SplitN(registryType, "/", 2)
 			if len(parts) < 2 {
