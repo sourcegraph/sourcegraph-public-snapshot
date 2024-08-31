@@ -449,7 +449,7 @@ outer:
 	}
 
 	if len(indexMap) > 0 {
-		indexes := make([]int, len(indexMap))
+		indexes := make([]int, 0, len(indexMap))
 		for index := range indexMap {
 			indexes = append(indexes, index)
 		}

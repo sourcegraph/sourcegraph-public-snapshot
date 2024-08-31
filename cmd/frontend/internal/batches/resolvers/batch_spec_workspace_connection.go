@@ -57,7 +57,7 @@ func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]gra
 		return nil, err
 	}
 
-	repoIDs := make([]api.RepoID, len(nodes))
+	repoIDs := make([]api.RepoID, 0, len(nodes))
 	for _, w := range nodes {
 		repoIDs = append(repoIDs, w.RepoID)
 	}
