@@ -1,4 +1,0 @@
-{
-  "Input": "/abcd\\// patterntype:regexp",
-  "Result": "patterntype:regexp /abcd\\//"
-}

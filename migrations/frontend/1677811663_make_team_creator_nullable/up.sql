@@ -1,1 +1,0 @@
-ALTER TABLE teams ALTER COLUMN creator_id DROP NOT NULL;

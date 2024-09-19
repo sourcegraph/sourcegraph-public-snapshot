@@ -1,3 +1,0 @@
-fragment GlobalNavigation_User on User {
-    ...UserMenu_User
-}

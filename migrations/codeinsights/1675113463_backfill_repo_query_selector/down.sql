@@ -1,1 +1,0 @@
--- no need for a down migration, this is entirely new data

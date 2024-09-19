@@ -1,4 +1,0 @@
-DROP FUNCTION IF EXISTS update_lsif_data_definitions_schema_versions_insert;
-DROP FUNCTION IF EXISTS update_lsif_data_documents_schema_versions_insert;
-DROP FUNCTION IF EXISTS update_lsif_data_implementations_schema_versions_insert;
-DROP FUNCTION IF EXISTS update_lsif_data_references_schema_versions_insert;

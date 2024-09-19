@@ -1,4 +1,0 @@
-{
-  "Input": "repo:\"quoted\\\"\"",
-  "Result": "repo:\"quoted\\\"\""
-}

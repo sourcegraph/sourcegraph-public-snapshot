@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS codeintel_ranking_path_counts_inputs_graph_key_unique_definition_id;

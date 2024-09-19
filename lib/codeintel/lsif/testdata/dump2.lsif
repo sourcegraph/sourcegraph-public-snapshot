@@ -1,2 +1,0 @@
-{"id": "01", "type": "vertex", "label": "metaData", "version": "0.4.3", "projectRoot": "file:///test/"}
-{"id": "02", "type": "vertex", "label": "document", "uri": "file:///test/root/foo.go"}

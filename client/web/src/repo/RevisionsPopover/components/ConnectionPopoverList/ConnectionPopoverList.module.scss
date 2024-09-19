@@ -1,9 +1,0 @@
-.connection-popover-nodes {
-    &:empty {
-        display: none;
-    }
-
-    border-top: solid 1px var(--border-color-2);
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
-}

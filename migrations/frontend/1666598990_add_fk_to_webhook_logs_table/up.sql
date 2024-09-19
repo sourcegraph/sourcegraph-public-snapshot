@@ -1,2 +1,0 @@
-ALTER TABLE webhook_logs
-    ADD COLUMN IF NOT EXISTS webhook_id INTEGER REFERENCES webhooks(id) ON DELETE CASCADE;

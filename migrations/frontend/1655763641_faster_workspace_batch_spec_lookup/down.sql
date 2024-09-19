@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS batch_spec_workspaces_id_batch_spec_id;

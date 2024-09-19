@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS codeintel_ranking_definitions_graph_key_last_scanned_at_id;

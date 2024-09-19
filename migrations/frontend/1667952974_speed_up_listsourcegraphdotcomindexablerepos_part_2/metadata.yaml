@@ -1,3 +1,0 @@
-name: Speed up ListSourcegraphDotComIndexableRepos (part 2)
-parents: [1667950421]
-createIndexConcurrently: true

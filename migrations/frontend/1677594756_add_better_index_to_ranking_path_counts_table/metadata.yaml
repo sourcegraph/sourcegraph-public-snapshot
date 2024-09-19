@@ -1,3 +1,0 @@
-name: Add better index to ranking path counts table
-parents: [1677003167, 1677073533, 1677104938]
-createIndexConcurrently: true

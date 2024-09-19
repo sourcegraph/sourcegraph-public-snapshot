@@ -1,9 +1,0 @@
-# See https://github.com/sourcegraph/codenotify for documentation.
-
-external* @eseliger
-namespaces* @eseliger
-repos* @eseliger
-permissions* @BolajiOlajide
-user_roles* @BolajiOlajide
-roles* @BolajiOlajide
-role_permissions* @BolajiOlajide

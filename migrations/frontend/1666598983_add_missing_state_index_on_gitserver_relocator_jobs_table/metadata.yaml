@@ -1,3 +1,0 @@
-name: Add missing state index on gitserver_relocator_jobs table
-parents: [1666598828]
-createIndexConcurrently: true

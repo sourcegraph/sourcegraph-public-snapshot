@@ -1,9 +1,0 @@
-.card-footer {
-    padding: 0.5rem;
-    background-color: var(--color-bg-2);
-
-    // This calc(var(--border-radius) - 1px) calculation will remove small white spaces in bottom left and bottom right corners
-    &:last-child {
-        border-radius: 0 0 calc(var(--border-radius) - 1px) calc(var(--border-radius) - 1px);
-    }
-}

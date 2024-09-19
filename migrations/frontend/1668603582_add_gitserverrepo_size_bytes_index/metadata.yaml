@@ -1,3 +1,0 @@
-name: add gitserver.repo_size_bytes index
-parents: [1668184279, 1668179619]
-createIndexConcurrently: true

@@ -1,5 +1,0 @@
----
-source: src/lib.rs
-expression: result.unwrap_err()
----
-{"error":"/scip endpoint: Tree-sitter backend requires a language to be specified"}

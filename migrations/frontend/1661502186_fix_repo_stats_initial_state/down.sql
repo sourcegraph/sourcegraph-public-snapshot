@@ -1,2 +1,0 @@
--- No schema changes made in up migrations, only data migrations that can't be
--- undone.

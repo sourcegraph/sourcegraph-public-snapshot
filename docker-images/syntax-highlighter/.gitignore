@@ -1,9 +1,0 @@
-target
-languages/libraries/
-.vscode/
-
-bench_data/
-
-**/flamegraph.svg
-**/perf.data
-**/perf.data.old

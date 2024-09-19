@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS codeintel_ranking_references_processed_reference_id;

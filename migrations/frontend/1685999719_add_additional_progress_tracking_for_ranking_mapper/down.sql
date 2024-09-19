@@ -1,4 +1,0 @@
-ALTER TABLE codeintel_ranking_progress DROP COLUMN IF EXISTS reference_cursor_export_deleted_at;
-ALTER TABLE codeintel_ranking_progress DROP COLUMN IF EXISTS reference_cursor_export_id;
-ALTER TABLE codeintel_ranking_progress DROP COLUMN IF EXISTS path_cursor_deleted_export_at;
-ALTER TABLE codeintel_ranking_progress DROP COLUMN IF EXISTS path_cursor_export_id;

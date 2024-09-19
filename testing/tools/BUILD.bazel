@@ -1,5 +1,0 @@
-sh_library(
-    name = "integration_runner",
-    srcs = ["integration_runner.sh"],
-    visibility = ["//testing:__subpackages__"],
-)

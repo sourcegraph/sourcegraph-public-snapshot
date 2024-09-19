@@ -1,4 +1,0 @@
-fragment CodySidebar_ResolvedRevision on Repository {
-    id
-    name
-}

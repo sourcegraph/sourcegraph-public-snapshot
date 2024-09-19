@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS batch_spec_workspace_execution_jobs_last_dequeue;

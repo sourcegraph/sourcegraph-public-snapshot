@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "references": [{ "path": "../.." }],
-  "compilerOptions": {
-    "types": ["node"],
-  },
-  "include": ["**/*"],
-  "exclude": [],
-}

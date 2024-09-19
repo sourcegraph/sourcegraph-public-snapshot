@@ -1,6 +1,0 @@
-fragment OpenInCodeHostAction on GitBlob {
-    externalURLs {
-        url
-        serviceKind
-    }
-}

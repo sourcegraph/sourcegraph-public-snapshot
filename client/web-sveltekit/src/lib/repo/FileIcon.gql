@@ -1,4 +1,0 @@
-fragment FileIcon_GitBlob on GitBlob {
-    name
-    languages
-}

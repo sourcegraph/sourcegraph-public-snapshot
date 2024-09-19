@@ -1,5 +1,0 @@
-filegroup(
-    name = "scripts",
-    srcs = glob(["*.sh"]),
-    visibility = ["//cmd/server:__pkg__"],
-)

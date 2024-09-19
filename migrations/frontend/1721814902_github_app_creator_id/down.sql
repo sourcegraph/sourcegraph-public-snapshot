@@ -1,1 +1,0 @@
-ALTER TABLE IF EXISTS github_apps DROP COLUMN IF EXISTS creator_id;

@@ -1,4 +1,0 @@
-{
-  "Input": "repo:foo file:bar baz and qux",
-  "Result": "repo:foo file:bar (baz AND qux)"
-}

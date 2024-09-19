@@ -1,3 +1,0 @@
-sourcegraph.test:3443
-tls internal
-reverse_proxy 192.168.99.111:31963

@@ -1,7 +1,0 @@
-k8s_yaml(listdir('generated-cluster'))
-
-custom_build(
-  'sourcegraph/frontend',
-  '../../cmd/frontend/pre-build.sh && IMAGE="$EXPECTED_REF" ../../cmd/frontend/build.sh',
-  ['tilt-watch-targets/frontend'],
-)

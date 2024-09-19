@@ -1,9 +1,0 @@
-@import 'wildcard/src/global-styles/breakpoints';
-
-.batch-spec-tab {
-    &__header-col {
-        @media (--sm-breakpoint-down) {
-            flex-basis: 100%;
-        }
-    }
-}

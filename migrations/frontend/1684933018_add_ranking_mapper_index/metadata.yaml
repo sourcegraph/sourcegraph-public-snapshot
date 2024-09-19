@@ -1,3 +1,0 @@
-name: Add ranking mapper index
-parents: [1684831743, 1684753192]
-createIndexConcurrently: true

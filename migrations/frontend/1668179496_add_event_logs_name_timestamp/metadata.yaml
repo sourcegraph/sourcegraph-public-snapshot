@@ -1,3 +1,0 @@
-name: Add event_logs_name_timestamp
-parents: [1667825028, 1667952974]
-createIndexConcurrently: true

@@ -1,5 +1,0 @@
-filegroup(
-    name = "data",
-    srcs = glob(["**/**"]),
-    visibility = ["//lib/codeintel:__subpackages__"],
-)

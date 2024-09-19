@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS explicit_permissions_bitbucket_projects_jobs_project_key_external_service_id_state_idx;

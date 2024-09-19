@@ -1,1 +1,0 @@
-DROP TABLE IF EXISTS explicit_permissions_bitbucket_projects_jobs;

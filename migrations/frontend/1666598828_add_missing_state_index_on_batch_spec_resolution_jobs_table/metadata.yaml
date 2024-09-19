@@ -1,3 +1,0 @@
-name: Add missing state index on batch_spec_resolution_jobs table
-parents: [1666598814]
-createIndexConcurrently: true

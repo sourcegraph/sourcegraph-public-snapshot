@@ -1,1 +1,0 @@
-./src/feature/cmd/golang/ci/

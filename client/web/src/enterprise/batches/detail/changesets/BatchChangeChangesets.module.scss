@@ -1,8 +1,0 @@
-.batch-change-changesets {
-    &__grid {
-        display: grid;
-        grid-template-columns: [checkbox] min-content [caret] min-content [status] min-content [info] minmax(auto, 1fr) [checkstate] min-content [reviewstate] min-content [diffstat] min-content [end];
-        align-items: center;
-        margin-bottom: 0;
-    }
-}

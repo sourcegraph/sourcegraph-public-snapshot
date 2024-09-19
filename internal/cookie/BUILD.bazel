@@ -1,9 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "cookie",
-    srcs = ["cookie.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/cookie",
-    tags = [TAG_PLATFORM_SOURCE],
-    visibility = ["//:__subpackages__"],
-)

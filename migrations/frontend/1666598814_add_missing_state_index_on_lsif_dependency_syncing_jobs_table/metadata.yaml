@@ -1,3 +1,0 @@
-name: Add missing state index on lsif_dependency_syncing_jobs table
-parents: [1666524436]
-createIndexConcurrently: true

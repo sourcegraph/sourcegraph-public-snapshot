@@ -1,2 +1,0 @@
-name: remove git_status column from gitserver_repos table
-parents: [1668174127]

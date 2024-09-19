@@ -1,4 +1,0 @@
-fragment Readme_Blob on GitBlob {
-    richHTML
-    content
-}

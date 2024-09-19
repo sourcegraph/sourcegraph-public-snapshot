@@ -1,9 +1,0 @@
-{
-  "Include": [
-   "sg/go-langserver",
-   "sg/python-langserver-fork"
-  ],
-  "Exclude": [
-   "sg/python-langserver"
-  ]
- }

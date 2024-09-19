@@ -1,9 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "managedservicesplatform",
-    srcs = ["managedservicesplatform.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform",
-    tags = [TAG_INFRA_CORESERVICES],
-    visibility = ["//visibility:public"],
-)
