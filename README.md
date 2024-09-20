@@ -1,3 +1,5 @@
+[![Open in DevZero](https://assets.devzero.io/open-in-devzero.svg)](https://www.devzero.io/dashboard/recipes/new?repo-url=https://github.com/sourcegraph/sourcegraph-public-snapshot)
+
 > [!NOTE]
 > Sourcegraph transitioned to a private monorepo. This repository, `sourcegraph/sourcegraph-public-snapshot` is a publicly available copy of the `sourcegraph/sourcegraph` repository as it was just before the migration.
 
@@ -5,7 +7,6 @@
 > If you are interested in working with the code, this [commit](https://github.com/sourcegraph/sourcegraph-public-snapshot/commit/1cd36d2dbbd2a9ab638cc437d208d2717eaefb0b) is the last one made under an Apache License.
 
 ---
-
 
 <p align="center">
 <a href="https://sourcegraph.com/" target="_blank">
